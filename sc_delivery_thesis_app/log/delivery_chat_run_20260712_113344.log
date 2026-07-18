@@ -1,0 +1,45 @@
+2026-07-12 11:33:44 | INFO | supply_chain_delivery_app | logger.initialized path=/Users/aditikulkarni/Documents/Masters/AI-Projects/10-Capstone/0_supply_chain_capstone/supply_chain_delivery_app/log/delivery_chat_run_20260712_113344.log
+2026-07-12 11:33:44 | INFO | supply_chain_delivery_app | app.startup log_path=/Users/aditikulkarni/Documents/Masters/AI-Projects/10-Capstone/0_supply_chain_capstone/supply_chain_delivery_app/log/delivery_chat_run_20260712_113344.log
+2026-07-12 11:33:54 | INFO | supply_chain_delivery_app | request.received request_id=1da8cf0c28ea pending=False has_orders_file=True message_len=237
+2026-07-12 11:33:54 | INFO | supply_chain_delivery_app | request.confirmation request_id=1da8cf0c28ea action=run_confirmed is_quick_action=True
+2026-07-12 11:33:54 | INFO | supply_chain_delivery_app | run.started request_id=1da8cf0c28ea query_len=883 has_orders_file=True
+2026-07-12 11:33:56 | INFO | supply_chain_delivery_app | agent.updated request_id=1da8cf0c28ea agent=Supply Chain Last-Mile Delivery Optimization Expert Agent
+2026-07-12 11:33:57 | INFO | supply_chain_delivery_app | tool.call.started request_id=1da8cf0c28ea tool=predict_delivery_delays_tool args=(input=Predict delayed orders and severity using input file: /private/var/folders/ch...)
+2026-07-12 11:33:58 | INFO | supply_chain_delivery_app | llm.usage request_id=1da8cf0c28ea model=gpt-5.4-2026-03-05 prompt_tokens=5113 completion_tokens=105 total_tokens=5218
+2026-07-12 11:34:37 | INFO | supply_chain_delivery_app | tool.call.completed request_id=1da8cf0c28ea tool=predict_delivery_delays_tool duration_ms=40030
+2026-07-12 11:34:37 | INFO | supply_chain_delivery_app | predict.rows request_id=1da8cf0c28ea source=tool_stream count=50
+2026-07-12 11:34:39 | INFO | supply_chain_delivery_app | tool.call.started request_id=1da8cf0c28ea tool=diagnose_delay_patterns args=(input=Diagnose delay patterns and root causes using the latest prediction outputs f...)
+2026-07-12 11:34:39 | INFO | supply_chain_delivery_app | llm.usage request_id=1da8cf0c28ea model=gpt-5.4-2026-03-05 prompt_tokens=10437 completion_tokens=112 total_tokens=10549
+2026-07-12 11:35:03 | INFO | supply_chain_delivery_app | tool.call.completed request_id=1da8cf0c28ea tool=diagnose_delay_patterns duration_ms=24285
+2026-07-12 11:35:05 | INFO | supply_chain_delivery_app | tool.call.started request_id=1da8cf0c28ea tool=delay_simulations_tool args=(input=Run a simulation for weather_condition=stormy and region=east using the lates...)
+2026-07-12 11:35:05 | INFO | supply_chain_delivery_app | llm.usage request_id=1da8cf0c28ea model=gpt-5.4-2026-03-05 prompt_tokens=15672 completion_tokens=38 total_tokens=15710
+2026-07-12 11:35:33 | INFO | supply_chain_delivery_app | tool.call.completed request_id=1da8cf0c28ea tool=delay_simulations_tool duration_ms=28273
+2026-07-12 11:35:35 | INFO | supply_chain_delivery_app | tool.call.started request_id=1da8cf0c28ea tool=recommendation_tool args=(input=Generate optimization recommendations using the latest prediction and diagnos...)
+2026-07-12 11:35:35 | INFO | supply_chain_delivery_app | llm.usage request_id=1da8cf0c28ea model=gpt-5.4-2026-03-05 prompt_tokens=19859 completion_tokens=34 total_tokens=19893
+2026-07-12 11:35:36 | INFO | supply_chain_delivery_app | tool.recommend_actions.started
+2026-07-12 11:35:36 | INFO | supply_chain_delivery_app | tool.recommend_actions.data dims_compared=6 hist_high_risk=10 daily_high_risk=10 severity_hotspots=5 hist_top_dims=6 daily_top_dims=6 output_chars=3666
+2026-07-12 11:35:39 | INFO | supply_chain_delivery_app | rag.retrieve.started input_len=3666 rerank_top_n=8
+2026-07-12 11:35:40 | INFO | supply_chain_delivery_app | rag.collection.load.started
+2026-07-12 11:35:40 | INFO | supply_chain_delivery_app | rag.collection.load.completed duration_ms=108 count=73
+2026-07-12 11:35:40 | INFO | supply_chain_delivery_app | rag.retrieve.hybrid_prefilter candidates=12
+2026-07-12 11:35:40 | INFO | supply_chain_delivery_app | rag.cross_encoder.load model=cross-encoder/ms-marco-MiniLM-L-6-v2
+2026-07-12 11:35:48 | INFO | supply_chain_delivery_app | rag.cross_encoder.ready
+2026-07-12 11:35:48 | INFO | supply_chain_delivery_app | rag.retrieve.cross_encoder_rerank returned=8
+2026-07-12 11:35:48 | INFO | supply_chain_delivery_app | rag.retrieve.completed duration_ms=8968 retrieved=15 returned=8
+2026-07-12 11:35:48 | INFO | supply_chain_delivery_app | tool.recommend_actions.completed status=ok duration_ms=12315
+2026-07-12 11:36:09 | INFO | supply_chain_delivery_app | tool.call.completed request_id=1da8cf0c28ea tool=recommendation_tool duration_ms=34310
+2026-07-12 11:36:10 | INFO | supply_chain_delivery_app | tool.call.started request_id=1da8cf0c28ea tool=email_alert_tool args=(input=Generate customer email alerts for all delayed orders using the latest predic...)
+2026-07-12 11:36:10 | INFO | supply_chain_delivery_app | llm.usage request_id=1da8cf0c28ea model=gpt-5.4-2026-03-05 prompt_tokens=22900 completion_tokens=32 total_tokens=22932
+2026-07-12 11:36:12 | INFO | supply_chain_delivery_app | tool.fetch_delayed_orders_for_email.started
+2026-07-12 11:36:12 | INFO | supply_chain_delivery_app | tool.fetch_delayed_orders_for_email.completed status=ok duration_ms=14 csv_path=/Users/aditikulkarni/Documents/Masters/AI-Projects/10-Capstone/0_supply_chain_capstone/supply_chain_delivery_app/output/daily_delivery_delay_prediction.csv
+2026-07-12 11:36:15 | INFO | supply_chain_delivery_app | tool.call.completed request_id=1da8cf0c28ea tool=email_alert_tool duration_ms=4364
+2026-07-12 11:36:19 | INFO | supply_chain_delivery_app | llm.usage request_id=1da8cf0c28ea model=gpt-5.4-2026-03-05 prompt_tokens=23472 completion_tokens=239 total_tokens=23711
+2026-07-12 11:36:19 | INFO | supply_chain_delivery_app | run.outputs request_id=1da8cf0c28ea predict=True diagnosis=True simulate=True recommend=True email=True
+2026-07-12 11:36:19 | INFO | supply_chain_delivery_app | debug.agent_text request_id=1da8cf0c28ea agent=predict is_real=True preview='### Cross-Dimensional Delay Insights\n\nAcross the **50** enriched delayed orders, the biggest operational pattern is not one single cause but a stack of tight schedules, weather-pressure, and vehicle-r'
+2026-07-12 11:36:19 | INFO | supply_chain_delivery_app | debug.agent_text request_id=1da8cf0c28ea agent=simulate is_real=True preview='### Delivery Delay Simulation Results\n\nAnalyzed **241** simulated orders (weather: stormy; region: east; vehicle: truck, van, scooter, ev van, ev bike, bike).\n\n**Simulated Severity Distribution:**\n- M'
+2026-07-12 11:36:19 | INFO | supply_chain_delivery_app | debug.agent_text request_id=1da8cf0c28ea agent=diagnosis is_real=True preview='### Delay Pattern Diagnosis: Today vs Historical\n\n**Overall**\n- Today processed **5,000** deliveries with **1,346** delays -- a delay rate of **26.9%**.\n- Historically, the baseline is **20,000** deli'
+2026-07-12 11:36:19 | INFO | supply_chain_delivery_app | debug.agent_text request_id=1da8cf0c28ea agent=recommend is_real=True preview='### Delivery Optimization Recommendations\n\nThe optimization approach should focus first on reducing exposure to high-risk **express** commitments, especially on **long-distance** routes and during **s'
+2026-07-12 11:36:19 | INFO | supply_chain_delivery_app | debug.agent_text request_id=1da8cf0c28ea agent=email is_real=True preview='**To:** customer-1@example.com\n\nSubject: Delivery Update -- Minor Delay for Order 16535\n\nDear Valued Customer,\n\nA brief update on your order 16535: we anticipate a slight delay (estimated 1--2 hours) '
+2026-07-12 11:36:19 | INFO | supply_chain_delivery_app | run.completed request_id=1da8cf0c28ea duration_ms=144723
+2026-07-12 11:36:19 | INFO | supply_chain_delivery_app | run.usage.summary request_id=1da8cf0c28ea usage_events=6 prompt_tokens_total=97453 completion_tokens_total=560 total_tokens_total=98013
+2026-07-12 11:36:19 | INFO | supply_chain_delivery_app | run.response_cache_stored request_id=1da8cf0c28ea keys=['diag_comp_df', 'diag_hr_df', 'diagnosis_md', 'email_csv', 'email_md', 'predict_csv', 'predict_df', 'predict_md', 'recommend_md', 'simulate_csv', 'simulate_df', 'simulate_md']

@@ -1,0 +1,6 @@
+order_id,weather,traffic,order_date,delivery_date,delay_hours,delay_reason
+1,Rainy,Heavy,2023-01-01T00:00:00,2023-01-02T00:00:00,3,Moderate delay due to heavy traffic and rainy weather
+2,Rainy,Light,2023-01-02T00:00:00,2023-01-03T00:00:00,24,Severe delay likely caused by heavy rain despite light traffic
+3,Cloudy,Moderate,2023-01-03T00:00:00,2023-01-04T00:00:00,6,Moderate delay due to moderate traffic and cloudy weather
+4,Snowy,Heavy,2023-01-04T00:00:00,2023-01-05T00:00:00,4,Delay caused by heavy traffic and snowy weather conditions
+5,Windy,Light,2023-01-05T00:00:00,2023-01-06T00:00:00,12,Significant delay possibly due to windy weather despite light traffic
