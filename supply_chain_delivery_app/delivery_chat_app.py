@@ -937,7 +937,7 @@ custom_css = """
     .input-textbox textarea { font-size: 14px !important; }
 """
 
-with gr.Blocks(theme=gr.themes.Default(primary_hue="purple"), css=custom_css) as ui:
+with gr.Blocks() as ui:
     ui.queue(default_concurrency_limit=5)
     gr.Markdown(
         "# Supply Chain Last-Mile Delivery - AI Control Plane",
@@ -948,10 +948,9 @@ with gr.Blocks(theme=gr.themes.Default(primary_hue="purple"), css=custom_css) as
         # ---- LEFT COLUMN: Chat + Controls ----
         with gr.Column(scale=1):
             chatbot = gr.Chatbot(
-                type="messages",
                 label="Agent Conversation",
                 height=370,
-                show_copy_button=True,
+                buttons=["copy"],
                 elem_classes=["chatbot-box"],
                 value=[{"role": "assistant", "content": _WELCOME_MSG}],
             )
@@ -991,8 +990,6 @@ with gr.Blocks(theme=gr.themes.Default(primary_hue="purple"), css=custom_css) as
                     predict_table_out = gr.Dataframe(
                         label="Predicted Daily Delivery Delays with Severity and Reasoning",
                         value=pd.DataFrame(),
-                        col_count=(0, "dynamic"),
-                        row_count=(0, "dynamic"),
                         interactive=False,
                         elem_classes=["output-table"],
                     )
@@ -1007,16 +1004,12 @@ with gr.Blocks(theme=gr.themes.Default(primary_hue="purple"), css=custom_css) as
                 diagnose_high_risk_table_out = gr.Dataframe(
                     label="High-Risk Delay Pattern Combinations (Today)",
                     value=pd.DataFrame(),
-                    col_count=(0, "dynamic"),
-                    row_count=(0, "dynamic"),
                     interactive=False,
                     elem_classes=["output-table"],
                 )
                 diagnose_comparison_table_out = gr.Dataframe(
                     label="Today vs Historical - Delay Rate Comparison",
                     value=pd.DataFrame(),
-                    col_count=(0, "dynamic"),
-                    row_count=(0, "dynamic"),
                     interactive=False,
                     elem_classes=["output-table"],
                 )
@@ -1027,8 +1020,6 @@ with gr.Blocks(theme=gr.themes.Default(primary_hue="purple"), css=custom_css) as
                     simulate_table_out = gr.Dataframe(
                         label="Simulated Orders with Delay Hours",
                         value=pd.DataFrame(),
-                        col_count=(0, "dynamic"),
-                        row_count=(0, "dynamic"),
                         interactive=False,
                         elem_classes=["output-table"],
                     )
@@ -1124,6 +1115,8 @@ with gr.Blocks(theme=gr.themes.Default(primary_hue="purple"), css=custom_css) as
 
 if __name__ == "__main__":
     ui.launch(
+        theme=gr.themes.Default(primary_hue="purple"),
+        css=custom_css,
         inbrowser=True,
         allowed_paths=[str((_APP_DIR / "output").resolve())],
     )

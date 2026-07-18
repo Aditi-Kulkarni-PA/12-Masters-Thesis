@@ -1,0 +1,17 @@
+{
+  "generated": "2026-07-18T12:28:25",
+  "scores": {
+    "Predict Delivery Delays": {
+      "relevance": 5.0,
+      "faithfulness": 5.0,
+      "safety": 5.0,
+      "mean": 5.0
+    },
+    "Diagnose Delay Patterns": {
+      "relevance": 5.0,
+      "faithfulness": 5.0,
+      "safety": 5.0,
+      "mean": 5.0
+    }
+  }
+}

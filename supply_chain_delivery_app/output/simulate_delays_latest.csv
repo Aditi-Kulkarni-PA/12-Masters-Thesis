@@ -1,50 +1,50 @@
 delivery_id,delivery_partner,delivery_mode,region,weather_condition,vehicle_type,distance_km,original_severity,simulated_severity,simulate_delay_reason
-3775.0,dhl,express,east,stormy,truck,247.7,Long (6+h),Long (6+h),Stormy weather in the east likely keeps this long-haul truck delivery at a severe delay level because poor road conditions and slower line-haul movement sustain long disruptions.
-8841.0,ekart,express,east,stormy,van,250.3,Long (6+h),Medium (3-5h),"Even under stormy weather, the simulated pattern suggests this long-distance express van order improves slightly from long to medium, likely because historical outcomes for similar east-region stormy van shipments cluster more in medium delays than extreme ones."
-23052.0,amazon logistics,same day,east,stormy,scooter,165.4,Short (1-2h),Long (6+h),"Stormy weather sharply worsens this same-day scooter delivery in the east because two-wheelers are highly exposed to rain, wind, and visibility issues, making a long delay more likely."
-23679.0,xpressbees,express,east,stormy,van,275.8,Long (6+h),Medium (3-5h),"This east-region express van shipment remains heavily delayed under stormy weather, but the simulation shifts it to medium severity, indicating similar historical stormy cases more often landed in the 3-5 hour band."
-7826.0,amazon logistics,express,east,stormy,scooter,175.5,Short (1-2h),Medium (3-5h),"Stormy conditions likely extend this scooter-based express delivery from short to medium delay due to slower travel speeds, route interruptions, and higher caution on wet roads."
-2431.0,blue dart,express,east,stormy,truck,130.3,Short (1-2h),Short (1-2h),"Although stormy weather adds friction, this truck-based express order likely stays in the short-delay band, suggesting the route and vehicle type can absorb some disruption despite adverse conditions."
-12927.0,xpressbees,express,east,stormy,scooter,69.6,Medium (3-5h),Medium (3-5h),"Stormy weather keeps this scooter delivery at medium severity, likely because the shorter distance limits escalation even though two-wheeler operations remain vulnerable to weather disruption."
-2517.0,xpressbees,express,east,stormy,ev van,173.0,Short (1-2h),Medium (3-5h),"Under stormy east-region conditions, this EV van delivery is expected to slip from short to medium delay as weather-related congestion and slower urban movement increase transit time."
-3589.0,shadowfax,express,east,stormy,scooter,259.5,Short (1-2h),Long (6+h),"This long-distance scooter shipment is highly exposed to stormy weather, so the simulation escalates it to a long delay due to severe mobility constraints and likely route inefficiency."
-5001.0,blue dart,express,east,stormy,truck,194.7,Short (1-2h),Medium (3-5h),Stormy weather likely pushes this truck-based express order into medium delay as road slowdowns and operational bottlenecks add several hours beyond the original expectation.
-18495.0,ecom express,express,east,stormy,scooter,209.8,Medium (3-5h),Medium (3-5h),"This scooter delivery remains in the medium-delay band under stormy weather, indicating meaningful disruption but not enough historical evidence here to push it into the longest-delay category."
-7233.0,dhl,express,east,stormy,ev van,206.4,Short (1-2h),Medium (3-5h),"Stormy conditions in the east likely increase travel and handling delays for this EV van route, moving it from short to medium severity."
-9973.0,shadowfax,same day,east,stormy,ev bike,263.2,Short (1-2h),Medium (3-5h),"Same-day service combined with a long distance and EV bike transport becomes harder to maintain in stormy weather, so a medium delay is more plausible than the original short delay."
-5788.0,shadowfax,express,east,stormy,ev bike,44.8,Short (1-2h),Medium (3-5h),"Even on a shorter route, stormy weather can slow EV bike movement and last-mile execution enough to shift this order from short to medium delay."
-7491.0,blue dart,express,east,stormy,truck,168.1,Short (1-2h),Long (6+h),"The simulation indicates stormy weather could severely disrupt this truck route, escalating it from a short delay to a long one due to compounded road and network slowdowns."
-22760.0,ekart,express,east,stormy,ev van,276.6,Medium (3-5h),Medium (3-5h),"This long-distance EV van order stays at medium severity under stormy weather, suggesting sustained disruption but not a consistent shift to the most extreme delay bucket."
-9301.0,blue dart,express,east,stormy,van,185.2,Short (1-2h),Long (6+h),"Stormy weather likely causes major route and handling delays for this van-based express shipment, pushing it from short to long severity in the simulation."
-16502.0,dhl,express,east,stormy,truck,272.1,Medium (3-5h),Long (6+h),"This very long truck route in the east becomes more vulnerable under stormy weather, increasing the chance that a medium delay stretches into a long one."
-9874.0,dhl,express,east,stormy,truck,219.4,Short (1-2h),Medium (3-5h),Stormy conditions likely add enough road friction and transit slowdown to move this truck delivery from short to medium delay.
-2520.0,ecom express,express,east,stormy,truck,226.4,Long (6+h),Medium (3-5h),"Although still materially delayed, this truck shipment shifts from long to medium in the simulation because comparable east-region stormy truck cases appear somewhat less extreme historically."
-14434.0,xpressbees,express,east,stormy,ev bike,160.6,Short (1-2h),Medium (3-5h),"Stormy weather tends to affect EV bike reliability and speed, so this express order is simulated to worsen from short to medium delay."
-9099.0,fedex,express,east,stormy,van,188.0,Short (1-2h),Medium (3-5h),"This van-based express shipment likely absorbs additional weather-related congestion and handling delays, increasing severity from short to medium."
-11750.0,blue dart,same day,east,stormy,ev bike,149.6,Medium (3-5h),Medium (3-5h),"Stormy weather keeps this same-day EV bike order in the medium-delay range, reflecting continued last-mile pressure without a further jump to long delay."
-22414.0,fedex,express,east,stormy,ev bike,70.9,Medium (3-5h),Long (6+h),"Despite the shorter distance, stormy weather can heavily disrupt EV bike operations, and the simulation suggests this order could escalate from medium to long delay."
-9730.0,shadowfax,same day,east,stormy,ev van,297.1,Medium (3-5h),Long (6+h),"A very long same-day route under stormy weather is difficult to recover operationally, so this order is simulated to worsen into the long-delay category."
-24028.0,delhivery,express,east,stormy,ev bike,170.4,Medium (3-5h),Medium (3-5h),"Stormy weather sustains a medium delay for this EV bike express order, with disruption remaining significant but not worsening further in the simulated historical mix."
-6364.0,ekart,express,east,stormy,bike,180.1,Medium (3-5h),Medium (3-5h),"This bike-based express delivery remains medium delayed under stormy weather, consistent with continued exposure to slower and riskier two-wheeler travel."
-14805.0,blue dart,express,east,stormy,scooter,219.9,Medium (3-5h),Long (6+h),"Stormy weather likely overwhelms this long scooter route, pushing the delay from medium to long due to reduced speed, safety constraints, and route instability."
-20557.0,dhl,express,east,stormy,ev van,279.4,Short (1-2h),Medium (3-5h),"Given the long distance, stormy weather likely makes the original short delay unrealistic, so the simulation shifts this EV van order to medium severity."
-13365.0,fedex,express,east,stormy,bike,260.2,Medium (3-5h),Long (6+h),"A long-distance bike delivery in stormy weather is highly vulnerable to severe slowdown, so the simulation escalates this order from medium to long delay."
-13160.0,ecom express,express,east,stormy,bike,291.1,Medium (3-5h),Short (1-2h),"Although stormy weather is adverse, the simulated reassignment places this order in the short-delay bucket, implying that similar east-region stormy bike cases historically included some faster recoveries despite the long route."
-19073.0,fedex,same day,east,stormy,bike,220.2,Short (1-2h),Medium (3-5h),"Stormy weather likely makes same-day bike delivery harder to maintain on this distance, increasing the expected delay from short to medium."
-23679.0,xpressbees,express,east,stormy,van,275.8,Long (6+h),Medium (3-5h),"This east-region express van shipment remains heavily delayed under stormy weather, but the simulation shifts it to medium severity, indicating similar historical stormy cases more often landed in the 3-5 hour band."
-19515.0,delhivery,express,east,stormy,van,4.7,Short (1-2h),Medium (3-5h),"Even though the route is very short, stormy weather can still create pickup, dispatch, and local congestion issues that push this order into a medium delay."
-6895.0,xpressbees,express,east,stormy,ev bike,221.5,Short (1-2h),Long (6+h),"This long EV bike route is especially sensitive to stormy conditions, so the simulation escalates it from short to long delay due to severe travel inefficiency and exposure."
-1949.0,delhivery,express,east,stormy,ev bike,31.3,Short (1-2h),Long (6+h),"Despite the short distance, stormy weather may heavily disrupt last-mile EV bike execution through localized flooding, rider slowdown, or dispatch backlog, resulting in a simulated long delay."
-5420.0,shadowfax,express,east,stormy,ev bike,235.5,Long (6+h),Long (6+h),This long-distance EV bike order remains in the long-delay category because stormy weather reinforces already severe transit risk and limited recovery capacity.
-3810.0,shadowfax,express,east,stormy,bike,42.1,Long (6+h),Medium (3-5h),"The simulation moderates this order from long to medium delay, suggesting that while stormy weather still disrupts bike movement, similar historical east-region cases were somewhat less extreme overall."
-15695.0,ecom express,express,east,stormy,truck,197.1,Short (1-2h),Medium (3-5h),Stormy weather likely slows this truck route enough to move it from short to medium delay through reduced speeds and operational congestion.
-24678.0,xpressbees,express,east,stormy,truck,196.2,Short (1-2h),Long (6+h),"The simulation suggests stormy weather could cause major disruption for this truck-based express order, escalating it from short to long delay due to compounded route and network impacts."
+3775.0,dhl,express,east,stormy,truck,247.7,Long (6+h),Long (6+h),Stormy weather in east on a long-distance express truck route keeps this order in the highest delay band because severe weather likely continues to slow line-haul movement and handling.
+8841.0,ekart,express,east,stormy,van,250.3,Long (6+h),Medium (3-5h),"Although stormy weather still raises delay risk, the simulation shifts this long-distance express van order down to Medium (3-5h), suggesting historical east-region stormy cases for similar conditions more often land in the medium band."
+23052.0,amazon logistics,same day,east,stormy,scooter,165.4,Short (1-2h),Long (6+h),"Stormy weather sharply worsens this east same-day scooter delivery, where exposure to rain and road disruption can heavily impact two-wheeler speed and same-day SLA performance, pushing it to Long (6+h)."
+23679.0,xpressbees,express,east,stormy,van,275.8,Long (6+h),Medium (3-5h),"Under stormy east-region conditions this very long express van shipment remains significantly delayed, but the simulated pattern suggests similar historical cases more commonly fall into Medium (3-5h) than Long (6+h)."
+7826.0,amazon logistics,express,east,stormy,scooter,175.5,Short (1-2h),Medium (3-5h),"Stormy weather likely slows this east express scooter delivery through reduced road speed and rider exposure, increasing the delay from Short (1-2h) to Medium (3-5h)."
+2431.0,blue dart,express,east,stormy,truck,130.3,Short (1-2h),Short (1-2h),"Even after switching to stormy weather, this east express truck order stays in Short (1-2h), indicating the route and vehicle type appear relatively resilient despite some weather-related slowdown."
+12927.0,xpressbees,express,east,stormy,scooter,69.6,Medium (3-5h),Medium (3-5h),"Stormy weather keeps this east express scooter order in Medium (3-5h), consistent with moderate disruption for two-wheelers even on a shorter route."
+2517.0,xpressbees,express,east,stormy,ev van,173.0,Short (1-2h),Medium (3-5h),"Stormy conditions in the east likely add travel and handling friction for this express ev van shipment, worsening the delay from Short (1-2h) to Medium (3-5h)."
+3589.0,shadowfax,express,east,stormy,scooter,259.5,Short (1-2h),Long (6+h),"This long-distance east express scooter delivery is highly vulnerable to stormy weather, with two-wheeler limitations and route length combining to escalate the delay to Long (6+h)."
+5001.0,blue dart,express,east,stormy,truck,194.7,Short (1-2h),Medium (3-5h),"Stormy weather likely causes slower road movement and operational bottlenecks for this east express truck order, increasing severity to Medium (3-5h)."
+18495.0,ecom express,express,east,stormy,scooter,209.8,Medium (3-5h),Medium (3-5h),"This east express scooter shipment remains at Medium (3-5h) under stormy weather, reflecting sustained but not extreme disruption for a longer two-wheeler route."
+7233.0,dhl,express,east,stormy,ev van,206.4,Short (1-2h),Medium (3-5h),Stormy east-region conditions likely slow this express ev van movement enough to push the delay from Short (1-2h) into Medium (3-5h).
+9973.0,shadowfax,same day,east,stormy,ev bike,263.2,Short (1-2h),Medium (3-5h),"A long-distance same-day east delivery on an ev bike becomes more delay-prone in stormy weather, with tighter SLA pressure and two-wheeler exposure raising severity to Medium (3-5h)."
+5788.0,shadowfax,express,east,stormy,ev bike,44.8,Short (1-2h),Medium (3-5h),"Even on a shorter route, stormy weather can reduce ev bike reliability and speed in the east, increasing this express order to Medium (3-5h)."
+7491.0,blue dart,express,east,stormy,truck,168.1,Short (1-2h),Long (6+h),"Stormy weather appears to create severe disruption for this east express truck shipment, likely through traffic, loading, or route delays that push it into Long (6+h)."
+22760.0,ekart,express,east,stormy,ev van,276.6,Medium (3-5h),Medium (3-5h),"This very long east express ev van order stays at Medium (3-5h), suggesting stormy weather sustains a meaningful delay but does not consistently push similar cases into the longest band."
+9301.0,blue dart,express,east,stormy,van,185.2,Short (1-2h),Long (6+h),"Stormy weather significantly worsens this east express van delivery, likely due to route disruption and cumulative transit slowdown, moving it from Short (1-2h) to Long (6+h)."
+16502.0,dhl,express,east,stormy,truck,272.1,Medium (3-5h),Long (6+h),"This long-haul east express truck order becomes more vulnerable under stormy weather, with distance and road disruption combining to raise severity to Long (6+h)."
+9874.0,dhl,express,east,stormy,truck,219.4,Short (1-2h),Medium (3-5h),Stormy conditions likely slow this east express truck route enough to increase the delay from Short (1-2h) to Medium (3-5h).
+2520.0,ecom express,express,east,stormy,truck,226.4,Long (6+h),Medium (3-5h),"Although stormy weather remains adverse, the simulation reassigns this east express truck order from Long (6+h) to Medium (3-5h), reflecting historical severity mix under similar stormy conditions."
+14434.0,xpressbees,express,east,stormy,ev bike,160.6,Short (1-2h),Medium (3-5h),"Stormy weather likely reduces speed and reliability for this east express ev bike delivery, worsening the delay to Medium (3-5h)."
+9099.0,fedex,express,east,stormy,van,188.0,Short (1-2h),Medium (3-5h),"This east express van order is expected to face moderate storm-related transit disruption, increasing severity from Short (1-2h) to Medium (3-5h)."
+11750.0,blue dart,same day,east,stormy,ev bike,149.6,Medium (3-5h),Medium (3-5h),"Stormy weather keeps this east same-day ev bike delivery in Medium (3-5h), as tight same-day timing and two-wheeler exposure continue to create moderate delay risk."
+22414.0,fedex,express,east,stormy,ev bike,70.9,Medium (3-5h),Long (6+h),"Despite the shorter distance, stormy weather can heavily affect this east express ev bike order, and the simulation indicates similar cases can escalate into Long (6+h)."
+9730.0,shadowfax,same day,east,stormy,ev van,297.1,Medium (3-5h),Long (6+h),"A very long-distance same-day east delivery under stormy weather is highly exposed to SLA breach, pushing this ev van order from Medium (3-5h) to Long (6+h)."
+24028.0,delhivery,express,east,stormy,ev bike,170.4,Medium (3-5h),Medium (3-5h),"Stormy weather keeps this east express ev bike shipment in Medium (3-5h), indicating continued moderate disruption without a further jump in severity."
+6364.0,ekart,express,east,stormy,bike,180.1,Medium (3-5h),Medium (3-5h),"This east express bike delivery remains at Medium (3-5h) under stormy weather, consistent with moderate but persistent two-wheeler disruption over a longer route."
+14805.0,blue dart,express,east,stormy,scooter,219.9,Medium (3-5h),Long (6+h),"Stormy weather likely creates severe travel constraints for this long east express scooter route, increasing the delay to Long (6+h)."
+20557.0,dhl,express,east,stormy,ev van,279.4,Short (1-2h),Medium (3-5h),"This very long east express ev van order becomes more delay-prone in stormy weather, moving from Short (1-2h) to Medium (3-5h)."
+13365.0,fedex,express,east,stormy,bike,260.2,Medium (3-5h),Long (6+h),"A long-distance east express bike delivery is especially vulnerable in stormy weather, with reduced speed and route disruption pushing it into Long (6+h)."
+13160.0,ecom express,express,east,stormy,bike,291.1,Medium (3-5h),Short (1-2h),"Despite stormy weather and long distance, the simulation shifts this east express bike order down to Short (1-2h), indicating that historically similar stormy-condition cases sometimes resolve faster than the original prediction suggested."
+19073.0,fedex,same day,east,stormy,bike,220.2,Short (1-2h),Medium (3-5h),"Stormy weather likely strains this east same-day bike delivery through slower travel and tighter SLA pressure, increasing severity to Medium (3-5h)."
+23679.0,xpressbees,express,east,stormy,van,275.8,Long (6+h),Medium (3-5h),"Under stormy east-region conditions this very long express van shipment remains significantly delayed, but the simulated pattern suggests similar historical cases more commonly fall into Medium (3-5h) than Long (6+h)."
+19515.0,delhivery,express,east,stormy,van,4.7,Short (1-2h),Medium (3-5h),"Even though the route is very short, stormy weather can still create pickup, dispatch, or local traffic disruption in the east, raising this express van order to Medium (3-5h)."
+6895.0,xpressbees,express,east,stormy,ev bike,221.5,Short (1-2h),Long (6+h),"This long east express ev bike delivery is strongly impacted by stormy weather, with two-wheeler vulnerability and route length driving a jump to Long (6+h)."
+1949.0,delhivery,express,east,stormy,ev bike,31.3,Short (1-2h),Long (6+h),"Stormy weather can disproportionately affect this east express ev bike order through rider slowdown and local disruption, and the simulation escalates it to Long (6+h)."
+5420.0,shadowfax,express,east,stormy,ev bike,235.5,Long (6+h),Long (6+h),This long-distance east express ev bike shipment remains in Long (6+h) because stormy weather continues to create severe transit risk for exposed two-wheeler operations.
+3810.0,shadowfax,express,east,stormy,bike,42.1,Long (6+h),Medium (3-5h),"Stormy weather still implies meaningful disruption, but the simulation reduces this east express bike order from Long (6+h) to Medium (3-5h), matching the historical mix for similar cases."
+15695.0,ecom express,express,east,stormy,truck,197.1,Short (1-2h),Medium (3-5h),Stormy east-region conditions likely slow this express truck shipment enough to increase the delay from Short (1-2h) to Medium (3-5h).
+24678.0,xpressbees,express,east,stormy,truck,196.2,Short (1-2h),Long (6+h),"Stormy weather appears to create severe route or operational disruption for this east express truck order, pushing it from Short (1-2h) to Long (6+h)."
 20842.0,blue dart,express,east,stormy,ev bike,264.6,Short (1-2h),Long (6+h),
 11312.0,blue dart,express,east,stormy,ev van,75.7,Long (6+h),Medium (3-5h),
 9789.0,xpressbees,express,east,stormy,scooter,244.9,Medium (3-5h),Medium (3-5h),
 12422.0,delhivery,express,east,stormy,ev van,144.2,Short (1-2h),Long (6+h),
 19362.0,shadowfax,express,east,stormy,bike,213.9,Short (1-2h),Long (6+h),
-24028.0,delhivery,express,east,stormy,ev bike,170.4,Medium (3-5h),Medium (3-5h),"Stormy weather sustains a medium delay for this EV bike express order, with disruption remaining significant but not worsening further in the simulated historical mix."
+24028.0,delhivery,express,east,stormy,ev bike,170.4,Medium (3-5h),Medium (3-5h),"Stormy weather keeps this east express ev bike shipment in Medium (3-5h), indicating continued moderate disruption without a further jump in severity."
 1898.0,amazon logistics,express,east,stormy,bike,226.3,Long (6+h),Medium (3-5h),
 19095.0,ecom express,express,east,stormy,bike,16.0,Medium (3-5h),Medium (3-5h),
 3465.0,dhl,express,east,stormy,bike,210.7,Medium (3-5h),Medium (3-5h),
@@ -74,7 +74,7 @@ delivery_id,delivery_partner,delivery_mode,region,weather_condition,vehicle_type
 9293.0,xpressbees,express,east,stormy,van,49.0,Short (1-2h),Medium (3-5h),
 3144.0,shadowfax,express,east,stormy,bike,270.9,Medium (3-5h),Medium (3-5h),
 1156.0,shadowfax,express,east,stormy,truck,12.8,Medium (3-5h),Medium (3-5h),
-15695.0,ecom express,express,east,stormy,truck,197.1,Short (1-2h),Long (6+h),Stormy weather likely slows this truck route enough to move it from short to medium delay through reduced speeds and operational congestion.
+15695.0,ecom express,express,east,stormy,truck,197.1,Short (1-2h),Long (6+h),Stormy east-region conditions likely slow this express truck shipment enough to increase the delay from Short (1-2h) to Medium (3-5h).
 22983.0,xpressbees,express,east,stormy,ev bike,140.1,Medium (3-5h),Long (6+h),
 16920.0,fedex,same day,east,stormy,ev van,215.9,Medium (3-5h),Medium (3-5h),
 587.0,xpressbees,express,east,stormy,ev bike,190.9,Medium (3-5h),Long (6+h),
@@ -175,7 +175,7 @@ delivery_id,delivery_partner,delivery_mode,region,weather_condition,vehicle_type
 14398.0,xpressbees,same day,east,stormy,van,232.9,Medium (3-5h),Short (1-2h),
 23274.0,xpressbees,express,east,stormy,ev bike,259.8,Medium (3-5h),Medium (3-5h),
 19942.0,xpressbees,express,east,stormy,ev van,217.2,Short (1-2h),Long (6+h),
-12927.0,xpressbees,express,east,stormy,scooter,69.6,Medium (3-5h),Medium (3-5h),"Stormy weather keeps this scooter delivery at medium severity, likely because the shorter distance limits escalation even though two-wheeler operations remain vulnerable to weather disruption."
+12927.0,xpressbees,express,east,stormy,scooter,69.6,Medium (3-5h),Medium (3-5h),"Stormy weather keeps this east express scooter order in Medium (3-5h), consistent with moderate disruption for two-wheelers even on a shorter route."
 22195.0,xpressbees,express,east,stormy,bike,132.5,Short (1-2h),Medium (3-5h),
 7951.0,shadowfax,express,east,stormy,bike,88.3,Short (1-2h),Long (6+h),
 17384.0,ekart,same day,east,stormy,van,223.0,Medium (3-5h),Medium (3-5h),
@@ -185,7 +185,7 @@ delivery_id,delivery_partner,delivery_mode,region,weather_condition,vehicle_type
 5899.0,shadowfax,express,east,stormy,ev bike,203.6,Short (1-2h),Long (6+h),
 3465.0,dhl,express,east,stormy,bike,210.7,Medium (3-5h),Medium (3-5h),
 2312.0,delhivery,express,east,stormy,truck,162.3,Medium (3-5h),Long (6+h),
-20557.0,dhl,express,east,stormy,ev van,279.4,Short (1-2h),Short (1-2h),"Given the long distance, stormy weather likely makes the original short delay unrealistic, so the simulation shifts this EV van order to medium severity."
+20557.0,dhl,express,east,stormy,ev van,279.4,Short (1-2h),Short (1-2h),"This very long east express ev van order becomes more delay-prone in stormy weather, moving from Short (1-2h) to Medium (3-5h)."
 9084.0,delhivery,express,east,stormy,scooter,290.2,Long (6+h),Medium (3-5h),
 23974.0,delhivery,same day,east,stormy,van,96.8,Medium (3-5h),Medium (3-5h),
 22436.0,dhl,same day,east,stormy,truck,119.1,Medium (3-5h),Long (6+h),
@@ -204,7 +204,7 @@ delivery_id,delivery_partner,delivery_mode,region,weather_condition,vehicle_type
 18886.0,xpressbees,express,east,stormy,bike,173.8,Short (1-2h),Long (6+h),
 15569.0,ekart,express,east,stormy,truck,285.1,Medium (3-5h),Medium (3-5h),
 14191.0,delhivery,same day,east,stormy,van,156.9,Short (1-2h),Long (6+h),
-2517.0,xpressbees,express,east,stormy,ev van,173.0,Short (1-2h),Short (1-2h),"Under stormy east-region conditions, this EV van delivery is expected to slip from short to medium delay as weather-related congestion and slower urban movement increase transit time."
+2517.0,xpressbees,express,east,stormy,ev van,173.0,Short (1-2h),Short (1-2h),"Stormy conditions in the east likely add travel and handling friction for this express ev van shipment, worsening the delay from Short (1-2h) to Medium (3-5h)."
 13533.0,delhivery,same day,east,stormy,truck,293.7,Long (6+h),Medium (3-5h),
 654.0,amazon logistics,same day,east,stormy,scooter,187.3,Short (1-2h),Long (6+h),
 17642.0,dhl,express,east,stormy,truck,212.3,Long (6+h),Long (6+h),
@@ -225,7 +225,7 @@ delivery_id,delivery_partner,delivery_mode,region,weather_condition,vehicle_type
 12391.0,delhivery,express,east,stormy,van,180.2,Long (6+h),Medium (3-5h),
 18028.0,ekart,express,east,stormy,bike,83.9,Short (1-2h),Medium (3-5h),
 23969.0,dhl,express,east,stormy,ev bike,205.0,Short (1-2h),Medium (3-5h),
-13160.0,ecom express,express,east,stormy,bike,291.1,Medium (3-5h),Medium (3-5h),"Although stormy weather is adverse, the simulated reassignment places this order in the short-delay bucket, implying that similar east-region stormy bike cases historically included some faster recoveries despite the long route."
+13160.0,ecom express,express,east,stormy,bike,291.1,Medium (3-5h),Medium (3-5h),"Despite stormy weather and long distance, the simulation shifts this east express bike order down to Short (1-2h), indicating that historically similar stormy-condition cases sometimes resolve faster than the original prediction suggested."
 20504.0,ecom express,express,east,stormy,truck,36.1,Medium (3-5h),Medium (3-5h),
 22383.0,shadowfax,express,east,stormy,scooter,74.5,Medium (3-5h),Medium (3-5h),
 23818.0,dhl,express,east,stormy,scooter,284.7,Short (1-2h),Medium (3-5h),

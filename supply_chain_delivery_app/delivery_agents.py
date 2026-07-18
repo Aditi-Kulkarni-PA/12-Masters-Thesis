@@ -89,6 +89,20 @@ def _configure_llm_backend() -> None:
 _configure_llm_backend()
 
 
+async def _json_output_extractor(run_result) -> str:
+    """Serialize a sub-agent's structured final_output back to JSON.
+
+    agent.as_tool()'s default extractor returns final_output's Python str()/repr()
+    when no custom_output_extractor is given, which is not valid JSON for a Pydantic
+    model. The app's chat handler parses each tool's output with json.loads() to
+    progressively fill the UI tabs, so this must always hand back real JSON.
+    """
+    final_output = run_result.final_output
+    if isinstance(final_output, BaseModel):
+        return final_output.model_dump_json()
+    return str(final_output)
+
+
 def _sub_agent_as_tool(
     *,
     agent_name: str,
@@ -118,7 +132,11 @@ def _sub_agent_as_tool(
         model_settings=ModelSettings(tool_choice="required", temperature=0),
         output_type=output_type,
     )
-    return agent, agent.as_tool(tool_name=tool_name, tool_description=tool_description)
+    return agent, agent.as_tool(
+        tool_name=tool_name,
+        tool_description=tool_description,
+        custom_output_extractor=_json_output_extractor,
+    )
 
 
 # ---------------------------------------------------------------------------
