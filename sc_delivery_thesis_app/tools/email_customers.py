@@ -14,7 +14,7 @@ import os
 import time
 
 import pandas as pd
-from agents import function_tool
+from agent_framework import tool # Migrate to MAF
 
 _TOOL_DIR = Path(__file__).resolve().parent
 _APP_DIR = _TOOL_DIR.parent                       # supply_chain_delivery_app/
@@ -115,7 +115,8 @@ def _generate_email(row: pd.Series) -> tuple[str, str]:
 # Tool
 # ---------------------------------------------------------------------------
 
-@function_tool
+
+@tool # MAF migration
 def fetch_delayed_orders_for_email() -> str:
     """
     Generate email alerts for all delayed orders using severity-based templates.

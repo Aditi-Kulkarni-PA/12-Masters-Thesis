@@ -17,14 +17,14 @@ distinct SLA sections rather than a single noisy LLM judgment.
 
 import re
 import pytest
-from agents import Runner
+from agent_adapter import run_agent
 
 from conftest import EVAL_DB
 from eval_config import (
     MIN_FAITHFULNESS, MIN_ANSWER_RELEVANCY,
     MIN_CONTEXT_PRECISION, MAX_HALLUCINATION_RATE,
 )
-from judge import judge_output, get_tool_output
+from judge import judge_output
 
 from delivery_agents import recommendation_agent, RecommendedActionsList
 from tools.rag_knowledge import retrieve_sla_context
@@ -70,7 +70,7 @@ async def test_rag_faithfulness_and_relevancy(seeded_eval_db):
     original_db = ra_module._DB_PATH
     ra_module._DB_PATH = EVAL_DB
     try:
-        result = await Runner.run(
+        result = await run_agent(
             recommendation_agent,
             "Recommend ways to optimize delivery timelines and reduce delays",
         )
@@ -80,7 +80,7 @@ async def test_rag_faithfulness_and_relevancy(seeded_eval_db):
     output = result.final_output
     assert output is not None, "Recommendation agent returned no output"
 
-    tool_out = get_tool_output(result, "recommend_actions")
+    tool_out = result.tool_outputs.get("recommend_actions", "")
     if "--- SLA Knowledge Context" not in tool_out:
         pytest.skip("Could not find SLA context block in recommend_actions output")
 

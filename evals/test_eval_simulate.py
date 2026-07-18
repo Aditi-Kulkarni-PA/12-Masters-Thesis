@@ -13,7 +13,7 @@ Checks:
 
 import time
 import pytest
-from agents import Runner
+from agent_adapter import run_agent
 
 from eval_config import MIN_SIMULATIONS, MIN_JUDGE_SCORE, MAX_SIMULATE_LATENCY_S
 from judge import get_called_tools, judge_output, mean_score
@@ -26,7 +26,7 @@ _SIMULATE_QUERY = "Simulate delays for stormy weather in East region"
 @pytest.fixture(scope="module")
 async def simulate_result(seeded_eval_db, pipeline_mcp_server):
     t0 = time.perf_counter()
-    result = await Runner.run(delay_simulation_agent, _SIMULATE_QUERY)
+    result = await run_agent(delay_simulation_agent, _SIMULATE_QUERY)
     return result, time.perf_counter() - t0
 
 
@@ -34,7 +34,7 @@ async def simulate_result(seeded_eval_db, pipeline_mcp_server):
 
 async def test_simulate_tool_called(simulate_result):
     result, _ = simulate_result
-    assert "simulate_order_delays" in get_called_tools(result), (
+    assert "simulate_order_delays" in result.called_tools, (
         "Expected simulate_order_delays MCP tool to be called"
     )
 

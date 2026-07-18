@@ -1,5 +1,7 @@
 {
-  "generated": "2026-07-18T16:06:48",
+  "generated": "2026-07-18T16:02:53",
+  "stack": "baseline",
+  "app_dir": "supply_chain_delivery_app",
   "scores": {
     "Predict Delivery Delays": {
       "relevance": 5.0,
@@ -30,6 +32,14 @@
       "faithfulness": 5.0,
       "safety": 5.0,
       "mean": 5.0
+    }
+  },
+  "ragas": {
+    "Recommendation Expert Agent": {
+      "faithfulness": 0.875,
+      "answer_relevancy": 0.8548500884266866,
+      "context_precision": 0.7098544973355495,
+      "hallucination_rate": 0.125
     }
   }
 }

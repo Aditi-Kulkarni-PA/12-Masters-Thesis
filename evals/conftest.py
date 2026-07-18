@@ -18,7 +18,7 @@ from pathlib import Path
 
 # ── 1. Resolve paths ──────────────────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).resolve().parent.parent   # 0_supply_chain_capstone
-APP_DIR      = PROJECT_ROOT / "supply_chain_delivery_app"
+APP_DIR = PROJECT_ROOT / os.getenv("SC_EVAL_APP_DIR", "supply_chain_delivery_app")
 PIPELINE_DIR = PROJECT_ROOT / "prediction_pipeline"
 EVALS_DIR    = Path(__file__).resolve().parent
 
@@ -56,20 +56,24 @@ os.environ["SC_EMAIL_MAX_ROWS"]         = "3"
 # ── 4. App imports (after env setup) ─────────────────────────────────────────
 import pytest
 import pytest_asyncio
-from agents import Runner
 from delivery_agents import pipeline_mcp, predict_delivery_delays_agent
 
 # MCP's stdio transport on macOS only inherits: HOME, LOGNAME, PATH, SHELL, TERM, USER.
 # SC_PREDICTION_DB_PATH and SC_PREDICTION_MODEL_DIR are custom vars that won't reach the
-# subprocess unless we inject them explicitly via StdioServerParameters.env.
-# Setting .env merges on top of get_default_environment() — PATH etc. are still inherited.
-pipeline_mcp.params.env = {
+# subprocess unless we inject them explicitly.
+#   - OpenAI SDK stack: MCPServerStdio -> pipeline_mcp.params.env
+#   - MAF stack:        MCPStdioTool   -> pipeline_mcp.env
+_MCP_ENV = {
     "SC_PREDICTION_DB_PATH":   str(EVAL_DB),
     "SC_PREDICTION_MODEL_DIR": str(PIPELINE_DIR / "models"),
     "OPENAI_API_KEY":          os.environ.get("OPENAI_API_KEY", ""),
     "OPENAI_MODEL":            "gpt-5.4",
     "OPENAI_MODEL_MINI":       "gpt-4.1-mini",
 }
+if hasattr(pipeline_mcp, "params"):        # OpenAI SDK (baseline)
+    pipeline_mcp.params.env = _MCP_ENV
+else:                                      # MAF (thesis replica)
+    pipeline_mcp.env = _MCP_ENV
 
 REPORTS_DIR = EVALS_DIR / "reports"
 
@@ -354,8 +358,11 @@ def pytest_sessionfinish(session, exitstatus):
     # so the human-baseline comparison always uses the LATEST run's LLM scores
     # (the human_scores.xls llm_* columns are only a fallback).
     import json as _json
+    _stack_dir = os.getenv("SC_EVAL_APP_DIR", "supply_chain_delivery_app")
     scores_payload = {
         "generated": datetime.now().isoformat(timespec="seconds"),
+        "stack": "maf" if _stack_dir == "sc_delivery_thesis_app" else "baseline",
+        "app_dir": _stack_dir,
         "scores": {
             g["agent"]: {
                 "relevance":    g["relevance"],
@@ -364,6 +371,11 @@ def pytest_sessionfinish(session, exitstatus):
                 "mean":         g["mean"],
             }
             for g in summary_rows
+        },
+        # RAGAS metrics (0-1 scale) — attached to the RAG-grounded record(s)
+        "ragas": {
+            r["agent"]: r["ragas_scores"]
+            for r in _records if r.get("ragas_scores")
         },
     }
     (REPORTS_DIR / f"judge_scores_{timestamp}.json").write_text(

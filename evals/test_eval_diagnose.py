@@ -13,7 +13,7 @@ Checks:
 
 import time
 import pytest
-from agents import Runner
+from agent_adapter import run_agent
 
 from eval_config import (
     MIN_HIGH_RISK_PATTERNS, MIN_COMPARISON_ROWS,
@@ -31,7 +31,7 @@ _VALID_RISK_LEVELS = {"critical", "high", "medium"}
 async def diagnose_result(seeded_eval_db, pipeline_mcp_server):
     """Run diagnose agent once; seeded_eval_db listed first to ensure DB is ready."""
     t0 = time.perf_counter()
-    result = await Runner.run(
+    result = await run_agent(
         diagnose_delay_patterns_agent,
         "Provide delay patterns and root cause diagnosis for today's orders",
     )
@@ -42,7 +42,7 @@ async def diagnose_result(seeded_eval_db, pipeline_mcp_server):
 
 async def test_diagnose_tool_called(diagnose_result):
     result, _ = diagnose_result
-    assert "get_delay_diagnosis" in get_called_tools(result), (
+    assert "get_delay_diagnosis" in result.called_tools, (
         "Expected get_delay_diagnosis MCP tool to be called"
     )
 

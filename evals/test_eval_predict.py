@@ -14,7 +14,7 @@ Checks:
 
 import time
 import pytest
-from agents import Runner
+from agent_adapter import run_agent
 
 from conftest import FULL_INPUT_FILE_REL
 from eval_config import (
@@ -31,7 +31,7 @@ from delivery_agents import DeliveryDelayPredictionResult
 async def predict_result(pipeline_mcp_server):
     """Run predict agent once; share across all tests in this module."""
     t0 = time.perf_counter()
-    result = await Runner.run(
+    result = await run_agent(
         predict_delivery_delays_agent,
         f"Predict delivery delays for orders in {FULL_INPUT_FILE_REL}",
     )
@@ -42,7 +42,7 @@ async def predict_result(pipeline_mcp_server):
 
 async def test_predict_tool_called(predict_result):
     result, _ = predict_result
-    assert "predict_delivery_delays" in get_called_tools(result), (
+    assert "predict_delivery_delays" in result.called_tools, (
         "Expected predict_delivery_delays MCP tool to be called"
     )
 

@@ -13,7 +13,7 @@ import time
 from pathlib import Path
 
 import pandas as pd
-from agents import function_tool
+from agent_framework import tool # Migrate to MAF
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -117,7 +117,7 @@ def _daily_severity_hotspots(csv_path: Path, n: int = 5) -> list[dict]:
 # Tool
 # ---------------------------------------------------------------------------
 
-@function_tool
+@tool
 def recommend_actions() -> str:
     """Analyze prediction and diagnosis results to produce data-driven
     delivery optimization recommendations (long-term, short-term, quick-wins).

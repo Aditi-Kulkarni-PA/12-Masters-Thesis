@@ -17,7 +17,7 @@ Checks:
 
 import time
 import pytest
-from agents import Runner
+from agent_adapter import run_agent
 
 from eval_config import MIN_EMAILS, MIN_JUDGE_SCORE, MAX_EMAIL_LATENCY_S
 from judge import get_called_tools, judge_output, mean_score
@@ -34,7 +34,7 @@ _SEVERITY_SUBJECT = {
 @pytest.fixture(scope="module")
 async def email_result(seeded_eval_db):
     t0 = time.perf_counter()
-    result = await Runner.run(
+    result = await run_agent(
         email_alert_agent,
         "Generate customer email alerts for all delayed orders",
     )
@@ -45,7 +45,7 @@ async def email_result(seeded_eval_db):
 
 async def test_email_tool_called(email_result):
     result, _ = email_result
-    assert "fetch_delayed_orders_for_email" in get_called_tools(result), (
+    assert "fetch_delayed_orders_for_email" in result.called_tools, (
         "Expected fetch_delayed_orders_for_email function tool to be called"
     )
 

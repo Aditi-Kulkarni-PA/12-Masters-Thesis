@@ -24,9 +24,8 @@ if str(_APP_DIR) not in sys.path:
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(dotenv_path=find_dotenv(), override=False)
 
-from agents import Agent, set_default_openai_api, set_default_openai_client
-from agents.mcp import MCPServerStdio
-from agents.model_settings import ModelSettings
+from agent_framework import Agent, tool, MCPStdioTool
+from agent_framework.openai import OpenAIChatClient
 from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 from typing import Annotated, Literal, Optional
@@ -61,33 +60,31 @@ PIPELINE_TOOL_NAMES = [
 # tool_filter restricts agents to only the pipeline tools, blocking
 # everything else that may exist on the server now or in the future.
 # Each sub-agent's prompt further pins it to its specific tool by name.
-pipeline_mcp = MCPServerStdio(
+pipeline_mcp = MCPStdioTool(
     name="prediction_pipeline",
-    params=_MCP_PARAMS,
-    tool_filter={"allowed_tool_names": PIPELINE_TOOL_NAMES},
-    client_session_timeout_seconds=120,
+    command=_PYTHON,
+    args=[_PREDICTION_SERVER],
+    allowed_tools=PIPELINE_TOOL_NAMES,   # MAF kwarg (was: tool_filter)
+    request_timeout=120,                 # MAF kwarg (was: client_session_timeout_seconds)
 )
 
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 MODEL_MINI = os.getenv("OPENAI_MODEL_MINI", "gpt-4.1-mini")
 
-
-def _configure_llm_backend() -> None:
+def _configure_llm_backend() -> OpenAIChatClient:
     """Configure provider routing for OpenAI cloud or local LM Studio."""
     backend = os.getenv("LLM_BACKEND", "openai").strip().lower()
-    if backend != "lmstudio":
-        return
 
-    base_url = os.getenv("LLM_BASE_URL", "http://127.0.0.1:1234/v1").strip()
-    api_key = os.getenv("LLM_API_KEY", "lm-studio").strip() or "lm-studio"
-    local_client = AsyncOpenAI(base_url=base_url, api_key=api_key)
-    set_default_openai_client(local_client)
-    # LM Studio's OpenAI-compatible server is generally most reliable via chat completions.
-    set_default_openai_api("chat_completions")
+    if backend == "lmstudio":
+        return OpenAIChatClient(
+            model=MODEL,
+            base_url = os.getenv("LLM_BASE_URL", "http://127.0.0.1:1234/v1").strip(),
+            api_key = os.getenv("LLM_API_KEY", "lm-studio").strip() or "lm-studio",
+        )
+    return OpenAIChatClient(model=MODEL)  # default: OpenAI cloud
 
-
-_configure_llm_backend()
-
+chat_client = _configure_llm_backend()
+chat_client_mini = OpenAIChatClient(model=MODEL_MINI)  # for lightweight formatting agent
 
 async def _json_output_extractor(run_result) -> str:
     """Serialize a sub-agent's structured final_output back to JSON.
@@ -125,18 +122,21 @@ def _sub_agent_as_tool(
     """
     agent = Agent(
         name=agent_name,
+        client=chat_client,
         instructions=get_instruction(prompt_key),
-        model=MODEL,
-        tools=function_tools or [],
-        mcp_servers=[pipeline_mcp] if use_pipeline_mcp else [],
-        model_settings=ModelSettings(tool_choice="required", temperature=0),
-        output_type=output_type,
+        tools=(function_tools or []) + ([pipeline_mcp] if use_pipeline_mcp else []),
+        default_options={"temperature": 0, "tool_choice": "required", "response_format": output_type},
     )
-    return agent, agent.as_tool(
-        tool_name=tool_name,
-        tool_description=tool_description,
-        custom_output_extractor=_json_output_extractor,
-    )
+
+    @tool(name=tool_name, description=tool_description)
+    async def _run_sub_agent(request: str) -> str:
+        """Run the sub-agent and return its final_output as JSON."""
+        result = await agent.run(request)
+        if isinstance(result.value, BaseModel):
+            return result.value.model_dump_json()
+        return str(result.value)
+    
+    return agent, _run_sub_agent
 
 
 # ---------------------------------------------------------------------------
@@ -314,10 +314,15 @@ email_alert_agent, email_alert_tool = _sub_agent_as_tool(
 
 fallback_advisor_agent = Agent(
     name="Fallback Supply Chain Optimization Agent",
+    client=chat_client,
     instructions=get_instruction("fallback_advisor"),
-    model=MODEL,
 )
 
+fallback_advisor_tool = fallback_advisor_agent.as_tool(
+    name="fallback_advisor_tool",
+    description="Use this when no tool results and datasets are found and you need alternative suggestions",
+    arg_name="request",
+)
 
 # ---------------------------------------------------------------------------
 # 7. Format summary agent — lightweight formatter (uses MODEL_MINI)
@@ -325,13 +330,14 @@ fallback_advisor_agent = Agent(
 
 format_summary_agent = Agent(
     name="Summary Formatting Specialist",
+    client=chat_client_mini,
     instructions=get_instruction("format_summary"),
-    model=MODEL_MINI,
-    model_settings=ModelSettings(temperature=0),
-)
+    default_options={"temperature": 0},
+)   # still not wired in, matching baseline
+
 format_summary_tool = format_summary_agent.as_tool(
-    tool_name="format_summary_tool",
-    tool_description=(
+    name="format_summary_tool",
+    description=(
         "Format structured data into a clean Markdown summary. "
         "Pass a message with: summary_type (predict, diagnosis, simulate, recommendation, email_alert) "
         "and the raw data from the domain tool."
@@ -374,10 +380,13 @@ class MasterOutput(BaseModel):
                     "'no delayed orders'). Empty if email was not run.",
     )
 
+# MAF's Agent has no handoffs param — handoff is an orchestration-level pattern. 
+# Faithful workaround: expose the fallback advisor as a tool with the handoff description
+
 supply_chain_delivery_master_agent = Agent(
     name="Supply Chain Last-Mile Delivery Optimization Expert Agent",
     instructions=get_instruction("master_expert"),
-    model=MODEL,
+    client=chat_client,
     # format_summary_tool is intentionally NOT wired in: all display formatting
     # is deterministic in helpers/post_processing.py (the agent remains defined
     # above and can be re-attached if a use case returns).
@@ -387,9 +396,7 @@ supply_chain_delivery_master_agent = Agent(
         delay_simulations_tool,
         recommendation_tool,
         email_alert_tool,
+        fallback_advisor_tool,
     ],
-    model_settings=ModelSettings(tool_choice="auto"),
-    handoffs=[fallback_advisor_agent],
-    handoff_description="Use this when no tool results and datasets are found and you need alternative suggestions",
-    output_type=MasterOutput,
+    default_options={"tool_choice": "auto", "response_format": MasterOutput},
 )

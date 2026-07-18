@@ -18,13 +18,13 @@ Checks:
 import time
 from pathlib import Path
 import pytest
-from agents import Runner
+from agent_adapter import run_agent
 
 from conftest import EVAL_DB, APP_DIR
 from eval_config import (
     MIN_RECOMMENDATIONS, MIN_JUDGE_SCORE, MAX_RECOMMEND_LATENCY_S, SLA_KEYWORDS,
 )
-from judge import get_called_tools, get_tool_output, judge_output, mean_score
+from judge import judge_output, mean_score
 
 from delivery_agents import recommendation_agent, RecommendedActionsList
 # tools/__init__.py shadows the submodule name with the FunctionTool; use sys.modules
@@ -46,7 +46,7 @@ def patch_recommend_db():
 @pytest.fixture(scope="module")
 async def recommend_result(seeded_eval_db):
     t0 = time.perf_counter()
-    result = await Runner.run(
+    result = await run_agent(
         recommendation_agent,
         "Recommend ways to optimize delivery timelines and reduce delays",
     )
@@ -57,7 +57,7 @@ async def recommend_result(seeded_eval_db):
 
 async def test_recommend_tool_called(recommend_result):
     result, _ = recommend_result
-    assert "recommend_actions" in get_called_tools(result), (
+    assert "recommend_actions" in result.called_tools, (
         "Expected recommend_actions function tool to be called"
     )
 
@@ -105,7 +105,7 @@ async def test_recommend_sla_references_non_empty(recommend_result):
 async def test_recommend_sla_context_retrieved(recommend_result):
     """The tool output must contain the RAG context header."""
     result, _ = recommend_result
-    tool_out = get_tool_output(result, "recommend_actions")
+    tool_out = result.tool_outputs.get("recommend_actions", "")
     assert "SLA Knowledge Context" in tool_out or "SLA Reference" in tool_out, (
         "SLA Knowledge Context block not found in recommend_actions tool output — "
         "RAG retrieval may have failed"

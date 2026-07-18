@@ -16,6 +16,8 @@ import os
 import sys
 import sqlite3
 from pathlib import Path
+import logging
+logging.getLogger("mcp").setLevel(logging.WARNING)
 
 from dotenv import load_dotenv, find_dotenv
 

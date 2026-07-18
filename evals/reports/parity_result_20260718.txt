@@ -1,0 +1,41 @@
+baseline: judge_scores_20260718T160253.json  (generated 2026-07-18T16:02:53)
+maf     : judge_scores_20260718T160648.json  (generated 2026-07-18T16:06:48)
+tolerance: +/-0.5 per metric (1-5 judge scale)
+
+agent                                 metric         baseline    maf   delta  flag
+----------------------------------------------------------------------------------
+Diagnose Delay Patterns               relevance          5.00   5.00   +0.00
+Diagnose Delay Patterns               faithfulness       5.00   5.00   +0.00
+Diagnose Delay Patterns               safety             5.00   5.00   +0.00
+Diagnose Delay Patterns               mean               5.00   5.00   +0.00
+
+Email Alert Agent                     relevance          5.00   5.00   +0.00
+Email Alert Agent                     faithfulness       5.00   5.00   +0.00
+Email Alert Agent                     safety             5.00   5.00   +0.00
+Email Alert Agent                     mean               5.00   5.00   +0.00
+
+Predict Delivery Delays               relevance          5.00   5.00   +0.00
+Predict Delivery Delays               faithfulness       5.00   5.00   +0.00
+Predict Delivery Delays               safety             5.00   5.00   +0.00
+Predict Delivery Delays               mean               5.00   5.00   +0.00
+
+Recommendation Expert Agent           relevance          5.00   5.00   +0.00
+Recommendation Expert Agent           faithfulness       5.00   5.00   +0.00
+Recommendation Expert Agent           safety             5.00   5.00   +0.00
+Recommendation Expert Agent           mean               5.00   5.00   +0.00
+
+Simulate Delay Prediction             relevance          5.00   5.00   +0.00
+Simulate Delay Prediction             faithfulness       4.00   4.00   +0.00
+Simulate Delay Prediction             safety             5.00   5.00   +0.00
+Simulate Delay Prediction             mean               4.67   4.67   +0.00
+
+
+RAGAS metrics (0-1 scale, tolerance +/-0.05)
+----------------------------------------------------------------------------------
+Recommendation Expert Agent           answer_relevancy          0.855  0.851  -0.004
+Recommendation Expert Agent           context_precision         0.710  0.844  +0.134  <-- EXCEEDS
+Recommendation Expert Agent           faithfulness              0.875  1.000  +0.125  <-- EXCEEDS
+Recommendation Expert Agent           hallucination_rate        0.125  0.000  -0.125  <-- EXCEEDS (lower=better)
+
+==================================================================================
+PARITY: FAIL — 3 metric(s) exceed tolerance (judge worst |delta| = 0.00, ragas worst |delta| = 0.134)

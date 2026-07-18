@@ -1,5 +1,7 @@
 {
   "generated": "2026-07-18T16:06:48",
+  "stack": "maf",
+  "app_dir": "sc_delivery_thesis_app",
   "scores": {
     "Predict Delivery Delays": {
       "relevance": 5.0,
@@ -30,6 +32,14 @@
       "faithfulness": 5.0,
       "safety": 5.0,
       "mean": 5.0
+    }
+  },
+  "ragas": {
+    "Recommendation Expert Agent": {
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.850904302651176,
+      "context_precision": 0.8442592592406196,
+      "hallucination_rate": 0.0
     }
   }
 }

@@ -2,15 +2,17 @@
 CLI runner for supply chain delivery evals.
 
 Usage:
-    uv run python evals/run_evals.py                    # full suite (agents + RAG/RAGAS + human baseline)
-    uv run python evals/run_evals.py --agent recommend  # single agent
+    uv run python evals/run_evals.py --stack baseline                    # full suite, OpenAI SDK app
+    uv run python evals/run_evals.py --stack maf                         # full suite, MAF replica
+    uv run python evals/run_evals.py --stack maf --agent recommend       # single agent
     uv run python evals/run_evals.py --help
 
-Writes a JSON report to evals/reports/<timestamp>.json.
+Writes a JSON report to evals/reports/<timestamp>_<stack>.json.
 """
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from datetime import datetime
@@ -18,6 +20,12 @@ from pathlib import Path
 
 EVALS_DIR  = Path(__file__).resolve().parent
 REPORTS_DIR = EVALS_DIR / "reports"
+
+# --stack choice -> app directory the evals import delivery_agents from
+_STACKS = {
+    "baseline": "supply_chain_delivery_app",
+    "maf":      "sc_delivery_thesis_app",
+}
 
 _AGENT_FILES = {
     "predict":   "test_eval_predict.py",
@@ -50,18 +58,26 @@ def _build_pytest_args(agent: str | None, extra: list[str]) -> list[str]:
     return base
 
 
-def _run(args: list[str]) -> dict:
+def _run(args: list[str], stack: str) -> dict:
+    app_dir = _STACKS[stack]
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-    report_path = REPORTS_DIR / f"{datetime.now().strftime('%Y%m%dT%H%M%S')}.json"
+    report_path = REPORTS_DIR / f"{datetime.now().strftime('%Y%m%dT%H%M%S')}_{stack}.json"
 
     cmd = args + [f"--json-report-file={report_path}"]
+    print(f"Stack: {stack}  (app dir: {app_dir})")
     print(f"Running: {' '.join(cmd)}\n")
 
-    proc = subprocess.run(cmd, cwd=EVALS_DIR.parent)
+    env = {**os.environ, "SC_EVAL_APP_DIR": app_dir}
+    proc = subprocess.run(cmd, cwd=EVALS_DIR.parent, env=env)
 
     if report_path.exists():
         with report_path.open() as f:
             report = json.load(f)
+        # Stamp the stack into the report so every JSON is self-documenting
+        report["stack"] = stack
+        report["app_dir"] = app_dir
+        with report_path.open("w") as f:
+            json.dump(report, f, indent=2)
         _print_summary(report, report_path)
     else:
         print(f"No JSON report written (pytest-json-report may not be installed).")
@@ -79,7 +95,7 @@ def _print_summary(report: dict, path: Path):
     duration = report.get("duration", 0)
 
     print("\n" + "=" * 60)
-    print(f"EVAL RESULTS  —  {path.name}")
+    print(f"EVAL RESULTS  —  {path.name}  [stack: {report.get('stack', '?')}]")
     print("=" * 60)
     print(f"  Total:   {total}")
     print(f"  Passed:  {passed}")
@@ -105,6 +121,8 @@ def _print_summary(report: dict, path: Path):
 
 def main():
     parser = argparse.ArgumentParser(description="Run supply chain delivery agent evals")
+    parser.add_argument("--stack", choices=list(_STACKS.keys()), required=True,
+                        help="Which app to evaluate: 'baseline' (OpenAI SDK) or 'maf' (Agent Framework replica)")
     parser.add_argument("--agent", choices=list(_AGENT_FILES.keys()),
                         help="Run evals for a single agent only")
     parser.add_argument("extra", nargs=argparse.REMAINDER,
@@ -112,7 +130,7 @@ def main():
 
     args = parser.parse_args()
     pytest_args = _build_pytest_args(args.agent, args.extra)
-    result = _run(pytest_args)
+    result = _run(pytest_args, args.stack)
     sys.exit(result["exit_code"])
 
 
