@@ -1,5 +1,5 @@
 """First end-to-end MAF run — headless, with live progress logging."""
-import asyncio, json, sys, time
+import asyncio, json, os, sys, time
 from datetime import datetime
 from pathlib import Path
 import logging
@@ -60,7 +60,9 @@ _ORDERS = str(_APP_DIR.parent / "prediction_pipeline" / "data" / "raw" / "daily_
 async def main():
     query = "Predict today's delivery delays and diagnose the main delay patterns."
     query += f"\n\nThe input orders data is in the file at path: {_ORDERS}"
-    query += build_freshness_system_msg()
+    # SC_NO_CACHE=1 -> measurement mode: no freshness reuse, all tools run fresh
+    if os.getenv("SC_NO_CACHE", "").strip().lower() not in ("1", "true", "yes"):
+        query += build_freshness_system_msg()
 
     session = master.create_session()
 

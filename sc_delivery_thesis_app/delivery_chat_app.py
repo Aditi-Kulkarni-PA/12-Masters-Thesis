@@ -31,7 +31,7 @@ load_dotenv(dotenv_path=find_dotenv(), override=True)
 
 import pandas as pd
 import gradio as gr
-from agents import Runner, trace
+from agent_framework import FunctionInvocationContext, function_middleware
 
 from delivery_agents import (
     supply_chain_delivery_master_agent,
@@ -51,7 +51,7 @@ from helpers.post_processing import (
     process_recommendations,
     process_emails,
 )
-from helpers.logging_utils import setup_run_logger, extract_usage_from_event
+from helpers.logging_utils import setup_run_logger
 from helpers.app_utils import (
     brief_args,
     build_freshness_system_msg,
@@ -74,6 +74,14 @@ _APP_LOGGER.info("app.startup log_path=%s", _LOG_PATH)
 # ---------------------------------------------------------------------------
 _response_cache: dict[str, dict] = {}
 _RESPONSE_CACHE_MAX_SIZE = 50
+
+# Measurement mode: SC_NO_CACHE=1 disables ALL reuse paths so every run is a
+# full, independent execution (required for thesis latency/cost measurements):
+#   1. response cache (skip lookup and store)
+#   2. freshness metadata (master would otherwise skip predict/diagnose tools)
+_NO_CACHE = os.getenv("SC_NO_CACHE", "").strip().lower() in ("1", "true", "yes")
+if _NO_CACHE:
+    _APP_LOGGER.info("app.no_cache_mode enabled — response cache and freshness reuse disabled")
 
 
 def _response_cache_key(message: str, orders_path, predict_sidecar: Path, diag_sidecar: Path) -> str:
@@ -346,7 +354,7 @@ async def chat_handler(message: str, history: list, orders_path, pending_query: 
     # Cache key includes: message, orders file hash, sidecar mtimes, model name.
     # If any of these change, the cache key changes and we run a fresh analysis.
     _cache_key = _response_cache_key(message, orders_path, PREDICT_SIDECAR, DIAG_SIDECAR)
-    if _cache_key in _response_cache:
+    if not _NO_CACHE and _cache_key in _response_cache:
         # Cache hit: restore all tab outputs from the cached entry and skip the agent run
         cached = _response_cache[_cache_key]
         _APP_LOGGER.info("run.cache_hit request_id=%s", request_id)
@@ -372,7 +380,9 @@ async def chat_handler(message: str, history: list, orders_path, pending_query: 
         full_query += f"\n\nThe input orders data is in the file at path: {orders_path}"
 
     # Append freshness metadata so agents know if they can reuse prior predictions/diagnosis
-    full_query += build_freshness_system_msg()
+    # (skipped in no-cache mode: every measurement run must execute all tools fresh)
+    if not _NO_CACHE:
+        full_query += build_freshness_system_msg()
 
     # The plan was already shown and confirmed in the chat UI (typed "yes" or
     # clicked a quick action) — the agent must execute, not re-confirm.
@@ -607,280 +617,235 @@ async def chat_handler(message: str, history: list, orders_path, pending_query: 
     # execute the agent, stream progress updates to the UI, 
     # post-processing the final outputs, update the tabs, cache the results, and handle errors.
     try:
-        # open the mcp session context for all tools in the pipeline
-        async with pipeline_mcp: 
+        async with pipeline_mcp:
+            ui_events: list[tuple] = []   # (kind, tool_name, data, duration_ms)
 
-            # record every agent run as one trace span for observability
-            # run streamed to allow incremental updates to the UI as the agent progresses
-            with trace("Supply Chain Delivery Master"): 
-                result = Runner.run_streamed(supply_chain_delivery_master_agent, full_query)
+            @function_middleware
+            async def capture(context: FunctionInvocationContext, call_next):
+                name = context.function.name
+                args = dict(context.arguments) if context.arguments else {}
+                ui_events.append(("tool_start", name, brief_args(args), None))
+                t0 = time.perf_counter()
+                await call_next()
+                dur = int((time.perf_counter() - t0) * 1000)
+                r = context.result
+                payload = (r if isinstance(r, str)
+                           else "".join(getattr(c, "text", "") for c in r)
+                           if isinstance(r, (list, tuple)) else repr(r))
+                ui_events.append(("tool_done", name, payload, dur))
 
-                # process every event as soon as it is received (streamed)
-                async for event in result.stream_events():
+            stream = supply_chain_delivery_master_agent.run(
+                full_query, stream=True, middleware=[capture])
 
-                    if event.type == "raw_response_event":
-                        # Handle raw_response_event for token usage logging
-                        usage_payload = extract_usage_from_event(event)
-                        if usage_payload:
-                            pt = usage_payload.get("prompt_tokens")
-                            ct = usage_payload.get("completion_tokens")
-                            tt = usage_payload.get("total_tokens")
-                            # Accumulate token counts across all LLM calls in this run
-                            run_prompt_tokens += int(pt or 0)
-                            run_completion_tokens += int(ct or 0)
-                            run_total_tokens += int(tt or 0)
-                            usage_events += 1
-                            _APP_LOGGER.info(
-                                "llm.usage request_id=%s model=%s prompt_tokens=%s completion_tokens=%s total_tokens=%s",
-                                request_id,
-                                usage_payload.get("model", "unknown"),
-                                pt,
-                                ct,
-                                tt,
-                            )
+            async for update in stream:
+                while ui_events:                       # drain middleware events
+                    kind, tool_name, data, dur = ui_events.pop(0)
+                    if kind == "tool_start":
+                        pending_tool_calls.append((tool_name, time.perf_counter()))
+                        compose_started = None
+                        _APP_LOGGER.info("tool.call.started request_id=%s tool=%s args=%s",
+                                         request_id, tool_name, data)
+                        status_lines.append(f"    -- calling {tool_name}\n    {data}")
+                    else:
+                        if pending_tool_calls:
+                            pending_tool_calls.pop(0)
+                        _APP_LOGGER.info("tool.call.completed request_id=%s tool=%s duration_ms=%s",
+                                         request_id, tool_name, dur)
+                        tools_completed += 1
+                        compose_started = None
+                        status_lines.append("    -- output received")
+                        if data:
+                            tool_payloads[tool_name] = data
+                            if _apply_payload(tool_name):
+                                _running_tabs = _tabs(show_pending=True)
+                                status_lines.append(f"    -- {tool_name} results shown in tab")
 
-                        # Heartbeat: the master is generating (choosing the next
-                        # step or composing the final structured output). Surface
-                        # it in the status log instead of leaving a silent gap.
-                        # This only runs when at least one tool has completed and no tools are currently running.
-                        if tools_completed > 0 and not pending_tool_calls:
-                            _now = time.perf_counter()
-                            if compose_started is None:
-                                # First heartbeat: master just finished all tool calls and is composing final output
-                                compose_started = _now
-                                last_heartbeat = _now
-                                status_lines.append("    -- master agent processing tool results / composing output...")
-                                compose_line_idx = len(status_lines) - 1  # Remember which line to update
-                                yield (
-                                    history + [{"role": "assistant", "content": "\n".join(status_lines)}],
-                                    "", "", *_running_tabs, tab_state,
-                                )
-                            elif _now - last_heartbeat >= 5 and compose_line_idx is not None:
-                                # Update heartbeat every 5 seconds to show elapsed time
-                                last_heartbeat = _now
-                                status_lines[compose_line_idx] = (
-                                    f"    -- master agent composing structured output... ({int(_now - compose_started)}s)"
-                                )
-                                yield (
-                                    history + [{"role": "assistant", "content": "\n".join(status_lines)}],
-                                    "", "", *_running_tabs, tab_state,
-                                )
-                        continue
-
-                    elif event.type == "agent_updated_stream_event":
-                        # Handle agent_updated_stream_event (agent switch) for logging and status updates
-                        _APP_LOGGER.info(
-                            "agent.updated request_id=%s agent=%s",
-                            request_id,
-                            event.new_agent.name,
+                # Heartbeat: the master is generating (choosing the next
+                # step or composing the final structured output). Surface
+                # it in the status log instead of leaving a silent gap.
+                # Runs when at least one tool has completed and no tools are currently running.
+                if tools_completed > 0 and not pending_tool_calls:
+                    _now = time.perf_counter()
+                    if compose_started is None:
+                        # First heartbeat: master finished all tool calls, composing final output
+                        compose_started = _now
+                        last_heartbeat = _now
+                        status_lines.append("    -- master agent processing tool results / composing output...")
+                        compose_line_idx = len(status_lines) - 1
+                        yield (
+                            history + [{"role": "assistant", "content": "\n".join(status_lines)}],
+                            "", "", *_running_tabs, tab_state,
                         )
-                        status_lines.append(f"  Agent: {event.new_agent.name}")
+                    elif _now - last_heartbeat >= 5 and compose_line_idx is not None:
+                        # Update heartbeat every 5 seconds with elapsed time
+                        last_heartbeat = _now
+                        status_lines[compose_line_idx] = (
+                            f"    -- master agent composing structured output... ({int(_now - compose_started)}s)"
+                        )
+                        yield (
+                            history + [{"role": "assistant", "content": "\n".join(status_lines)}],
+                            "", "", *_running_tabs, tab_state,
+                        )
 
-                    elif event.type == "run_item_stream_event":
-                        item = event.item
-                        raw = getattr(item, "raw_item", None)
-
-                        if item.type == "tool_call_item":
-                            # log the tool name, start time, and brief arguments for status updates
-                            tool_name = getattr(raw, "name", "")
-                            args = getattr(raw, "arguments", None)
-                            pending_tool_calls.append((tool_name, time.perf_counter()))
-                            compose_started = None  # a new tool run interrupts the composing heartbeat
-                            _APP_LOGGER.info(
-                                "tool.call.started request_id=%s tool=%s args=%s",
-                                request_id,
-                                tool_name,
-                                brief_args(args),
-                            )
-                            status_lines.append(f"    -- calling {tool_name}\n    {brief_args(args)}")
-
-                        elif item.type == "tool_call_output_item":
-                            # Tool call just completed; match it to the pending call to compute duration.
-                            # Assumption: tools complete in FIFO order (same as they were called).
-                            tool_name = "unknown"
-                            duration_ms = None
-                            if pending_tool_calls:
-                                # Pop the first pending call (FIFO) and compute its duration
-                                tool_name, started_at = pending_tool_calls.pop(0)
-                                duration_ms = int((time.perf_counter() - started_at) * 1000)
-                            _APP_LOGGER.info(
-                                "tool.call.completed request_id=%s tool=%s duration_ms=%s",
-                                request_id,
-                                tool_name,
-                                duration_ms,
-                            )
-                            tools_completed += 1
-                            compose_started = None
-                            status_lines.append("    -- output received")
-
-                            # Capture the sub-agent's raw output so the app can
-                            # parse rows/summaries itself (the master does not
-                            # copy tool results into MasterOutput to avoid 15-30s of re-emission overhead)
-                            _out = getattr(item, "output", None) or getattr(raw, "output", None)
-                            if _out and tool_name != "unknown":
-                                tool_payloads[tool_name] = str(_out)
-
-                                # PROGRESSIVE TAB UPDATE: parse and display this tool's output immediately
-                                # so the UI updates as each sub-agent finishes
-                                if _apply_payload(tool_name):
-                                    _running_tabs = _tabs(show_pending=True)
-                                    status_lines.append(f"    -- {tool_name} results shown in tab")
-
-                    # Update the UI while 
-                    # preserving existing tab outputs if they have real content, 
-                    # else show hourglass for tabs that have not yet produced output
-                    assistant_text = "\n".join(status_lines)
-                    yield (
-                        history + [{"role": "assistant", "content": assistant_text}],
-                        "",
-                        "",  # clear pending
-                        *_running_tabs,
-                        tab_state,
-                    )
-                    # continue for loop until event streaming is complete
-
-                # ---- Final output processing (deterministic, in post_processing.py) ----
-                # predict/diagnose tabs were already filled in-stream as each
-                # sub-agent finished. Here we read the master's slim output and
-                # re-apply the tools whose display includes a master-written
-                # note (simulate/recommend/email narratives).
-                final_output = result.final_output
-                chat_reply = ""
-                mo = None  # MasterOutput object
-                if isinstance(final_output, str):
-                    # no structured output
-                    chat_reply = final_output.strip()
-                elif final_output is not None:
-                    # Normal case: structured MasterOutput with optional chat_response field
-                    mo = final_output
-                    chat_reply = (getattr(mo, "chat_response", "") or "").strip()
-
-                # Extract master-written narrative summaries from the final structured output
-                sim_summary   = ((getattr(mo, "simulate_summary", "") or "") if mo else "").strip()
-                rec_summary   = ((getattr(mo, "recommendation_summary", "") or "") if mo else "").strip()
-                email_summary = ((getattr(mo, "email_alert_summary", "") or "") if mo else "").strip()
-
-                # Apply tool payloads to tabs (final pass):
-                #   - predict/diagnose: no-op if already applied in-stream (no reapply needed)
-                #   - simulate/recommend/email: reapply with master's narrative if present
-                #     (combines master's summary with tool's structured rows for richer display)
-                _apply_payload("predict_delivery_delays_tool")   # no-op if applied in-stream
-                _apply_payload("diagnose_delay_patterns")
-                _apply_payload("delay_simulations_tool", summary=sim_summary, reapply=bool(sim_summary))
-                _apply_payload("recommendation_tool", summary=rec_summary, reapply=bool(rec_summary))
-                _apply_payload("email_alert_tool", summary=email_summary, reapply=bool(email_summary))
-
-                _APP_LOGGER.info(
-                    "run.outputs request_id=%s predict=%s diagnosis=%s simulate=%s recommend=%s email=%s",
-                    request_id,
-                    bool(predict_text),
-                    bool(diagnosis_text),
-                    bool(simulate_text),
-                    bool(recommend_text),
-                    bool(email_alert_text),
-                )
-
-                # Determines reply style: tab-summary message for analysis runs,
-                # or the agent's direct chat answer for conversational queries
-                ran_analysis = any(_is_real(t) for t in (
-                    predict_text, diagnosis_text, simulate_text,
-                    recommend_text, email_alert_text,
-                ))
-
-                # Final assistant message — plain text, no emojis (#6).
-                # Conversational turn: show the agent's direct answer.
-                # Analysis turn: show the tab summary + welcome prompt.
-                if chat_reply and not ran_analysis:
-                    status_lines.append("\n" + chat_reply)
-                else:
-                    summary_parts = ["\n---", "**Analysis complete.**\n"]
-                    if _is_real(predict_text):
-                        summary_parts.append("- Predictions       -->  Predict tab")
-                    if _is_real(diagnosis_text):
-                        summary_parts.append("- Diagnosis         -->  Diagnosis tab")
-                    if _is_real(simulate_text):
-                        summary_parts.append("- Simulation        -->  Simulation tab")
-                    if _is_real(recommend_text):
-                        summary_parts.append("- Recommendations   -->  Recommendation tab")
-                    if _is_real(email_alert_text) and "no email" not in email_alert_text.lower():
-                        summary_parts.append("- Email Alerts      -->  Email tab")
-
-                    status_lines.extend(summary_parts)
-                    # Append welcome prompt for next interaction
-                    status_lines.append("\n" + _WELCOME_MSG)
-
-                # Surface soft errors — without this a degraded run looks
-                # successful and only the log file knows something went wrong
-                if run_warnings:
-                    status_lines.append("\n---\n**Warnings** -- some steps degraded:")
-                    # Use dict.fromkeys() to deduplicate while preserving order (Python 3.7+ guarantee)
-                    for w in dict.fromkeys(run_warnings):  # dedupe, keep order
-                        status_lines.append(f"- {w}")
-                    status_lines.append(f"Operator: details in log file `{_LOG_PATH.name}`")
-                    _APP_LOGGER.warning(
-                        "run.warnings request_id=%s count=%s", request_id, len(run_warnings),
-                    )
+                # Update the UI: preserve filled tabs, hourglass for tabs still pending
                 assistant_text = "\n".join(status_lines)
-
-                # Log a short preview of each output for post-run debugging
-                for _label, _txt in [
-                    ("predict",   predict_text),
-                    ("simulate",  simulate_text),
-                    ("diagnosis", diagnosis_text),
-                    ("recommend", recommend_text),
-                    ("email",     email_alert_text),
-                ]:
-                    _APP_LOGGER.info(
-                        "debug.agent_text request_id=%s agent=%s is_real=%s preview=%r",
-                        request_id, _label, _is_real(_txt), _txt[:200],
-                    )
-                # (tab_state persistence happens inside _apply_payload)
-                _APP_LOGGER.info(
-                    "run.completed request_id=%s duration_ms=%s",
-                    request_id,
-                    int((time.perf_counter() - run_start) * 1000),
-                )
-                if usage_events > 0:
-                    _APP_LOGGER.info(
-                        "run.usage.summary request_id=%s usage_events=%s prompt_tokens_total=%s completion_tokens_total=%s total_tokens_total=%s",
-                        request_id,
-                        usage_events,
-                        run_prompt_tokens,
-                        run_completion_tokens,
-                        run_total_tokens,
-                    )
-                else:
-                    _APP_LOGGER.info(
-                        "run.usage.summary request_id=%s usage_events=0 usage_source=unavailable",
-                        request_id,
-                    )
-
-                # Store successful run outputs to response cache.
-                # Only cache outputs that were actually produced in this run (_produced_keys).
-                if _produced_keys:
-                    _cached_entry: dict = {}
-                    for _k in _produced_keys:
-                        _v = tab_state.get(_k)
-                        # Deep copy DataFrames to prevent cache mutations; strings/paths are immutable
-                        _cached_entry[_k] = _v.copy() if isinstance(_v, pd.DataFrame) else _v
-                    # Simple eviction strategy: clear entire cache when it reaches max size
-                    if len(_response_cache) >= _RESPONSE_CACHE_MAX_SIZE:
-                        _response_cache.clear()
-                        _APP_LOGGER.info("run.response_cache_evicted request_id=%s", request_id)
-                    _response_cache[_cache_key] = _cached_entry
-                    _APP_LOGGER.info(
-                        "run.response_cache_stored request_id=%s keys=%s",
-                        request_id,
-                        sorted(_produced_keys),
-                    )
-
                 yield (
                     history + [{"role": "assistant", "content": assistant_text}],
                     "",
                     "",  # clear pending
-                    *_tabs(),
+                    *_running_tabs,
                     tab_state,
                 )
+                # continue async-for until streaming is complete
+
+            # ---- Final output processing (deterministic, in post_processing.py) ----
+            # predict/diagnose tabs were already filled in-stream as each
+            # sub-agent finished. Read the master's structured output and the
+            # aggregated token usage from the final MAF response.
+            final = await stream.get_final_response()
+            usage = final.usage_details or {}
+            run_prompt_tokens     = int(usage.get("input_token_count") or 0)
+            run_completion_tokens = int(usage.get("output_token_count") or 0)
+            run_total_tokens      = int(usage.get("total_token_count") or 0)
+            usage_events          = 1 if usage else 0  # aggregate, not per-call
+            final_output = final.value if final.value is not None else final.text
+            chat_reply = ""
+            mo = None  # MasterOutput object
+            if isinstance(final_output, str):
+                # no structured output
+                chat_reply = final_output.strip()
+            elif final_output is not None:
+                # Normal case: structured MasterOutput with optional chat_response field
+                mo = final_output
+                chat_reply = (getattr(mo, "chat_response", "") or "").strip()
+
+            # Extract master-written narrative summaries from the final structured output
+            sim_summary   = ((getattr(mo, "simulate_summary", "") or "") if mo else "").strip()
+            rec_summary   = ((getattr(mo, "recommendation_summary", "") or "") if mo else "").strip()
+            email_summary = ((getattr(mo, "email_alert_summary", "") or "") if mo else "").strip()
+
+            # Apply tool payloads to tabs (final pass):
+            #   - predict/diagnose: no-op if already applied in-stream (no reapply needed)
+            #   - simulate/recommend/email: reapply with master's narrative if present
+            #     (combines master's summary with tool's structured rows for richer display)
+            _apply_payload("predict_delivery_delays_tool")   # no-op if applied in-stream
+            _apply_payload("diagnose_delay_patterns")
+            _apply_payload("delay_simulations_tool", summary=sim_summary, reapply=bool(sim_summary))
+            _apply_payload("recommendation_tool", summary=rec_summary, reapply=bool(rec_summary))
+            _apply_payload("email_alert_tool", summary=email_summary, reapply=bool(email_summary))
+
+            _APP_LOGGER.info(
+                "run.outputs request_id=%s predict=%s diagnosis=%s simulate=%s recommend=%s email=%s",
+                request_id,
+                bool(predict_text),
+                bool(diagnosis_text),
+                bool(simulate_text),
+                bool(recommend_text),
+                bool(email_alert_text),
+            )
+
+            # Determines reply style: tab-summary message for analysis runs,
+            # or the agent's direct chat answer for conversational queries
+            ran_analysis = any(_is_real(t) for t in (
+                predict_text, diagnosis_text, simulate_text,
+                recommend_text, email_alert_text,
+            ))
+
+            # Final assistant message — plain text, no emojis (#6).
+            # Conversational turn: show the agent's direct answer.
+            # Analysis turn: show the tab summary + welcome prompt.
+            if chat_reply and not ran_analysis:
+                status_lines.append("\n" + chat_reply)
+            else:
+                summary_parts = ["\n---", "**Analysis complete.**\n"]
+                if _is_real(predict_text):
+                    summary_parts.append("- Predictions       -->  Predict tab")
+                if _is_real(diagnosis_text):
+                    summary_parts.append("- Diagnosis         -->  Diagnosis tab")
+                if _is_real(simulate_text):
+                    summary_parts.append("- Simulation        -->  Simulation tab")
+                if _is_real(recommend_text):
+                    summary_parts.append("- Recommendations   -->  Recommendation tab")
+                if _is_real(email_alert_text) and "no email" not in email_alert_text.lower():
+                    summary_parts.append("- Email Alerts      -->  Email tab")
+
+                status_lines.extend(summary_parts)
+                # Append welcome prompt for next interaction
+                status_lines.append("\n" + _WELCOME_MSG)
+
+            # Surface soft errors — without this a degraded run looks
+            # successful and only the log file knows something went wrong
+            if run_warnings:
+                status_lines.append("\n---\n**Warnings** -- some steps degraded:")
+                # Use dict.fromkeys() to deduplicate while preserving order (Python 3.7+ guarantee)
+                for w in dict.fromkeys(run_warnings):  # dedupe, keep order
+                    status_lines.append(f"- {w}")
+                status_lines.append(f"Operator: details in log file `{_LOG_PATH.name}`")
+                _APP_LOGGER.warning(
+                    "run.warnings request_id=%s count=%s", request_id, len(run_warnings),
+                )
+            assistant_text = "\n".join(status_lines)
+
+            # Log a short preview of each output for post-run debugging
+            for _label, _txt in [
+                ("predict",   predict_text),
+                ("simulate",  simulate_text),
+                ("diagnosis", diagnosis_text),
+                ("recommend", recommend_text),
+                ("email",     email_alert_text),
+            ]:
+                _APP_LOGGER.info(
+                    "debug.agent_text request_id=%s agent=%s is_real=%s preview=%r",
+                    request_id, _label, _is_real(_txt), _txt[:200],
+                )
+            # (tab_state persistence happens inside _apply_payload)
+            _APP_LOGGER.info(
+                "run.completed request_id=%s duration_ms=%s",
+                request_id,
+                int((time.perf_counter() - run_start) * 1000),
+            )
+            if usage_events > 0:
+                _APP_LOGGER.info(
+                    "run.usage.summary request_id=%s usage_events=%s prompt_tokens_total=%s completion_tokens_total=%s total_tokens_total=%s",
+                    request_id,
+                    usage_events,
+                    run_prompt_tokens,
+                    run_completion_tokens,
+                    run_total_tokens,
+                )
+            else:
+                _APP_LOGGER.info(
+                    "run.usage.summary request_id=%s usage_events=0 usage_source=unavailable",
+                    request_id,
+                )
+
+            # Store successful run outputs to response cache.
+            # Only cache outputs that were actually produced in this run (_produced_keys).
+            # Skipped in no-cache mode: measurement runs must never seed the cache.
+            if _produced_keys and not _NO_CACHE:
+                _cached_entry: dict = {}
+                for _k in _produced_keys:
+                    _v = tab_state.get(_k)
+                    # Deep copy DataFrames to prevent cache mutations; strings/paths are immutable
+                    _cached_entry[_k] = _v.copy() if isinstance(_v, pd.DataFrame) else _v
+                # Simple eviction strategy: clear entire cache when it reaches max size
+                if len(_response_cache) >= _RESPONSE_CACHE_MAX_SIZE:
+                    _response_cache.clear()
+                    _APP_LOGGER.info("run.response_cache_evicted request_id=%s", request_id)
+                _response_cache[_cache_key] = _cached_entry
+                _APP_LOGGER.info(
+                    "run.response_cache_stored request_id=%s keys=%s",
+                    request_id,
+                    sorted(_produced_keys),
+                )
+
+            yield (
+                history + [{"role": "assistant", "content": assistant_text}],
+                "",
+                "",  # clear pending
+                *_tabs(),
+                tab_state,
+            )
 
     except Exception as e:
         _APP_LOGGER.exception(
