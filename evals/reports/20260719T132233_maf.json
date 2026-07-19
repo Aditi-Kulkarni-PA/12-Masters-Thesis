@@ -1,0 +1,1469 @@
+{
+  "created": 1784447771.2442381,
+  "duration": 216.8852562904358,
+  "exitcode": 0,
+  "root": "/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_capstone/evals",
+  "environment": {},
+  "summary": {
+    "passed": 45,
+    "total": 45,
+    "collected": 45
+  },
+  "collectors": [
+    {
+      "nodeid": "",
+      "outcome": "passed",
+      "result": [
+        {
+          "nodeid": ".",
+          "type": "Package"
+        }
+      ]
+    },
+    {
+      "nodeid": "datasets",
+      "outcome": "passed",
+      "result": []
+    },
+    {
+      "nodeid": "db",
+      "outcome": "passed",
+      "result": []
+    },
+    {
+      "nodeid": "human_baseline",
+      "outcome": "passed",
+      "result": []
+    },
+    {
+      "nodeid": "reports/archive_baseline",
+      "outcome": "passed",
+      "result": []
+    },
+    {
+      "nodeid": "reports/parity_reference",
+      "outcome": "passed",
+      "result": []
+    },
+    {
+      "nodeid": "reports",
+      "outcome": "passed",
+      "result": [
+        {
+          "nodeid": "reports/archive_baseline",
+          "type": "Dir"
+        },
+        {
+          "nodeid": "reports/parity_reference",
+          "type": "Dir"
+        }
+      ]
+    },
+    {
+      "nodeid": "test_eval_diagnose.py",
+      "outcome": "passed",
+      "result": [
+        {
+          "nodeid": "test_eval_diagnose.py::test_diagnose_tool_called",
+          "type": "Coroutine",
+          "lineno": 42
+        },
+        {
+          "nodeid": "test_eval_diagnose.py::test_diagnose_schema_valid",
+          "type": "Coroutine",
+          "lineno": 51
+        },
+        {
+          "nodeid": "test_eval_diagnose.py::test_diagnose_high_risk_patterns",
+          "type": "Coroutine",
+          "lineno": 60
+        },
+        {
+          "nodeid": "test_eval_diagnose.py::test_diagnose_comparison_rows",
+          "type": "Coroutine",
+          "lineno": 68
+        },
+        {
+          "nodeid": "test_eval_diagnose.py::test_diagnose_summary_non_empty",
+          "type": "Coroutine",
+          "lineno": 76
+        },
+        {
+          "nodeid": "test_eval_diagnose.py::test_diagnose_risk_levels_valid",
+          "type": "Coroutine",
+          "lineno": 82
+        },
+        {
+          "nodeid": "test_eval_diagnose.py::test_diagnose_judge_score",
+          "type": "Coroutine",
+          "lineno": 93
+        },
+        {
+          "nodeid": "test_eval_diagnose.py::test_diagnose_latency",
+          "type": "Coroutine",
+          "lineno": 117
+        }
+      ]
+    },
+    {
+      "nodeid": "test_eval_email.py",
+      "outcome": "passed",
+      "result": [
+        {
+          "nodeid": "test_eval_email.py::test_email_tool_called",
+          "type": "Coroutine",
+          "lineno": 45
+        },
+        {
+          "nodeid": "test_eval_email.py::test_email_schema_valid",
+          "type": "Coroutine",
+          "lineno": 54
+        },
+        {
+          "nodeid": "test_eval_email.py::test_email_minimum_count",
+          "type": "Coroutine",
+          "lineno": 61
+        },
+        {
+          "nodeid": "test_eval_email.py::test_email_content_non_empty",
+          "type": "Coroutine",
+          "lineno": 71
+        },
+        {
+          "nodeid": "test_eval_email.py::test_email_subject_matches_severity",
+          "type": "Coroutine",
+          "lineno": 80
+        },
+        {
+          "nodeid": "test_eval_email.py::test_email_judge_score",
+          "type": "Coroutine",
+          "lineno": 108
+        },
+        {
+          "nodeid": "test_eval_email.py::test_email_latency",
+          "type": "Coroutine",
+          "lineno": 135
+        }
+      ]
+    },
+    {
+      "nodeid": "test_eval_human_baseline.py",
+      "outcome": "passed",
+      "result": [
+        {
+          "nodeid": "test_eval_human_baseline.py::test_all_rows_scored",
+          "type": "Function",
+          "lineno": 163
+        },
+        {
+          "nodeid": "test_eval_human_baseline.py::test_human_scores_in_range",
+          "type": "Function",
+          "lineno": 169
+        },
+        {
+          "nodeid": "test_eval_human_baseline.py::test_no_large_divergence",
+          "type": "Function",
+          "lineno": 180
+        },
+        {
+          "nodeid": "test_eval_human_baseline.py::test_detail_records_match_summary",
+          "type": "Function",
+          "lineno": 193
+        }
+      ]
+    },
+    {
+      "nodeid": "test_eval_predict.py",
+      "outcome": "passed",
+      "result": [
+        {
+          "nodeid": "test_eval_predict.py::test_predict_tool_called",
+          "type": "Coroutine",
+          "lineno": 42
+        },
+        {
+          "nodeid": "test_eval_predict.py::test_predict_schema_valid",
+          "type": "Coroutine",
+          "lineno": 51
+        },
+        {
+          "nodeid": "test_eval_predict.py::test_predict_summary_non_empty",
+          "type": "Coroutine",
+          "lineno": 62
+        },
+        {
+          "nodeid": "test_eval_predict.py::test_predict_delayed_orders_populated",
+          "type": "Coroutine",
+          "lineno": 68
+        },
+        {
+          "nodeid": "test_eval_predict.py::test_predict_llm_insights_reference_features",
+          "type": "Coroutine",
+          "lineno": 76
+        },
+        {
+          "nodeid": "test_eval_predict.py::test_predict_summary_judge_score",
+          "type": "Coroutine",
+          "lineno": 92
+        },
+        {
+          "nodeid": "test_eval_predict.py::test_predict_insights_judge_score",
+          "type": "Coroutine",
+          "lineno": 113
+        },
+        {
+          "nodeid": "test_eval_predict.py::test_predict_latency",
+          "type": "Coroutine",
+          "lineno": 142
+        }
+      ]
+    },
+    {
+      "nodeid": "test_eval_rag.py",
+      "outcome": "passed",
+      "result": [
+        {
+          "nodeid": "test_eval_rag.py::test_rag_faithfulness_and_relevancy",
+          "type": "Coroutine",
+          "lineno": 56
+        }
+      ]
+    },
+    {
+      "nodeid": "test_eval_recommend.py",
+      "outcome": "passed",
+      "result": [
+        {
+          "nodeid": "test_eval_recommend.py::test_recommend_tool_called",
+          "type": "Coroutine",
+          "lineno": 57
+        },
+        {
+          "nodeid": "test_eval_recommend.py::test_recommend_schema_valid",
+          "type": "Coroutine",
+          "lineno": 66
+        },
+        {
+          "nodeid": "test_eval_recommend.py::test_recommend_minimum_count",
+          "type": "Coroutine",
+          "lineno": 73
+        },
+        {
+          "nodeid": "test_eval_recommend.py::test_recommend_category_balance",
+          "type": "Coroutine",
+          "lineno": 81
+        },
+        {
+          "nodeid": "test_eval_recommend.py::test_recommend_sla_references_non_empty",
+          "type": "Coroutine",
+          "lineno": 93
+        },
+        {
+          "nodeid": "test_eval_recommend.py::test_recommend_sla_context_retrieved",
+          "type": "Coroutine",
+          "lineno": 104
+        },
+        {
+          "nodeid": "test_eval_recommend.py::test_recommend_sla_keywords_present",
+          "type": "Coroutine",
+          "lineno": 114
+        },
+        {
+          "nodeid": "test_eval_recommend.py::test_recommend_sla_grounding",
+          "type": "Coroutine",
+          "lineno": 124
+        },
+        {
+          "nodeid": "test_eval_recommend.py::test_recommend_judge_score",
+          "type": "Coroutine",
+          "lineno": 166
+        },
+        {
+          "nodeid": "test_eval_recommend.py::test_recommend_latency",
+          "type": "Coroutine",
+          "lineno": 195
+        }
+      ]
+    },
+    {
+      "nodeid": "test_eval_simulate.py",
+      "outcome": "passed",
+      "result": [
+        {
+          "nodeid": "test_eval_simulate.py::test_simulate_tool_called",
+          "type": "Coroutine",
+          "lineno": 34
+        },
+        {
+          "nodeid": "test_eval_simulate.py::test_simulate_schema_valid",
+          "type": "Coroutine",
+          "lineno": 43
+        },
+        {
+          "nodeid": "test_eval_simulate.py::test_simulate_rows_populated",
+          "type": "Coroutine",
+          "lineno": 52
+        },
+        {
+          "nodeid": "test_eval_simulate.py::test_simulate_severity_fields_present",
+          "type": "Coroutine",
+          "lineno": 60
+        },
+        {
+          "nodeid": "test_eval_simulate.py::test_simulate_what_if_produces_change",
+          "type": "Coroutine",
+          "lineno": 69
+        },
+        {
+          "nodeid": "test_eval_simulate.py::test_simulate_judge_score",
+          "type": "Coroutine",
+          "lineno": 85
+        },
+        {
+          "nodeid": "test_eval_simulate.py::test_simulate_latency",
+          "type": "Coroutine",
+          "lineno": 114
+        }
+      ]
+    },
+    {
+      "nodeid": ".",
+      "outcome": "passed",
+      "result": [
+        {
+          "nodeid": "datasets",
+          "type": "Dir"
+        },
+        {
+          "nodeid": "db",
+          "type": "Dir"
+        },
+        {
+          "nodeid": "human_baseline",
+          "type": "Dir"
+        },
+        {
+          "nodeid": "reports",
+          "type": "Dir"
+        },
+        {
+          "nodeid": "test_eval_diagnose.py",
+          "type": "Module"
+        },
+        {
+          "nodeid": "test_eval_email.py",
+          "type": "Module"
+        },
+        {
+          "nodeid": "test_eval_human_baseline.py",
+          "type": "Module"
+        },
+        {
+          "nodeid": "test_eval_predict.py",
+          "type": "Module"
+        },
+        {
+          "nodeid": "test_eval_rag.py",
+          "type": "Module"
+        },
+        {
+          "nodeid": "test_eval_recommend.py",
+          "type": "Module"
+        },
+        {
+          "nodeid": "test_eval_simulate.py",
+          "type": "Module"
+        }
+      ]
+    }
+  ],
+  "tests": [
+    {
+      "nodeid": "test_eval_diagnose.py::test_diagnose_tool_called",
+      "lineno": 42,
+      "outcome": "passed",
+      "keywords": [
+        "test_diagnose_tool_called",
+        "asyncio",
+        "test_eval_diagnose.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 31.755114042200148,
+        "outcome": "passed",
+        "stdout": "\n1. Reading CSV file...\n   \u2713 File loaded: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_capstone/supply_chain_delivery_app/input/daily_delivery_logistics_1.csv\n\n2. Skipping shape display\n\n3. Skipping head display\n\n4. Skipping info display\n\n5. Skipping null information display\n\u2713 Model loaded from: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_capstone/prediction_pipeline/models/best_classification_random_forest.pkl\n\u2713 Model loaded from: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_capstone/prediction_pipeline/models/best_severity_random_forest.pkl\n\u2713 Saved 5000 rows \u2192 daily_delivery_delay_prediction (mode=replace)\n\u2713 Summary table 1/12: daily_summary_by_delivery_partner\n\u2713 Summary table 2/12: daily_summary_by_package_type\n\u2713 Summary table 3/12: daily_summary_by_vehicle_type\n\u2713 Summary table 4/12: daily_summary_by_delivery_mode\n\u2713 Summary table 5/12: daily_summary_by_region\n\u2713 Summary table 6/12: daily_summary_by_weather_condition\n\u2713 Summary table 7/12: daily_summary_by_distance_category\n\u2713 Summary table 8/12: daily_summary_by_mode_weather\n\u2713 Summary table 9/12: daily_summary_by_mode_distance\n\u2713 Summary table 10/12: daily_summary_by_weather_vehicle\n\u2713 Summary table 11/12: daily_summary_overall\n\u2713 Summary table 12/12: daily_summary_high_risk_patterns\n\n\u2713 Created 12 summary tables (prefix=daily_)\n\u2713 metadata_dictionary: 290 entries across 27 tables\n\n\u2713 Daily refresh complete: 12 summary tables, 290 metadata entries\n",
+        "stderr": "[Pipeline] build_mcp_response: file=/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_capstone/supply_chain_delivery_app/input/daily_delivery_logistics_1.csv csv_dir=/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_capstone/prediction_pipeline/data/processed\n[Pipeline] build_mcp_response done: total_delayed=1346, sending top 50 rows to agent (cap=50), sidecar=/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_capstone/prediction_pipeline/data/processed/daily_delivery_delay_prediction_meta.json\n[MCP DEBUG] get_delay_diagnosis called, db_path=/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_capstone/prediction_pipeline/db/delivery_predictions.db\n[MCP DEBUG] get_delay_diagnosis result keys: ['overall_daily', 'overall_hist', 'comparison', 'daily_high_risk_patterns', 'hist_high_risk_patterns']\n"
+      },
+      "call": {
+        "duration": 0.00219075009226799,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.001135542057454586,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_diagnose.py::test_diagnose_schema_valid",
+      "lineno": 51,
+      "outcome": "passed",
+      "keywords": [
+        "test_diagnose_schema_valid",
+        "asyncio",
+        "test_eval_diagnose.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0010382910259068012,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.0006655002944171429,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0010109576396644115,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_diagnose.py::test_diagnose_high_risk_patterns",
+      "lineno": 60,
+      "outcome": "passed",
+      "keywords": [
+        "test_diagnose_high_risk_patterns",
+        "asyncio",
+        "test_eval_diagnose.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0008625839836895466,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.0004359581507742405,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0005355421453714371,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_diagnose.py::test_diagnose_comparison_rows",
+      "lineno": 68,
+      "outcome": "passed",
+      "keywords": [
+        "test_diagnose_comparison_rows",
+        "asyncio",
+        "test_eval_diagnose.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0005043330602347851,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.0003475421108305454,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.000384374987334013,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_diagnose.py::test_diagnose_summary_non_empty",
+      "lineno": 76,
+      "outcome": "passed",
+      "keywords": [
+        "test_diagnose_summary_non_empty",
+        "asyncio",
+        "test_eval_diagnose.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0007739998400211334,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.00034795794636011124,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0005794167518615723,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_diagnose.py::test_diagnose_risk_levels_valid",
+      "lineno": 82,
+      "outcome": "passed",
+      "keywords": [
+        "test_diagnose_risk_levels_valid",
+        "asyncio",
+        "test_eval_diagnose.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0005928338505327702,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.000561791006475687,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0006436253897845745,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_diagnose.py::test_diagnose_judge_score",
+      "lineno": 93,
+      "outcome": "passed",
+      "keywords": [
+        "test_diagnose_judge_score",
+        "asyncio",
+        "test_eval_diagnose.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0006653331220149994,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 1.9469453329220414,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.001107124611735344,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_diagnose.py::test_diagnose_latency",
+      "lineno": 117,
+      "outcome": "passed",
+      "keywords": [
+        "test_diagnose_latency",
+        "asyncio",
+        "test_eval_diagnose.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0010250406339764595,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.0005385419353842735,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0009225830435752869,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_email.py::test_email_tool_called",
+      "lineno": 45,
+      "outcome": "passed",
+      "keywords": [
+        "test_email_tool_called",
+        "asyncio",
+        "test_eval_email.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 4.74717158311978,
+        "outcome": "passed",
+        "stdout": "Generated 3 email alerts and wrote to CSV.\n"
+      },
+      "call": {
+        "duration": 0.0006555840373039246,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0007380410097539425,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_email.py::test_email_schema_valid",
+      "lineno": 54,
+      "outcome": "passed",
+      "keywords": [
+        "test_email_schema_valid",
+        "asyncio",
+        "test_eval_email.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0009429161436855793,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.000552792102098465,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0009139580652117729,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_email.py::test_email_minimum_count",
+      "lineno": 61,
+      "outcome": "passed",
+      "keywords": [
+        "test_email_minimum_count",
+        "asyncio",
+        "test_eval_email.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0008810423314571381,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.0005475417710840702,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0005621248856186867,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_email.py::test_email_content_non_empty",
+      "lineno": 71,
+      "outcome": "passed",
+      "keywords": [
+        "test_email_content_non_empty",
+        "asyncio",
+        "test_eval_email.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0006425417959690094,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.00042695924639701843,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0009514158591628075,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_email.py::test_email_subject_matches_severity",
+      "lineno": 80,
+      "outcome": "passed",
+      "keywords": [
+        "test_email_subject_matches_severity",
+        "asyncio",
+        "test_eval_email.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0008879159577190876,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.0005611656233668327,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.000593333039432764,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_email.py::test_email_judge_score",
+      "lineno": 108,
+      "outcome": "passed",
+      "keywords": [
+        "test_email_judge_score",
+        "asyncio",
+        "test_eval_email.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.000704541802406311,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 1.623872417025268,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.001984999980777502,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_email.py::test_email_latency",
+      "lineno": 135,
+      "outcome": "passed",
+      "keywords": [
+        "test_email_latency",
+        "asyncio",
+        "test_eval_email.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0012475410476326942,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.0010062921792268753,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0012435419484972954,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_human_baseline.py::test_all_rows_scored",
+      "lineno": 163,
+      "outcome": "passed",
+      "keywords": [
+        "test_all_rows_scored",
+        "test_eval_human_baseline.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.02156075043603778,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.000836667139083147,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.00021629221737384796,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_human_baseline.py::test_human_scores_in_range",
+      "lineno": 169,
+      "outcome": "passed",
+      "keywords": [
+        "test_human_scores_in_range",
+        "test_eval_human_baseline.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0004894169978797436,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.00020408304408192635,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.00016229087486863136,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_human_baseline.py::test_no_large_divergence",
+      "lineno": 180,
+      "outcome": "passed",
+      "keywords": [
+        "test_no_large_divergence",
+        "test_eval_human_baseline.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.00018587522208690643,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.0004704589955508709,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.000321459025144577,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_human_baseline.py::test_detail_records_match_summary",
+      "lineno": 193,
+      "outcome": "passed",
+      "keywords": [
+        "test_detail_records_match_summary",
+        "test_eval_human_baseline.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0002648751251399517,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.019740916322916746,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.00024366704747080803,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_predict.py::test_predict_tool_called",
+      "lineno": 42,
+      "outcome": "passed",
+      "keywords": [
+        "test_predict_tool_called",
+        "asyncio",
+        "test_eval_predict.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 43.78907058387995,
+        "outcome": "passed",
+        "stderr": "[Pipeline] build_mcp_response: file=supply_chain_delivery_app/input/daily_delivery_logistics_1.csv csv_dir=/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_capstone/prediction_pipeline/data/processed\n[Pipeline] build_mcp_response done: total_delayed=1346, sending top 50 rows to agent (cap=50), sidecar=/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_capstone/prediction_pipeline/data/processed/daily_delivery_delay_prediction_meta.json\n"
+      },
+      "call": {
+        "duration": 0.000637957826256752,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0006470838561654091,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_predict.py::test_predict_schema_valid",
+      "lineno": 51,
+      "outcome": "passed",
+      "keywords": [
+        "test_predict_schema_valid",
+        "asyncio",
+        "test_eval_predict.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0006202091462910175,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.0005968748591840267,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0011620000004768372,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_predict.py::test_predict_summary_non_empty",
+      "lineno": 62,
+      "outcome": "passed",
+      "keywords": [
+        "test_predict_summary_non_empty",
+        "asyncio",
+        "test_eval_predict.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0015359167009592056,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.0006810841150581837,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0006621661596000195,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_predict.py::test_predict_delayed_orders_populated",
+      "lineno": 68,
+      "outcome": "passed",
+      "keywords": [
+        "test_predict_delayed_orders_populated",
+        "asyncio",
+        "test_eval_predict.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0007376656867563725,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.0004447498358786106,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.000746541190892458,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_predict.py::test_predict_llm_insights_reference_features",
+      "lineno": 76,
+      "outcome": "passed",
+      "keywords": [
+        "test_predict_llm_insights_reference_features",
+        "asyncio",
+        "test_eval_predict.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0009191660210490227,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.0006311656907200813,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0006109592504799366,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_predict.py::test_predict_summary_judge_score",
+      "lineno": 92,
+      "outcome": "passed",
+      "keywords": [
+        "test_predict_summary_judge_score",
+        "asyncio",
+        "test_eval_predict.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0005606659688055515,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 2.1077362499199808,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.001144791953265667,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_predict.py::test_predict_insights_judge_score",
+      "lineno": 113,
+      "outcome": "passed",
+      "keywords": [
+        "test_predict_insights_judge_score",
+        "asyncio",
+        "test_eval_predict.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0009355000220239162,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 2.079564374871552,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0011476250365376472,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_predict.py::test_predict_latency",
+      "lineno": 142,
+      "outcome": "passed",
+      "keywords": [
+        "test_predict_latency",
+        "asyncio",
+        "test_eval_predict.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0009279591031372547,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.0009465422481298447,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.001235791016370058,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_rag.py::test_rag_faithfulness_and_relevancy",
+      "lineno": 56,
+      "outcome": "passed",
+      "keywords": [
+        "test_rag_faithfulness_and_relevancy",
+        "asyncio",
+        "test_eval_rag.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0009505827911198139,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 66.60557629121467,
+        "outcome": "passed",
+        "stdout": "Recommend Best Course of Action Tool Called\n",
+        "stderr": "\rLoading weights:   0%|          | 0/105 [00:00<?, ?it/s]\rLoading weights: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 105/105 [00:00<00:00, 8838.97it/s]\n\rEvaluating:   0%|          | 0/18 [00:00<?, ?it/s]\rEvaluating:   6%|\u258c         | 1/18 [00:04<01:12,  4.27s/it]\rEvaluating:  11%|\u2588         | 2/18 [00:08<01:08,  4.31s/it]\rEvaluating:  56%|\u2588\u2588\u2588\u2588\u2588\u258c    | 10/18 [00:08<00:04,  1.67it/s]\rEvaluating:  67%|\u2588\u2588\u2588\u2588\u2588\u2588\u258b   | 12/18 [00:11<00:04,  1.25it/s]\rEvaluating:  72%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  | 13/18 [00:16<00:06,  1.39s/it]\rEvaluating:  78%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258a  | 14/18 [00:17<00:05,  1.36s/it]\rEvaluating:  89%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2589 | 16/18 [00:18<00:01,  1.04it/s]\rEvaluating: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 18/18 [00:21<00:00,  1.14s/it]\rEvaluating: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 18/18 [00:21<00:00,  1.18s/it]\n"
+      },
+      "teardown": {
+        "duration": 0.002271875273436308,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_recommend.py::test_recommend_tool_called",
+      "lineno": 57,
+      "outcome": "passed",
+      "keywords": [
+        "test_recommend_tool_called",
+        "asyncio",
+        "test_eval_recommend.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 26.397098124958575,
+        "outcome": "passed",
+        "stdout": "Recommend Best Course of Action Tool Called\n"
+      },
+      "call": {
+        "duration": 0.000967792235314846,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0006287917494773865,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_recommend.py::test_recommend_schema_valid",
+      "lineno": 66,
+      "outcome": "passed",
+      "keywords": [
+        "test_recommend_schema_valid",
+        "asyncio",
+        "test_eval_recommend.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0008406671695411205,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.0005137082189321518,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0005915411747992039,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_recommend.py::test_recommend_minimum_count",
+      "lineno": 73,
+      "outcome": "passed",
+      "keywords": [
+        "test_recommend_minimum_count",
+        "asyncio",
+        "test_eval_recommend.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0010844999924302101,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.001030957791954279,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0008482909761369228,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_recommend.py::test_recommend_category_balance",
+      "lineno": 81,
+      "outcome": "passed",
+      "keywords": [
+        "test_recommend_category_balance",
+        "asyncio",
+        "test_eval_recommend.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0008714171126484871,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.0011051669716835022,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0006786668673157692,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_recommend.py::test_recommend_sla_references_non_empty",
+      "lineno": 93,
+      "outcome": "passed",
+      "keywords": [
+        "test_recommend_sla_references_non_empty",
+        "asyncio",
+        "test_eval_recommend.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0009018750861287117,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.0004765838384628296,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0005230410024523735,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_recommend.py::test_recommend_sla_context_retrieved",
+      "lineno": 104,
+      "outcome": "passed",
+      "keywords": [
+        "test_recommend_sla_context_retrieved",
+        "asyncio",
+        "test_eval_recommend.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0006272499449551105,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.0003838748671114445,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0005455841310322285,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_recommend.py::test_recommend_sla_keywords_present",
+      "lineno": 114,
+      "outcome": "passed",
+      "keywords": [
+        "test_recommend_sla_keywords_present",
+        "asyncio",
+        "test_eval_recommend.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0005410825833678246,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.00046358397230505943,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0005415421910583973,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_recommend.py::test_recommend_sla_grounding",
+      "lineno": 124,
+      "outcome": "passed",
+      "keywords": [
+        "test_recommend_sla_grounding",
+        "asyncio",
+        "test_eval_recommend.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0005763750523328781,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.003615375142544508,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.00044454168528318405,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_recommend.py::test_recommend_judge_score",
+      "lineno": 166,
+      "outcome": "passed",
+      "keywords": [
+        "test_recommend_judge_score",
+        "asyncio",
+        "test_eval_recommend.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0004070829600095749,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 2.118104042019695,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0008787913247942924,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_recommend.py::test_recommend_latency",
+      "lineno": 195,
+      "outcome": "passed",
+      "keywords": [
+        "test_recommend_latency",
+        "asyncio",
+        "test_eval_recommend.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0009550419636070728,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.0006902078166604042,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0007615829817950726,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_simulate.py::test_simulate_tool_called",
+      "lineno": 34,
+      "outcome": "passed",
+      "keywords": [
+        "test_simulate_tool_called",
+        "asyncio",
+        "test_eval_simulate.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 28.052005459088832,
+        "outcome": "passed",
+        "stderr": "[Simulation] run_simulation: scenario=Simulate delays for stormy weather in East region, filters={\"region\":\"east\"}, changes={\"weather_condition\":\"stormy\"}\n[Simulation] done: 241 rows affected, saved to /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_capstone/prediction_pipeline/data/processed/simulation_delivery_delays.csv\n"
+      },
+      "call": {
+        "duration": 0.0010184580460190773,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.000693541020154953,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_simulate.py::test_simulate_schema_valid",
+      "lineno": 43,
+      "outcome": "passed",
+      "keywords": [
+        "test_simulate_schema_valid",
+        "asyncio",
+        "test_eval_simulate.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0007290830835700035,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.00042512500658631325,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0005967500619590282,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_simulate.py::test_simulate_rows_populated",
+      "lineno": 52,
+      "outcome": "passed",
+      "keywords": [
+        "test_simulate_rows_populated",
+        "asyncio",
+        "test_eval_simulate.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0005195001140236855,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.00035787466913461685,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0007325001060962677,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_simulate.py::test_simulate_severity_fields_present",
+      "lineno": 60,
+      "outcome": "passed",
+      "keywords": [
+        "test_simulate_severity_fields_present",
+        "asyncio",
+        "test_eval_simulate.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0009010420180857182,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.0006637498736381531,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.000859375111758709,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_simulate.py::test_simulate_what_if_produces_change",
+      "lineno": 69,
+      "outcome": "passed",
+      "keywords": [
+        "test_simulate_what_if_produces_change",
+        "asyncio",
+        "test_eval_simulate.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0008639171719551086,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.00046187499538064003,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0009574168361723423,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_simulate.py::test_simulate_judge_score",
+      "lineno": 85,
+      "outcome": "passed",
+      "keywords": [
+        "test_simulate_judge_score",
+        "asyncio",
+        "test_eval_simulate.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0011769169941544533,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 2.1237051249481738,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0012216251343488693,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_simulate.py::test_simulate_latency",
+      "lineno": 114,
+      "outcome": "passed",
+      "keywords": [
+        "test_simulate_latency",
+        "asyncio",
+        "test_eval_simulate.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0010807919315993786,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.001213541254401207,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.2978091249242425,
+        "outcome": "passed",
+        "stdout": "\nHuman baseline report written: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_capstone/evals/reports/human_baseline_report_20260719T132610.md\n"
+      }
+    }
+  ],
+  "stack": "maf",
+  "app_dir": "sc_delivery_thesis_app"
+}
