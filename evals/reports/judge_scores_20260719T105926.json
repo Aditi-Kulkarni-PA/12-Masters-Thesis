@@ -1,0 +1,14 @@
+{
+  "generated": "2026-07-19T10:59:26",
+  "stack": "maf",
+  "app_dir": "sc_delivery_thesis_app",
+  "scores": {
+    "Diagnose Delay Patterns": {
+      "relevance": 5.0,
+      "faithfulness": 5.0,
+      "safety": 5.0,
+      "mean": 5.0
+    }
+  },
+  "ragas": {}
+}

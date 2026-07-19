@@ -1,0 +1,268 @@
+{
+  "created": 1784438524.4995809,
+  "duration": 33.33948087692261,
+  "exitcode": 0,
+  "root": "/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_capstone/evals",
+  "environment": {},
+  "summary": {
+    "passed": 8,
+    "total": 8,
+    "collected": 8
+  },
+  "collectors": [
+    {
+      "nodeid": "",
+      "outcome": "passed",
+      "result": [
+        {
+          "nodeid": "test_eval_diagnose.py",
+          "type": "Module"
+        }
+      ]
+    },
+    {
+      "nodeid": "test_eval_diagnose.py",
+      "outcome": "passed",
+      "result": [
+        {
+          "nodeid": "test_eval_diagnose.py::test_diagnose_tool_called",
+          "type": "Coroutine",
+          "lineno": 42
+        },
+        {
+          "nodeid": "test_eval_diagnose.py::test_diagnose_schema_valid",
+          "type": "Coroutine",
+          "lineno": 51
+        },
+        {
+          "nodeid": "test_eval_diagnose.py::test_diagnose_high_risk_patterns",
+          "type": "Coroutine",
+          "lineno": 60
+        },
+        {
+          "nodeid": "test_eval_diagnose.py::test_diagnose_comparison_rows",
+          "type": "Coroutine",
+          "lineno": 68
+        },
+        {
+          "nodeid": "test_eval_diagnose.py::test_diagnose_summary_non_empty",
+          "type": "Coroutine",
+          "lineno": 76
+        },
+        {
+          "nodeid": "test_eval_diagnose.py::test_diagnose_risk_levels_valid",
+          "type": "Coroutine",
+          "lineno": 82
+        },
+        {
+          "nodeid": "test_eval_diagnose.py::test_diagnose_judge_score",
+          "type": "Coroutine",
+          "lineno": 93
+        },
+        {
+          "nodeid": "test_eval_diagnose.py::test_diagnose_latency",
+          "type": "Coroutine",
+          "lineno": 117
+        }
+      ]
+    }
+  ],
+  "tests": [
+    {
+      "nodeid": "test_eval_diagnose.py::test_diagnose_tool_called",
+      "lineno": 42,
+      "outcome": "passed",
+      "keywords": [
+        "test_diagnose_tool_called",
+        "asyncio",
+        "test_eval_diagnose.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 30.853989499621093,
+        "outcome": "passed",
+        "stdout": "\n1. Reading CSV file...\n   \u2713 File loaded: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_capstone/supply_chain_delivery_app/input/daily_delivery_logistics_1.csv\n\n2. Skipping shape display\n\n3. Skipping head display\n\n4. Skipping info display\n\n5. Skipping null information display\n\u2713 Model loaded from: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_capstone/prediction_pipeline/models/best_classification_random_forest.pkl\n\u2713 Model loaded from: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_capstone/prediction_pipeline/models/best_severity_random_forest.pkl\n\u2713 Saved 5000 rows \u2192 daily_delivery_delay_prediction (mode=replace)\n\u2713 Summary table 1/12: daily_summary_by_delivery_partner\n\u2713 Summary table 2/12: daily_summary_by_package_type\n\u2713 Summary table 3/12: daily_summary_by_vehicle_type\n\u2713 Summary table 4/12: daily_summary_by_delivery_mode\n\u2713 Summary table 5/12: daily_summary_by_region\n\u2713 Summary table 6/12: daily_summary_by_weather_condition\n\u2713 Summary table 7/12: daily_summary_by_distance_category\n\u2713 Summary table 8/12: daily_summary_by_mode_weather\n\u2713 Summary table 9/12: daily_summary_by_mode_distance\n\u2713 Summary table 10/12: daily_summary_by_weather_vehicle\n\u2713 Summary table 11/12: daily_summary_overall\n\u2713 Summary table 12/12: daily_summary_high_risk_patterns\n\n\u2713 Created 12 summary tables (prefix=daily_)\n\u2713 metadata_dictionary: 290 entries across 27 tables\n\n\u2713 Daily refresh complete: 12 summary tables, 290 metadata entries\n",
+        "stderr": "[Pipeline] build_mcp_response: file=/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_capstone/supply_chain_delivery_app/input/daily_delivery_logistics_1.csv csv_dir=/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_capstone/prediction_pipeline/data/processed\n[Pipeline] build_mcp_response done: total_delayed=1346, sending top 50 rows to agent (cap=50), sidecar=/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_capstone/prediction_pipeline/data/processed/daily_delivery_delay_prediction_meta.json\n[MCP DEBUG] get_delay_diagnosis called, db_path=/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_capstone/evals/db/delivery_predictions_eval.db\n[MCP DEBUG] get_delay_diagnosis result keys: ['overall_daily', 'overall_hist', 'comparison', 'daily_high_risk_patterns', 'hist_high_risk_patterns']\n"
+      },
+      "call": {
+        "duration": 0.0012577916495501995,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0010625417344272137,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_diagnose.py::test_diagnose_schema_valid",
+      "lineno": 51,
+      "outcome": "passed",
+      "keywords": [
+        "test_diagnose_schema_valid",
+        "asyncio",
+        "test_eval_diagnose.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0008637499995529652,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.0003659580834209919,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0003813747316598892,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_diagnose.py::test_diagnose_high_risk_patterns",
+      "lineno": 60,
+      "outcome": "passed",
+      "keywords": [
+        "test_diagnose_high_risk_patterns",
+        "asyncio",
+        "test_eval_diagnose.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0004153340123593807,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.0002214997075498104,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0003235829062759876,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_diagnose.py::test_diagnose_comparison_rows",
+      "lineno": 68,
+      "outcome": "passed",
+      "keywords": [
+        "test_diagnose_comparison_rows",
+        "asyncio",
+        "test_eval_diagnose.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0007747081108391285,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.0005288342945277691,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0005427077412605286,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_diagnose.py::test_diagnose_summary_non_empty",
+      "lineno": 76,
+      "outcome": "passed",
+      "keywords": [
+        "test_diagnose_summary_non_empty",
+        "asyncio",
+        "test_eval_diagnose.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0008403751999139786,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.00035849958658218384,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0004122094251215458,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_diagnose.py::test_diagnose_risk_levels_valid",
+      "lineno": 82,
+      "outcome": "passed",
+      "keywords": [
+        "test_diagnose_risk_levels_valid",
+        "asyncio",
+        "test_eval_diagnose.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0003642081283032894,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.0006518340669572353,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0003553749993443489,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_diagnose.py::test_diagnose_judge_score",
+      "lineno": 93,
+      "outcome": "passed",
+      "keywords": [
+        "test_diagnose_judge_score",
+        "asyncio",
+        "test_eval_diagnose.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.00042116735130548477,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 2.2370537500828505,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.0008254582062363625,
+        "outcome": "passed"
+      }
+    },
+    {
+      "nodeid": "test_eval_diagnose.py::test_diagnose_latency",
+      "lineno": 117,
+      "outcome": "passed",
+      "keywords": [
+        "test_diagnose_latency",
+        "asyncio",
+        "test_eval_diagnose.py",
+        "evals",
+        ""
+      ],
+      "setup": {
+        "duration": 0.0007727500051259995,
+        "outcome": "passed"
+      },
+      "call": {
+        "duration": 0.00035624997690320015,
+        "outcome": "passed"
+      },
+      "teardown": {
+        "duration": 0.22157229064032435,
+        "outcome": "passed"
+      }
+    }
+  ],
+  "stack": "maf",
+  "app_dir": "sc_delivery_thesis_app"
+}

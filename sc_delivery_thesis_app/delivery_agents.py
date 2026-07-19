@@ -24,67 +24,32 @@ if str(_APP_DIR) not in sys.path:
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(dotenv_path=find_dotenv(), override=False)
 
-from agent_framework import Agent, tool, MCPStdioTool
-from agent_framework.openai import OpenAIChatClient
-from openai import AsyncOpenAI
+from agent_framework import Agent, tool
 from pydantic import BaseModel, Field
-from typing import Annotated, Literal, Optional
 
 from config import get_instruction
 from tools import (
     recommend_actions,
     fetch_delayed_orders_for_email,
 )
-
-# ---------------------------------------------------------------------------
-# MCP server for predict + diagnosis (lives in prediction_pipeline/): shared by sub-agents
-# ---------------------------------------------------------------------------
-_PREDICTION_SERVER = str(
-    _APP_DIR.parent / "prediction_pipeline" / "prediction_server.py"
-)
-_PYTHON = sys.executable
-
-# cwd pinned to the project root so relative file paths (e.g. from evals) resolve
-# the same way regardless of the directory the parent process was launched from.
-_MCP_PARAMS = {"command": _PYTHON, "args": [_PREDICTION_SERVER], "cwd": str(_APP_DIR.parent)}
-
-# The only pipeline tools agents may call via MCP. Also imported by the chat
-# app for per-tool timing logs, so the list is defined exactly once.
-PIPELINE_TOOL_NAMES = [
-    "predict_delivery_delays",
-    "get_delay_diagnosis",
-    "simulate_order_delays",
-]
-
-# One MCP server instance shared by the pipeline sub-agents.
-# tool_filter restricts agents to only the pipeline tools, blocking
-# everything else that may exist on the server now or in the future.
-# Each sub-agent's prompt further pins it to its specific tool by name.
-pipeline_mcp = MCPStdioTool(
-    name="prediction_pipeline",
-    command=_PYTHON,
-    args=[_PREDICTION_SERVER],
-    allowed_tools=PIPELINE_TOOL_NAMES,   # MAF kwarg (was: tool_filter)
-    request_timeout=120,                 # MAF kwarg (was: client_session_timeout_seconds)
+from core.schemas import (
+    RowEnrichment,
+    TopEntry,
+    DeliveryDelaySummary,
+    DeliveryDelayPredictionResult,
+    DiagnosisHighRisk,
+    DiagnosisComparison,
+    DelayDiagnosisResult,
+    SimulateDelays,
+    SimulationsList,
+    RecommendedAction,
+    RecommendedActionsList,
+    EmailAlert,
+    EmailsList,
 )
 
-MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
-MODEL_MINI = os.getenv("OPENAI_MODEL_MINI", "gpt-4.1-mini")
-
-def _configure_llm_backend() -> OpenAIChatClient:
-    """Configure provider routing for OpenAI cloud or local LM Studio."""
-    backend = os.getenv("LLM_BACKEND", "openai").strip().lower()
-
-    if backend == "lmstudio":
-        return OpenAIChatClient(
-            model=MODEL,
-            base_url = os.getenv("LLM_BASE_URL", "http://127.0.0.1:1234/v1").strip(),
-            api_key = os.getenv("LLM_API_KEY", "lm-studio").strip() or "lm-studio",
-        )
-    return OpenAIChatClient(model=MODEL)  # default: OpenAI cloud
-
-chat_client = _configure_llm_backend()
-chat_client_mini = OpenAIChatClient(model=MODEL_MINI)  # for lightweight formatting agent
+from core.clients import chat_client, chat_client_mini
+from core.mcp_tools import pipeline_mcp
 
 async def _json_output_extractor(run_result) -> str:
     """Serialize a sub-agent's structured final_output back to JSON.
@@ -140,40 +105,8 @@ def _sub_agent_as_tool(
 
 
 # ---------------------------------------------------------------------------
-# 1. Predict delivery delays — Pydantic models and agent/tool definition
+# 1. Predict delivery delays — agent/tool definition (schemas in core/schemas.py)
 # ---------------------------------------------------------------------------
-
-class RowEnrichment(BaseModel):
-    """Slim model: only delivery_id + llm_insights.
-    The full row data lives in the CSV on disk — no need for the LLM to copy it."""
-    delivery_id: str = Field(description="Delivery ID — must match the value from the tool's delayed_orders")
-    llm_insights: str = Field(min_length=10, description="REQUIRED — 1-2 sentence cross-functional explanation referencing at least two derived features (e.g. schedule_risk, vehicle_load_strain, km_per_expected_hr, vehicle_type). Must not be empty.")
-
-class TopEntry(BaseModel):
-    name: str = Field(description="Category name (e.g. region name, weather condition, partner name)")
-    count: int = Field(description="Number of delayed orders in this category")
-    pct: float = Field(description="Percentage of total delayed orders")
-
-class DeliveryDelaySummary(BaseModel):
-    total_orders: int = Field(description="Total orders analysed")
-    total_delayed: int = Field(description="Total predicted delayed orders")
-    pct_delayed: float = Field(description="Percentage of orders predicted delayed")
-    severity_short: int = Field(description="Count of Short (1-2h) delayed orders")
-    severity_medium: int = Field(description="Count of Medium (3-5h) delayed orders")
-    severity_long: int = Field(description="Count of Long (6+h) delayed orders")
-    delayed_csv_path: str = Field(default="", description="Path to the delayed-only prediction CSV")
-    showing_top_n: int = Field(default=0, description="Number of delayed rows shown in the table")
-    top_regions: list[TopEntry] = Field(default_factory=list, description="Top affected regions")
-    top_weather: list[TopEntry] = Field(default_factory=list, description="Top affected weather conditions")
-    top_partners: list[TopEntry] = Field(default_factory=list, description="Top affected delivery partners")
-    enrich_rows_cap: int = Field(default=50, description="Number of rows sent to the agent for delay_reason enrichment (SC_MCP_ENRICH_ROWS)")
-
-class DeliveryDelayPredictionResult(BaseModel):
-    predict_summary: str = Field(description="Cross-dimensional insight paragraph written by the agent — Markdown bullets with quantitative derived-feature stats")
-    delayed_orders: list[RowEnrichment] = Field(
-        default_factory=list,
-        description="One {delivery_id, llm_insights} entry per delayed row. Must have exactly enrich_rows_cap entries, each with non-empty llm_insights.",
-    )
 
 predict_delivery_delays_agent, predict_delivery_delays_tool = _sub_agent_as_tool(
     agent_name="Predict Delivery Delays",
@@ -186,32 +119,8 @@ predict_delivery_delays_agent, predict_delivery_delays_tool = _sub_agent_as_tool
 
 
 # ---------------------------------------------------------------------------
-# 2. Diagnose delay patterns — Pydantic models and agent/tool definition
+# 2. Diagnose delay patterns — agent/tool definition (schemas in core/schemas.py)
 # ---------------------------------------------------------------------------
-
-class DiagnosisHighRisk(BaseModel):
-    pattern_type: str = Field(description="Type of pattern combination (mode_weather, mode_distance, weather_vehicle)")
-    pattern_description: str = Field(description="Human-readable pattern description (e.g. 'same_day + Stormy')")
-    total_deliveries: int = Field(description="Total deliveries matching this pattern")
-    delayed_count: int = Field(description="Number of delayed deliveries")
-    delay_rate_pct: float = Field(description="Delay rate as percentage")
-    risk_level: str = Field(description="Risk level: critical (50%+), high (40-50%), medium (30-40%)")
-
-class DiagnosisComparison(BaseModel):
-    dimension: str = Field(description="Dimension name (region, weather_condition, delivery_partner, etc.)")
-    category: str = Field(description="Category value (East, Stormy, DHL, etc.)")
-    daily_total: int = Field(description="Today's total deliveries for this category")
-    daily_delayed: int = Field(description="Today's delayed count")
-    daily_delay_rate_pct: float = Field(description="Today's delay rate %")
-    hist_total: int = Field(description="Historical total deliveries")
-    hist_delayed: int = Field(description="Historical delayed count")
-    hist_delay_rate_pct: float = Field(description="Historical delay rate %")
-    rate_change_pct: float = Field(description="Change in delay rate (daily - hist), negative means improvement")
-
-class DelayDiagnosisResult(BaseModel):
-    high_risk_patterns: list[DiagnosisHighRisk] = Field(description="High-risk delay pattern combinations for today")
-    comparison: list[DiagnosisComparison] = Field(description="Today vs historical delay rate comparison across all dimensions")
-    diagnosis_summary: str = Field(default="", description="Formatted Markdown summary of delay pattern diagnosis, generated by the agent")
 
 diagnose_delay_patterns_agent, diagnose_delay_patterns_tool = _sub_agent_as_tool(
     agent_name="Diagnose & Analyse Delay Patterns",
@@ -224,23 +133,8 @@ diagnose_delay_patterns_agent, diagnose_delay_patterns_tool = _sub_agent_as_tool
 
 
 # ---------------------------------------------------------------------------
-# 3. Delay simulation — Pydantic models and agent/tool definition
+# 3. Delay simulation — agent/tool definition (schemas in core/schemas.py)
 # ---------------------------------------------------------------------------
-
-class SimulateDelays(BaseModel):
-    delivery_id: str = Field(description="Delivery ID")
-    delivery_partner: str = Field(description="Delivery Partner")
-    delivery_mode: str = Field(description="Delivery Mode")
-    region: str = Field(description="Region")
-    weather_condition: str = Field(description="Simulated weather condition")
-    vehicle_type: str = Field(description="Simulated vehicle type")
-    distance_km: str = Field(description="Distance in km")
-    original_severity: str = Field(description="Original predicted severity label")
-    simulated_severity: str = Field(description="Simulated severity under new conditions")
-    simulate_delay_reason: Optional[str] = Field(description="Reason for simulated delay")
-
-class SimulationsList(BaseModel):
-    simulations: list[SimulateDelays] = Field(description="List of simulations for order delivery delays")
 
 delay_simulation_agent, delay_simulations_tool = _sub_agent_as_tool(
     agent_name="Simulate & Analyse Delay Prediction",
@@ -253,23 +147,8 @@ delay_simulation_agent, delay_simulations_tool = _sub_agent_as_tool(
 
 
 # ---------------------------------------------------------------------------
-# 4. Recommendation — Pydantic models and agent/tool definition
+# 4. Recommendation — agent/tool definition (schemas in core/schemas.py)
 # ---------------------------------------------------------------------------
-
-class RecommendedAction(BaseModel):
-    action: str = Field(description="Recommendation Action - Short Description")
-    action_desc: str = Field(description="Recommendation Action - Full Description with supporting data")
-    category: Literal["quick-win", "short-term", "long-term"] = Field(description="One of: quick-win, short-term, long-term")
-    dimension: str = Field(description="Which dimension this targets: delivery_mode, weather, region, vehicle, partner, or general")
-    supporting_data: str = Field(description="Specific numbers from the analysis that justify this recommendation")
-    sla_reference: str = Field(description="Quote the actual SLA text from the Retrieved Sections — include the section heading and specific metric, target, penalty, or rule. Example: 'SLA 2.1 On-Time Delivery Commitments by Mode: Express current target OTD is 40%. SLA 3.2 Weather-Specific Operational Protocols: Stormy — halt same-day and express dispatches if wind speed > 60 km/h.' Do NOT write generic labels like 'SLA Reference 3' — always quote the content itself.")
-
-class RecommendedActionsList(BaseModel):
-    recommended_actions: list[RecommendedAction] = Field(
-        description="List of recommended actions for delivery optimization. "
-                    "MUST contain at least 3 quick-win, 3 short-term, AND 3 long-term actions (9+ total).",
-        min_length=9,
-    )
 
 recommendation_agent, recommendation_tool = _sub_agent_as_tool(
     agent_name="Recommendation Expert Agent to Optimize Order Delivery",
@@ -282,21 +161,8 @@ recommendation_agent, recommendation_tool = _sub_agent_as_tool(
 
 
 # ---------------------------------------------------------------------------
-# 5. Email alert — Pydantic models and agent/tool definition
+# 5. Email alert — agent/tool definition (schemas in core/schemas.py)
 # ---------------------------------------------------------------------------
-
-class EmailAlert(BaseModel):
-    email_content: str = Field(description="Professional email body to notify the customer about their delayed order.")
-    email_id: str = Field(description="Email ID of the customer; use a realistic placeholder if unknown.", default="first.last@domain.com")
-
-class EmailsList(BaseModel):
-    content: Annotated[
-        list[EmailAlert],
-        Field(
-            description="List of emails to be sent to customers whose orders are delayed. If there is at least one delayed order, this MUST have at least one item.",
-            min_length=1,
-        ),
-    ]
 
 email_alert_agent, email_alert_tool = _sub_agent_as_tool(
     agent_name="Email Alert Agent",
@@ -398,5 +264,5 @@ supply_chain_delivery_master_agent = Agent(
         email_alert_tool,
         fallback_advisor_tool,
     ],
-    default_options={"tool_choice": "auto", "response_format": MasterOutput},
+    default_options={"tool_choice": "auto", "response_format": MasterOutput, "temperature": 0},
 )
