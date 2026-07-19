@@ -9,17 +9,39 @@ _APP_DIR = Path(__file__).resolve().parent
 if str(_APP_DIR) not in sys.path:
     sys.path.insert(0, str(_APP_DIR))
 
-from agent_framework import FunctionInvocationContext, function_middleware
+#from agent_framework import FunctionInvocationContext, function_middleware
 from topologies.planner_executor import supply_chain_delivery_master_agent as master
 from core.mcp_tools import pipeline_mcp
+from core.instrumentation import RunRecorder, extract_usage, sum_usage
 from helpers.app_utils import build_freshness_system_msg
 
 # Keep MCP logs quiet so run output stays focused on workflow progress.
 logging.getLogger("mcp").setLevel(logging.WARNING)
 
 # Captures per-tool raw outputs and wall-clock timings for end-of-run reporting.
-captured: dict[str, str] = {}
-timings: dict[str, float] = {}
+
+# function_middleware. function_middleware is MAF's hook that wraps every tool call: 
+# when the master agent decides to call predict_delivery_delays_tool, 
+# MAF runs your middleware function around the actual call, passing it a context object and 
+# a call_next function you call to let the real tool execution happen. 
+
+# RunRecorder.middleware is just that same pattern as function_middleware. function_middleware, 
+# now packaged as a class so every consumer (run_once, the chat UI, the future harness) uses i
+# dentical logic instead of three copies drifting apart. It logs the tool name, times call_next(),
+# and after it returns, reads context.result (the tool's output) to record its length and 
+# whether it's valid JSON.
+
+# Need for contextvars.ContextVar : _wrap_as_tool's inner function (_run_sub_agent) is called by MAF internals with no way to 
+# hand it "the current RunRecorder"
+# A global variable would work for one run at a time but breaks the moment two things run 
+# concurrently (which matters later for the concurrent topology). The fix is contextvars.ContextVar — 
+# think of it as a variable that's global-looking, but each async task sees its own private 
+# value rather than one shared value everyone stomps on.
+
+# recorder = RunRecorder() runs the dataclass default, so recorder.sub_agent_usage is a 
+# fresh empty list — call it list object L. It lives at some memory address; 
+# recorder.sub_agent_usage is just a name pointing at L.
+recorder = RunRecorder()
 
 def _ts() -> str:
     """Return a compact clock string used in console progress lines."""
@@ -28,36 +50,6 @@ def _ts() -> str:
 def _banner(text: str) -> None:
     """Print a visual section separator for easier terminal scanning."""
     print(f"\n{'='*60}\n[{_ts()}] {text}\n{'='*60}", flush=True)
-
-@function_middleware
-async def capture(context: FunctionInvocationContext, call_next):
-    """Middleware that logs each tool call and stores its output snapshot."""
-    name = context.function.name
-    print(f"\n>>> [{_ts()}] TOOL START : {name}", flush=True)
-    t0 = time.perf_counter()
-    await call_next()
-    dt = round(time.perf_counter() - t0, 2)
-    timings[name] = dt
-
-    result_value = context.result
-    if isinstance(result_value, str):
-        payload = result_value
-    elif isinstance(result_value, (list, tuple)):
-        payload = "".join(getattr(c, "text", "") for c in result_value)
-    else:
-        payload = repr(result_value)
-
-    # Normalize output into text so summary reporting is consistent across tools.
-    captured[name] = payload
-    print(f"<<< [{_ts()}] TOOL DONE  : {name}  ({dt}s, {len(payload):,} chars, "
-          f"valid_json={_is_json(payload)})", flush=True)
-
-def _is_json(s: str) -> bool:
-    """Best-effort JSON validity check used in summary diagnostics."""
-    try:
-        json.loads(s); return True
-    except Exception:
-        return False
 
 def _show(r) -> None:
     """Render structured model output when available, else fallback text."""
@@ -73,30 +65,78 @@ async def main():
     """Execute a two-turn master-agent run and print tool execution summary."""
     query = "Predict today's delivery delays and diagnose the main delay patterns."
     query += f"\n\nThe input orders data is in the file at path: {_ORDERS}"
-    # SC_NO_CACHE=1 -> measurement mode: no freshness reuse, all tools run fresh
+
+    # no-cache when 0, will do a freshness check and add a system message to the query 
+    # and avoid re-run the prediction pipeline if it is fresh.
+    # no-cache when 1, will skip the freshness check and re-run the prediction pipeline 
+    # regardless of freshness.
+    # freshness saves compute time inside the tool, not LLM tokens.
     if os.getenv("SC_NO_CACHE", "").strip().lower() not in ("1", "true", "yes"):
         query += build_freshness_system_msg()
+
 
     # Reuse one session across turns so planner and executor share context.
     session = master.create_session()
 
+    turns = [
+        ("TURN 1 — sending query (expecting plan)", query),
+        ("TURN 2 — confirming ('Yes, proceed.') — tools will run now", "Yes, proceed."),
+    ]
+
+    responses = []
+    turn_times = []
+
     # Keep MCP connection open for the full interaction window.
     async with pipeline_mcp:
-        _banner("\nTURN 1 — sending query (expecting plan)")
-        r1 = await master.run(query, session=session, middleware=[capture])
-        _banner("\nTURN 1 — master response")
-        _show(r1)
+        # before calling master.run(...), call the recorder.track_sub_agents(), 
+        # which does _sub_agent_bucket.set(self.sub_agent_usage) — this says 
+        # "for the rest of this task, anyone who asks _sub_agent_bucket.get() gets my list." 
 
-        _banner("\nTURN 2 — confirming ('Yes, proceed.') — tools will run now")
-        r2 = await master.run("Yes, proceed.", session=session, middleware=[capture])
-        _banner("TURN 2 — master response")
-        _show(r2)
+        # with recorder.track_sub_agents(): calls _sub_agent_bucket.set(self.sub_agent_usage). 
+        # This does not copy the list — it stores the same reference to L inside the contextvar. 
+        # Now there are two names pointing at the identical list object: recorder.sub_agent_usage 
+        # and whatever _sub_agent_bucket.get() returns inside this task.
 
-    # Print post-run diagnostics about tool outputs and parseability.
+        for label, msg in turns:
+            _banner(f"\n{label}")
+            t0 = time.perf_counter()
+            with recorder.track_sub_agents():
+                r = await master.run(msg, session=session, middleware=[recorder.middleware])
+            turn_times.append(round(time.perf_counter() - t0, 2))
+            responses.append(r)
+            _banner(f"{label.split(' — ')[0]} — master response")
+            _show(r)
+
+
+    # ---- SUMMARY ----
     _banner("\nSUMMARY — tool payloads")
-    for name in captured:
-        print(f"  {name:35s} {timings[name]:7.2f}s  {len(captured[name]):>8,} chars  "
-              f"valid_json={_is_json(captured[name])}")
+    for tc in recorder.summary():
+        print(f"  {tc['tool_name']:35s} {tc['duration_s']:7.2f}s  {tc['payload_chars']:>8,} chars  "
+              f"valid_json={tc['valid_json']}")
+
+    _banner("SUMMARY — sub-agent token usage")
+    for u in recorder.sub_agent_usage:
+        print(f"  {u['tool_name']:35s} prompt={u['prompt_tokens']:>6} "
+              f"completion={u['completion_tokens']:>6} total={u['total_tokens']:>6}")
+
+    sub_totals = recorder.total_sub_agent_usage()
+    master_totals = sum_usage(*(extract_usage(r) for r in responses))
+    grand_total = sum_usage(sub_totals, master_totals)
+
+    tool_time = recorder.total_tool_time()
+    run_time = round(sum(turn_times), 2)
+    master_time = round(run_time - tool_time, 2)
+
+    print(f"\n  Sub-agents total : prompt={sub_totals['prompt_tokens']:>6} "
+          f"completion={sub_totals['completion_tokens']:>6} total={sub_totals['total_tokens']:>6}  "
+          f"time={tool_time:7.2f}s")
+    print(f"  Master ({len(responses)} turns): prompt={master_totals['prompt_tokens']:>6} "
+          f"completion={master_totals['completion_tokens']:>6} total={master_totals['total_tokens']:>6}  "
+          f"time~={master_time:7.2f}s (approx, wall time minus tool time)")
+    print(f"  GRAND TOTAL      : prompt={grand_total['prompt_tokens']:>6} "
+          f"completion={grand_total['completion_tokens']:>6} total={grand_total['total_tokens']:>6}  "
+          f"time={run_time:7.2f}s (wall clock, all turns)")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

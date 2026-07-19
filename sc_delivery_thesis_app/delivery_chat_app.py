@@ -32,6 +32,7 @@ load_dotenv(dotenv_path=find_dotenv(), override=True)
 import pandas as pd
 import gradio as gr
 from agent_framework import FunctionInvocationContext, function_middleware
+from core.instrumentation import RunRecorder, extract_usage, sum_usage
 
 from topologies.planner_executor import supply_chain_delivery_master_agent
 from core.mcp_tools import pipeline_mcp
@@ -232,11 +233,9 @@ async def chat_handler(message: str, history: list, orders_path, pending_query: 
     compose_line_idx: int | None = None
     last_heartbeat = 0.0
 
-    # token usage counters for the entire run (across multiple tools)
-    run_prompt_tokens = 0
-    run_completion_tokens = 0
-    run_total_tokens = 0
-    usage_events = 0
+    # Per-request recorder — created fresh here, not module-level, since the
+    # UI serves concurrent requests (ui.queue(default_concurrency_limit=5)).
+    recorder = RunRecorder() 
 
     # Keep track of which tab outputs were produced in this run, for caching
     _produced_keys: set[str] = set()
@@ -499,7 +498,7 @@ async def chat_handler(message: str, history: list, orders_path, pending_query: 
                 produced = True
 
         # --- DIAGNOSE TOOL HANDLER ---
-        elif tool_name == "diagnose_delay_patterns":
+        elif tool_name == "diagnose_delay_patterns_tool":
             if not data:
                 return False
             
@@ -635,8 +634,9 @@ async def chat_handler(message: str, history: list, orders_path, pending_query: 
                            if isinstance(r, (list, tuple)) else repr(r))
                 ui_events.append(("tool_done", name, payload, dur))
 
+            recorder.start_tracking()
             stream = supply_chain_delivery_master_agent.run(
-                full_query, stream=True, middleware=[capture])
+                full_query, stream=True, middleware=[capture, recorder.middleware])
 
             async for update in stream:
                 while ui_events:                       # drain middleware events
@@ -704,11 +704,12 @@ async def chat_handler(message: str, history: list, orders_path, pending_query: 
             # sub-agent finished. Read the master's structured output and the
             # aggregated token usage from the final MAF response.
             final = await stream.get_final_response()
-            usage = final.usage_details or {}
-            run_prompt_tokens     = int(usage.get("input_token_count") or 0)
-            run_completion_tokens = int(usage.get("output_token_count") or 0)
-            run_total_tokens      = int(usage.get("total_token_count") or 0)
-            usage_events          = 1 if usage else 0  # aggregate, not per-call
+            recorder.stop_tracking()
+
+            master_usage    = extract_usage(final)
+            sub_usage_total = recorder.total_sub_agent_usage()
+            grand_usage     = sum_usage(master_usage, sub_usage_total)
+            
             final_output = final.value if final.value is not None else final.text
             chat_reply = ""
             mo = None  # MasterOutput object
@@ -730,7 +731,7 @@ async def chat_handler(message: str, history: list, orders_path, pending_query: 
             #   - simulate/recommend/email: reapply with master's narrative if present
             #     (combines master's summary with tool's structured rows for richer display)
             _apply_payload("predict_delivery_delays_tool")   # no-op if applied in-stream
-            _apply_payload("diagnose_delay_patterns")
+            _apply_payload("diagnose_delay_patterns_tool")
             _apply_payload("delay_simulations_tool", summary=sim_summary, reapply=bool(sim_summary))
             _apply_payload("recommendation_tool", summary=rec_summary, reapply=bool(rec_summary))
             _apply_payload("email_alert_tool", summary=email_summary, reapply=bool(email_summary))
@@ -805,20 +806,30 @@ async def chat_handler(message: str, history: list, orders_path, pending_query: 
                 request_id,
                 int((time.perf_counter() - run_start) * 1000),
             )
-            if usage_events > 0:
+
+            tool_time   = recorder.total_tool_time()
+            wall_time   = round(time.perf_counter() - run_start, 2)
+            master_time = round(wall_time - tool_time, 2)  # approx: wall time minus tool time
+
+            _APP_LOGGER.info(
+                "run.usage.summary request_id=%s "
+                "master_prompt=%s master_completion=%s master_total=%s "
+                "subagent_prompt=%s subagent_completion=%s subagent_total=%s "
+                "grand_prompt=%s grand_completion=%s grand_total=%s",
+                request_id,
+                master_usage["prompt_tokens"], master_usage["completion_tokens"], master_usage["total_tokens"],
+                sub_usage_total["prompt_tokens"], sub_usage_total["completion_tokens"], sub_usage_total["total_tokens"],
+                grand_usage["prompt_tokens"], grand_usage["completion_tokens"], grand_usage["total_tokens"],
+            )
+            for u in recorder.sub_agent_usage:
                 _APP_LOGGER.info(
-                    "run.usage.summary request_id=%s usage_events=%s prompt_tokens_total=%s completion_tokens_total=%s total_tokens_total=%s",
-                    request_id,
-                    usage_events,
-                    run_prompt_tokens,
-                    run_completion_tokens,
-                    run_total_tokens,
+                    "run.usage.subagent request_id=%s tool=%s prompt=%s completion=%s total=%s",
+                    request_id, u["tool_name"], u["prompt_tokens"], u["completion_tokens"], u["total_tokens"],
                 )
-            else:
-                _APP_LOGGER.info(
-                    "run.usage.summary request_id=%s usage_events=0 usage_source=unavailable",
-                    request_id,
-                )
+            _APP_LOGGER.info(
+                "run.timing.summary request_id=%s tool_time_s=%.2f master_time_approx_s=%.2f wall_time_s=%.2f",
+                request_id, tool_time, master_time, wall_time,
+            )
 
             # Store successful run outputs to response cache.
             # Only cache outputs that were actually produced in this run (_produced_keys).

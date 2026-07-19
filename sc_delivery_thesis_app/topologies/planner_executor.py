@@ -28,6 +28,7 @@ from core.agents import (
     fallback_advisor_agent,
 )
 from core.clients import chat_client, chat_client_mini
+from core.instrumentation import record_sub_agent_usage
 
 def _wrap_as_tool(agent, *, tool_name, tool_description):
     """Wrap the domain sub agent as a tool for the master agent.
@@ -41,9 +42,18 @@ def _wrap_as_tool(agent, *, tool_name, tool_description):
     Returns (agent, agent-as-tool).
     """
 
+    # deep inside _wrap_as_tool, after the sub-agent finishes, 
+    # it calls record_sub_agent_usage(tool_name, result), which does _sub_agent_bucket.get() 
+    # to find that same list _sub_agent_bucket.get() and appends the usage numbers to it .
+
+    # Deep inside _wrap_as_tool, record_sub_agent_usage(tool_name, result) runs
+    # bucket = _sub_agent_bucket.get() — this hands back that same list L. 
+    # Then bucket.append({...}) mutates L directly, in place.
+
     @tool(name=tool_name, description=tool_description)
     async def _run_sub_agent(request: str) -> str:
         result = await agent.run(request)
+        record_sub_agent_usage(tool_name, result)
         if isinstance(result.value, BaseModel):
             return result.value.model_dump_json()
         return str(result.value)

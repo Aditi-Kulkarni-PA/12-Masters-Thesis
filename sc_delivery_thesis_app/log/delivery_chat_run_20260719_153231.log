@@ -1,0 +1,25 @@
+2026-07-19 15:32:31 | INFO | supply_chain_delivery_app | logger.initialized path=/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_capstone/sc_delivery_thesis_app/log/delivery_chat_run_20260719_153231.log
+2026-07-19 15:32:31 | INFO | supply_chain_delivery_app | app.startup log_path=/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_capstone/sc_delivery_thesis_app/log/delivery_chat_run_20260719_153231.log
+2026-07-19 15:32:39 | INFO | supply_chain_delivery_app | request.received request_id=9bb00e9e6f9a pending=False has_orders_file=True message_len=20
+2026-07-19 15:32:39 | INFO | supply_chain_delivery_app | request.confirmation request_id=9bb00e9e6f9a action=confirm is_quick_action=False
+2026-07-19 15:32:39 | INFO | supply_chain_delivery_app | request.awaiting_confirmation request_id=9bb00e9e6f9a
+2026-07-19 15:32:43 | INFO | supply_chain_delivery_app | request.received request_id=5cec771c7188 pending=True has_orders_file=True message_len=3
+2026-07-19 15:32:43 | INFO | supply_chain_delivery_app | request.confirmation request_id=5cec771c7188 action=run_confirmed is_quick_action=False
+2026-07-19 15:32:43 | INFO | supply_chain_delivery_app | run.started request_id=5cec771c7188 query_len=666 has_orders_file=True
+2026-07-19 15:33:35 | INFO | supply_chain_delivery_app | tool.call.started request_id=5cec771c7188 tool=predict_delivery_delays_tool args={'request': 'Predict delivery delays for the provided orders data at /private/var/folders/ch/ytl512191sx9x1j5n3mc71tm...
+2026-07-19 15:33:35 | INFO | supply_chain_delivery_app | tool.call.completed request_id=5cec771c7188 tool=predict_delivery_delays_tool duration_ms=48260
+2026-07-19 15:33:35 | INFO | supply_chain_delivery_app | predict.rows request_id=5cec771c7188 source=tool_stream count=50
+2026-07-19 15:34:08 | INFO | supply_chain_delivery_app | tool.call.started request_id=5cec771c7188 tool=diagnose_delay_patterns_tool args={'request': "Diagnose today's delay patterns versus historical data using the fresh prediction outputs generated from...
+2026-07-19 15:34:08 | INFO | supply_chain_delivery_app | tool.call.completed request_id=5cec771c7188 tool=diagnose_delay_patterns_tool duration_ms=31745
+2026-07-19 15:34:10 | INFO | supply_chain_delivery_app | run.outputs request_id=5cec771c7188 predict=True diagnosis=False simulate=False recommend=False email=False
+2026-07-19 15:34:10 | INFO | supply_chain_delivery_app | debug.agent_text request_id=5cec771c7188 agent=predict is_real=True preview='### Cross-Dimensional Delay Insights\n\nThe enriched delayed orders show that delays are rarely caused by one factor alone: the biggest problems come from tight promised windows layered onto bad weather'
+2026-07-19 15:34:10 | INFO | supply_chain_delivery_app | debug.agent_text request_id=5cec771c7188 agent=simulate is_real=False preview=''
+2026-07-19 15:34:10 | INFO | supply_chain_delivery_app | debug.agent_text request_id=5cec771c7188 agent=diagnosis is_real=False preview=''
+2026-07-19 15:34:10 | INFO | supply_chain_delivery_app | debug.agent_text request_id=5cec771c7188 agent=recommend is_real=False preview=''
+2026-07-19 15:34:10 | INFO | supply_chain_delivery_app | debug.agent_text request_id=5cec771c7188 agent=email is_real=False preview=''
+2026-07-19 15:34:10 | INFO | supply_chain_delivery_app | run.completed request_id=5cec771c7188 duration_ms=87195
+2026-07-19 15:34:10 | INFO | supply_chain_delivery_app | run.usage.summary request_id=5cec771c7188 master_prompt=30514 master_completion=254 master_total=30768 subagent_prompt=48947 subagent_completion=10162 subagent_total=59109 grand_prompt=79461 grand_completion=10416 grand_total=89877
+2026-07-19 15:34:10 | INFO | supply_chain_delivery_app | run.usage.subagent request_id=5cec771c7188 tool=predict_delivery_delays_tool prompt=30337 completion=4971 total=35308
+2026-07-19 15:34:10 | INFO | supply_chain_delivery_app | run.usage.subagent request_id=5cec771c7188 tool=diagnose_delay_patterns_tool prompt=18610 completion=5191 total=23801
+2026-07-19 15:34:10 | INFO | supply_chain_delivery_app | run.timing.summary request_id=5cec771c7188 tool_time_s=80.01 master_time_approx_s=7.19 wall_time_s=87.20
+2026-07-19 15:34:10 | INFO | supply_chain_delivery_app | run.response_cache_stored request_id=5cec771c7188 keys=['predict_csv', 'predict_df', 'predict_md']
