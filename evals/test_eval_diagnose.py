@@ -21,8 +21,8 @@ from eval_config import (
 )
 from judge import get_called_tools, judge_output, mean_score
 
-from delivery_agents import diagnose_delay_patterns_agent
-from delivery_agents import DelayDiagnosisResult
+from thesis_target import diagnose_delay_patterns_agent
+from thesis_target import DelayDiagnosisResult
 
 _VALID_RISK_LEVELS = {"critical", "high", "medium"}
 

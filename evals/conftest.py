@@ -15,10 +15,13 @@ SC_PREDICTION_DB_PATH before entering `async with pipeline_mcp:` is enough.
 import os
 import sys
 from pathlib import Path
+import importlib
+
+from evals.env_settings import STACK_APP_DIRS, OPENAI_MODEL, OPENAI_MODEL_MINI, SC_EMAIL_MAX_ROWS, mcp_env
 
 # ── 1. Resolve paths ──────────────────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).resolve().parent.parent   # 0_supply_chain_capstone
-APP_DIR = PROJECT_ROOT / os.getenv("SC_EVAL_APP_DIR", "supply_chain_delivery_app")
+APP_DIR = PROJECT_ROOT / os.getenv("SC_EVAL_APP_DIR", STACK_APP_DIRS["baseline"])
 PIPELINE_DIR = PROJECT_ROOT / "prediction_pipeline"
 EVALS_DIR    = Path(__file__).resolve().parent
 
@@ -45,40 +48,70 @@ FULL_INPUT_FILE_REL = Path(EVAL_INPUT_REL)               # relative — for agen
 # load_dotenv in delivery_agents uses override=False, so these values survive.
 # Use the same model as the UI (.env) so eval behaviour matches production.
 # OPENAI_MODEL_MINI stays on gpt-4.1-mini to keep costs down for lightweight tasks.
-os.environ["OPENAI_MODEL"]              = "gpt-5.4"
-os.environ["OPENAI_MODEL_MINI"]         = "gpt-4.1-mini"
-os.environ["SC_PREDICTION_DB_PATH"]     = str(EVAL_DB)
-# Absolute path so _resolve_env in daily_predict.py doesn't mis-anchor the relative .env value
-os.environ["SC_PREDICTION_MODEL_DIR"]   = str(PIPELINE_DIR / "models")
-# Only process 3 delayed orders for email eval — enough to cover all severity types
-os.environ["SC_EMAIL_MAX_ROWS"]         = "3"
+
+os.environ["OPENAI_MODEL"]            = OPENAI_MODEL
+os.environ["OPENAI_MODEL_MINI"]       = OPENAI_MODEL_MINI
+os.environ["SC_PREDICTION_DB_PATH"]   = str(EVAL_DB)
+os.environ["SC_PREDICTION_MODEL_DIR"] = str(PIPELINE_DIR / "models")
+os.environ["SC_EMAIL_MAX_ROWS"]       = SC_EMAIL_MAX_ROWS
 
 # ── 4. App imports (after env setup) ─────────────────────────────────────────
 import pytest
 import pytest_asyncio
-from delivery_agents import pipeline_mcp, predict_delivery_delays_agent
+import importlib
+import types
 
-# MCP's stdio transport on macOS only inherits: HOME, LOGNAME, PATH, SHELL, TERM, USER.
-# SC_PREDICTION_DB_PATH and SC_PREDICTION_MODEL_DIR are custom vars that won't reach the
-# subprocess unless we inject them explicitly.
-#   - OpenAI SDK stack: MCPServerStdio -> pipeline_mcp.params.env
-#   - MAF stack:        MCPStdioTool   -> pipeline_mcp.env
-_MCP_ENV = {
-    "SC_PREDICTION_DB_PATH":   str(EVAL_DB),
-    "SC_PREDICTION_MODEL_DIR": str(PIPELINE_DIR / "models"),
-    "OPENAI_API_KEY":          os.environ.get("OPENAI_API_KEY", ""),
-    "OPENAI_MODEL":            "gpt-5.4",
-    "OPENAI_MODEL_MINI":       "gpt-4.1-mini",
-}
-if hasattr(pipeline_mcp, "params"):        # OpenAI SDK (baseline)
-    pipeline_mcp.params.env = _MCP_ENV
-else:                                      # MAF (thesis replica)
-    pipeline_mcp.env = _MCP_ENV
+_is_maf = (os.getenv("SC_EVAL_APP_DIR", STACK_APP_DIRS["baseline"]) == STACK_APP_DIRS["maf"])
 
-REPORTS_DIR = EVALS_DIR / "reports"
+if not _is_maf:
+    # Baseline: its own delivery_agents.py already defines everything — alias it.
+    sys.modules["thesis_target"] = importlib.import_module("delivery_agents")
+else:
+    # MAF: assemble the same public surface from its real, modular homes.
+    from core.mcp_tools import pipeline_mcp as _pipeline_mcp
+    from core.agents import (
+        predict_delivery_delays_agent as _predict_agent,
+        diagnose_delay_patterns_agent as _diagnose_agent,
+        delay_simulation_agent as _simulate_agent,
+        recommendation_agent as _recommend_agent,
+        email_alert_agent as _email_agent,
+    )
+    from core.schemas import (
+        DeliveryDelayPredictionResult, DelayDiagnosisResult, SimulationsList,
+        RecommendedActionsList, EmailsList, RowEnrichment, SimulateDelays,
+        DiagnosisHighRisk, DiagnosisComparison, RecommendedAction, EmailAlert,
+    )
+    from topologies.planner_executor import supply_chain_delivery_master_agent
+
+    target = types.ModuleType("thesis_target")
+    target.pipeline_mcp = _pipeline_mcp
+    target.predict_delivery_delays_agent = _predict_agent
+    target.diagnose_delay_patterns_agent = _diagnose_agent
+    target.delay_simulation_agent = _simulate_agent
+    target.recommendation_agent = _recommend_agent
+    target.email_alert_agent = _email_agent
+    target.supply_chain_delivery_master_agent = supply_chain_delivery_master_agent
+    target.DeliveryDelayPredictionResult = DeliveryDelayPredictionResult
+    target.DelayDiagnosisResult = DelayDiagnosisResult
+    target.SimulationsList = SimulationsList
+    target.RecommendedActionsList = RecommendedActionsList
+    target.EmailsList = EmailsList
+    target.RowEnrichment = RowEnrichment
+    target.SimulateDelays = SimulateDelays
+    target.DiagnosisHighRisk = DiagnosisHighRisk
+    target.DiagnosisComparison = DiagnosisComparison
+    target.RecommendedAction = RecommendedAction
+    target.EmailAlert = EmailAlert
+    sys.modules["thesis_target"] = target
+
+import importlib  # add near the top with the other stdlib imports
+
+from thesis_target import pipeline_mcp, predict_delivery_delays_agent
 
 
 # ── 5. Fixtures ───────────────────────────────────────────────────────────────
+
+REPORTS_DIR = EVALS_DIR / "reports"
 
 @pytest_asyncio.fixture(scope="session")
 async def pipeline_mcp_server():

@@ -23,8 +23,8 @@ from eval_config import (
 )
 from judge import get_called_tools, judge_output, mean_score
 
-from delivery_agents import predict_delivery_delays_agent
-from delivery_agents import DeliveryDelayPredictionResult
+from thesis_target import predict_delivery_delays_agent
+from thesis_target import DeliveryDelayPredictionResult
 
 
 @pytest.fixture(scope="module")

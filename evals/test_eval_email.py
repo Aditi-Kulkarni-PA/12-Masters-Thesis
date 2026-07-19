@@ -22,7 +22,7 @@ from agent_adapter import run_agent
 from eval_config import MIN_EMAILS, MIN_JUDGE_SCORE, MAX_EMAIL_LATENCY_S
 from judge import get_called_tools, judge_output, mean_score
 
-from delivery_agents import email_alert_agent, EmailsList
+from thesis_target import email_alert_agent, EmailsList
 
 _SEVERITY_SUBJECT = {
     "Long": "Urgent",

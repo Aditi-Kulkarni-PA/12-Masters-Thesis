@@ -18,7 +18,7 @@ from agent_adapter import run_agent
 from eval_config import MIN_SIMULATIONS, MIN_JUDGE_SCORE, MAX_SIMULATE_LATENCY_S
 from judge import get_called_tools, judge_output, mean_score
 
-from delivery_agents import delay_simulation_agent, SimulationsList
+from thesis_target import delay_simulation_agent, SimulationsList
 
 _SIMULATE_QUERY = "Simulate delays for stormy weather in East region"
 

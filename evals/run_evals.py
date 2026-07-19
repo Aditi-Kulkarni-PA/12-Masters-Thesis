@@ -22,10 +22,7 @@ EVALS_DIR  = Path(__file__).resolve().parent
 REPORTS_DIR = EVALS_DIR / "reports"
 
 # --stack choice -> app directory the evals import delivery_agents from
-_STACKS = {
-    "baseline": "supply_chain_delivery_app",
-    "maf":      "sc_delivery_thesis_app",
-}
+from env_settings import STACK_APP_DIRS as _STACKS
 
 _AGENT_FILES = {
     "predict":   "test_eval_predict.py",

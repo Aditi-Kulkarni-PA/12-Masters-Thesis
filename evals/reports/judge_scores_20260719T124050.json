@@ -1,0 +1,14 @@
+{
+  "generated": "2026-07-19T12:40:50",
+  "stack": "baseline",
+  "app_dir": "supply_chain_delivery_app",
+  "scores": {
+    "Diagnose Delay Patterns": {
+      "relevance": 5.0,
+      "faithfulness": 5.0,
+      "safety": 5.0,
+      "mean": 5.0
+    }
+  },
+  "ragas": {}
+}

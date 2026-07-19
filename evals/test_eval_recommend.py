@@ -26,7 +26,7 @@ from eval_config import (
 )
 from judge import judge_output, mean_score
 
-from delivery_agents import recommendation_agent, RecommendedActionsList
+from thesis_target import recommendation_agent, RecommendedActionsList
 # tools/__init__.py shadows the submodule name with the FunctionTool; use sys.modules
 import sys, tools  # noqa: E401 — side-effect: loads tools package and submodules
 ra_module = sys.modules["tools.recommend_actions"]

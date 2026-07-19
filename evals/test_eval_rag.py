@@ -26,7 +26,7 @@ from eval_config import (
 )
 from judge import judge_output
 
-from delivery_agents import recommendation_agent, RecommendedActionsList
+from thesis_target import recommendation_agent, RecommendedActionsList
 from tools.rag_knowledge import retrieve_sla_context
 import sys, tools  # noqa: E401
 ra_module = sys.modules["tools.recommend_actions"]

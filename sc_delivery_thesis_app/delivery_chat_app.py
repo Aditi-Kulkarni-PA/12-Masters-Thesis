@@ -33,9 +33,9 @@ import pandas as pd
 import gradio as gr
 from agent_framework import FunctionInvocationContext, function_middleware
 
-from delivery_agents import (
-    supply_chain_delivery_master_agent,
-    pipeline_mcp,
+from topologies.planner_executor import supply_chain_delivery_master_agent
+from core.mcp_tools import pipeline_mcp
+from core.schemas import (
     RowEnrichment,
     SimulateDelays,
     DiagnosisHighRisk,
@@ -44,6 +44,7 @@ from delivery_agents import (
     EmailAlert,
     EmailsList,
 )
+
 from helpers.post_processing import (
     process_predict,
     process_simulate,
