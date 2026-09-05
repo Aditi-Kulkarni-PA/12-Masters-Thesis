@@ -20,8 +20,8 @@ import importlib
 from evals.env_settings import STACK_APP_DIRS, OPENAI_MODEL, OPENAI_MODEL_MINI, SC_EMAIL_MAX_ROWS, mcp_env
 
 # ── 1. Resolve paths ──────────────────────────────────────────────────────────
-PROJECT_ROOT = Path(__file__).resolve().parent.parent   # 0_supply_chain_capstone
-APP_DIR = PROJECT_ROOT / os.getenv("SC_EVAL_APP_DIR", STACK_APP_DIRS["baseline"])
+PROJECT_ROOT = Path(__file__).resolve().parent.parent   # 0_supply_chain_thesis
+APP_DIR = PROJECT_ROOT / os.getenv("SC_EVAL_APP_DIR", STACK_APP_DIRS["maf"])
 PIPELINE_DIR = PROJECT_ROOT / "prediction_pipeline"
 EVALS_DIR    = Path(__file__).resolve().parent
 
@@ -61,7 +61,7 @@ import pytest_asyncio
 import importlib
 import types
 
-_is_maf = (os.getenv("SC_EVAL_APP_DIR", STACK_APP_DIRS["baseline"]) == STACK_APP_DIRS["maf"])
+_is_maf = (os.getenv("SC_EVAL_APP_DIR", STACK_APP_DIRS["maf"]) == STACK_APP_DIRS["maf"])
 
 if not _is_maf:
     # Baseline: its own delivery_agents.py already defines everything — alias it.
@@ -394,7 +394,7 @@ def pytest_sessionfinish(session, exitstatus):
     _stack_dir = os.getenv("SC_EVAL_APP_DIR", "supply_chain_delivery_app")
     scores_payload = {
         "generated": datetime.now().isoformat(timespec="seconds"),
-        "stack": "maf" if _stack_dir == "sc_delivery_thesis_app" else "baseline",
+        "stack": "maf" if _stack_dir == "supply_chain_topology_app" else "baseline",
         "app_dir": _stack_dir,
         "scores": {
             g["agent"]: {

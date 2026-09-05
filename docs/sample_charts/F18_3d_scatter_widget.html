@@ -1,0 +1,184 @@
+<!--
+F18 sample widget -- 3D interactive scatter, latency x cost x quality, target zone shaded.
+Built 30-Aug-26 (Aditi + Claude, docs/Analysis_Report_Design_Spec.md F18). Real data,
+dev-mode snapshot -- NOT the pilot-stage build script (see design spec §9 open decision
+#8 for the static print form still to be decided). This is a self-contained HTML file:
+open it directly in a browser, no server needed. Data is hard-coded from run_store.db as
+of 30-Aug-26 -- re-derive it from the DB rather than editing these arrays by hand once
+real pilot data exists (see design spec §8 build recipe for the source query).
+
+KNOWN BUG AND FIX, recorded here because it will recur on any future mesh3d + scatter3d
+combination: a translucent mesh3d "zone" trace can block mouse hover/picking on
+scatter3d markers that sit inside or behind it, even with hoverinfo:'skip' set on the
+mesh. hoverinfo:'skip' only suppresses the mesh's OWN tooltip -- it does not reliably
+exclude the mesh from Plotly's gl3d picking pass in every version. Fix applied here,
+in order of importance:
+  1. Trace draw order: the mesh trace is FIRST in the traces array, marker traces LAST.
+     Plotly's picking gives priority to later-drawn traces on ties.
+  2. Mesh opacity kept low (0.14) -- reduces how often it wins the pick in the first
+     place.
+  3. layout.hoverdistance raised to 20 (default 20 already, but stated explicitly here
+     since we tuned around it) to make marker picking more forgiving at the pixel level.
+  4. Mean-topology markers sized up (16) so they are easier targets once picking works.
+If hover still misses a point after these four, the next thing to try is dropping the
+mesh3d fill entirely in favour of a wireframe (12 scatter3d line segments for the box
+edges) -- guaranteed not to occlude picking since there is no filled surface, at the
+cost of the "background shading" look Aditi asked for.
+-->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>F18 sample -- topology latency/cost/quality 3D scatter</title>
+</head>
+<body style="font-family: sans-serif; margin: 0; padding: 16px; background: #fcfcfb;">
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 12px;">
+  <select id="viewMode">
+    <option value="points">Per-query points</option>
+    <option value="means" selected>Topology means</option>
+    <option value="both">Both</option>
+  </select>
+  <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #52514e;">
+    <input type="checkbox" id="showZone" checked />
+    Shade target zone
+  </label>
+  <span style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #52514e; margin-left: auto;">
+    <span style="width: 10px; height: 10px; border-radius: 2px; background: #97C459;"></span>
+    Target zone: lower latency, lower cost, higher quality
+  </span>
+</div>
+
+<div id="plot3d" style="width: 100%; height: 620px;"></div>
+
+<div id="chartLegend" style="display: flex; flex-wrap: wrap; gap: 10px 16px; margin-top: 10px; font-size: 12px; color: #52514e;"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"></script>
+<script>
+const POINTS = [
+  {t:"sequential",q:"Q4",lat:137.7,cost:0.6598,qual:4.33,adj:false,score:33.3,rep:2,caps:["predict","diagnose","recommend"],cx:12,ntq:2},
+  {t:"planner_executor",q:"Q4",lat:124.5,cost:0.3802,qual:4.31,adj:false,score:66.7,rep:3,caps:["predict","diagnose","recommend"],cx:12,ntq:2},
+  {t:"sequential",q:"Q5",lat:108.4,cost:0.7634,qual:4.39,adj:false,score:29.5,rep:1,caps:["predict","diagnose","simulate"],cx:9,ntq:4},
+  {t:"planner_executor",q:"Q5",lat:78.5,cost:0.4704,qual:4.64,adj:false,score:72.3,rep:1,caps:["predict","diagnose","simulate"],cx:9,ntq:4},
+  {t:"dynamic_graph",q:"Q5",lat:106.0,cost:0.0142,qual:2.46,adj:false,score:35.4,rep:1,caps:["predict","diagnose","simulate"],cx:9,ntq:4},
+  {t:"static_graph_routed",q:"Q5",lat:70.0,cost:0.5631,qual:4.34,adj:true,score:71.1,rep:1,caps:["predict","diagnose","simulate"],cx:9,ntq:4},
+  {t:"monolith",q:"Q10",lat:138.3,cost:0.9159,qual:4.39,adj:false,score:73.9,rep:1,caps:["predict","diagnose","simulate","recommend","email"],cx:15,ntq:5},
+  {t:"static_graph_dag",q:"Q10",lat:137.4,cost:0.9635,qual:4.31,adj:false,score:72.4,rep:2,caps:["predict","diagnose","simulate","recommend","email"],cx:15,ntq:5},
+  {t:"dynamic_graph",q:"Q10",lat:191.4,cost:0.0189,qual:1.27,adj:false,score:38.0,rep:2,caps:["predict","diagnose","simulate","recommend","email"],cx:15,ntq:5},
+  {t:"static_graph_routed",q:"Q10",lat:122.9,cost:0.9129,qual:4.33,adj:true,score:79.8,rep:2,caps:["predict","diagnose","simulate","recommend","email"],cx:15,ntq:5},
+  {t:"sequential",q:"Q10",lat:202.5,cost:1.5406,qual:4.37,adj:true,score:33.1,rep:1,caps:["predict","diagnose","simulate","recommend","email"],cx:15,ntq:5},
+  {t:"dynamic_graph",q:"Q6",lat:84.4,cost:0.459,qual:2.39,adj:true,score:0.0,rep:6,caps:["predict","diagnose","email"],cx:8,ntq:2},
+  {t:"static_graph_routed",q:"Q6",lat:66.4,cost:0.3302,qual:4.2,adj:true,score:100.0,rep:1,caps:["predict","diagnose","email"],cx:8,ntq:2},
+];
+const MEANS = [
+  {t:"static_graph_routed",lat:86.4,cost:0.6021,qual:4.29,score:83.6,nq:3,queries:["Q10","Q5","Q6"]},
+  {t:"monolith",lat:138.3,cost:0.9159,qual:4.39,score:73.9,nq:1,queries:["Q10"]},
+  {t:"static_graph_dag",lat:137.4,cost:0.9635,qual:4.31,score:72.4,nq:1,queries:["Q10"]},
+  {t:"planner_executor",lat:101.5,cost:0.4253,qual:4.47,score:69.5,nq:2,queries:["Q4","Q5"]},
+  {t:"sequential",lat:149.6,cost:0.9879,qual:4.36,score:32.0,nq:3,queries:["Q10","Q4","Q5"]},
+  {t:"dynamic_graph",lat:127.3,cost:0.164,qual:2.04,score:24.5,nq:3,queries:["Q10","Q5","Q6"]},
+];
+const TOPO_ORDER = ["monolith","sequential","planner_executor","static_graph_dag","static_graph_routed","dynamic_graph"];
+const TOPO_LABEL = {monolith:"Monolith",sequential:"Sequential",planner_executor:"Planner-Executor",static_graph_dag:"Static-Graph DAG",static_graph_routed:"Static-Graph Routed",dynamic_graph:"Dynamic-Graph"};
+const TOPO_COLOR = {monolith:"#2a78d6",sequential:"#eb6834",planner_executor:"#1baf7a",static_graph_dag:"#eda100",static_graph_routed:"#e87ba4",dynamic_graph:"#008300"};
+const TOPO_SYMBOL = {monolith:"circle",sequential:"square-open",planner_executor:"square",static_graph_dag:"diamond",static_graph_routed:"diamond-open",dynamic_graph:"cross"};
+
+const inkPrimary = "#0b0b0b";
+const inkMuted = "#898781";
+const gridColor = "#e1e0d9";
+const bg = "rgba(0,0,0,0)";
+
+const latVals = POINTS.map(p=>p.lat), costVals = POINTS.map(p=>p.cost), qualVals = POINTS.map(p=>p.qual);
+const latMin = Math.min(...latVals), latMax = Math.max(...latVals);
+const costMin = Math.min(...costVals), costMax = Math.max(...costVals);
+const qualMin = Math.min(...qualVals), qualMax = Math.max(...qualVals);
+const latMid = (latMin+latMax)/2, costMid = (costMin+costMax)/2, qualMid = (qualMin+qualMax)/2;
+const padL = (latMax-latMin)*0.08, padC = (costMax-costMin)*0.08, padQ = (qualMax-qualMin)*0.08;
+const axLat = [Math.max(0, latMin-padL), latMax+padL];
+const axCost = [Math.max(0, costMin-padC), costMax+padC];
+const axQual = [Math.max(0, qualMin-padQ), qualMax+padQ];
+
+function capsShort(arr){ return arr.join(", "); }
+function qualSrc(adj){ return adj ? "scope-adj" : "judge_mean fallback"; }
+
+// Zone box as a Mesh3d cuboid. 8 vertices (bottom face 0-3 at z0, top face 4-7 at z1),
+// 12 triangles, 2 per face, 6 faces -- a naive/incorrect triangulation collapses this
+// into a pyramid; this one was verified visually to render as a proper box.
+function cuboid(x0,x1,y0,y1,z0,z1){
+  const xs=[x0,x1,x1,x0,x0,x1,x1,x0], ys=[y0,y0,y1,y1,y0,y0,y1,y1], zs=[z0,z0,z0,z0,z1,z1,z1,z1];
+  return { type:"mesh3d", group:"zone", x:xs, y:ys, z:zs,
+    i:[0,0,4,4,0,0,3,3,0,0,1,1],
+    j:[1,2,5,6,1,5,2,6,3,7,2,6],
+    k:[2,3,6,7,5,4,6,7,7,4,6,5],
+    color:"#97C459", opacity:0.14, hoverinfo:"skip", hovertemplate: null,
+    showlegend:false, flatshading:true, lighting:{ambient:1,diffuse:0} };
+}
+const zoneTrace = cuboid(axLat[0], latMid, axCost[0], costMid, qualMid, axQual[1]);
+
+const pointTraces = TOPO_ORDER.map(t => {
+  const rows = POINTS.filter(p => p.t === t);
+  return {
+    type: "scatter3d", mode: "markers", name: TOPO_LABEL[t], legendgroup: t, group: "points",
+    x: rows.map(r=>r.lat), y: rows.map(r=>r.cost), z: rows.map(r=>r.qual),
+    marker: { size: 6, color: TOPO_COLOR[t], symbol: TOPO_SYMBOL[t], opacity: 0.95,
+      line: { color: TOPO_COLOR[t], width: 1 } },
+    customdata: rows.map(r => [TOPO_LABEL[t], r.q, qualSrc(r.adj), r.score, r.rep, r.ntq, r.cx, capsShort(r.caps)]),
+    hovertemplate: "<b>%{customdata[0]}</b> — query %{customdata[1]} (complexity %{customdata[6]})<br>" +
+      "Capabilities: %{customdata[7]}<br>Latency: %{x:.1f}s &nbsp; Cost: $%{y:.3f} &nbsp; Quality: %{z:.2f} (%{customdata[2]})<br>" +
+      "Composite score: %{customdata[3]} &nbsp; Reps: %{customdata[4]} &nbsp; Topologies on this query: %{customdata[5]}<extra></extra>",
+  };
+});
+
+const meanTraces = TOPO_ORDER.map(t => {
+  const m = MEANS.find(x => x.t === t);
+  return {
+    type: "scatter3d", mode: "markers", name: TOPO_LABEL[t] + " (mean)", legendgroup: t, group: "means", showlegend: false,
+    x: [m.lat], y: [m.cost], z: [m.qual],
+    marker: { size: 16, color: TOPO_COLOR[t], symbol: TOPO_SYMBOL[t], opacity: 1,
+      line: { color: inkPrimary, width: 1.5 } },
+    customdata: [[TOPO_LABEL[t], m.score, m.nq, m.queries.join(", ")]],
+    hovertemplate: "<b>%{customdata[0]} — topology mean</b><br>Latency: %{x:.1f}s &nbsp; Cost: $%{y:.3f} &nbsp; Quality: %{z:.2f}<br>" +
+      "Composite score: %{customdata[1]} &nbsp; Queries covered: %{customdata[2]}/10 (%{customdata[3]})<extra></extra>",
+  };
+});
+
+// Zone trace MUST be first -- see the hover-occlusion note at the top of this file.
+const allTraces = [zoneTrace, ...pointTraces, ...meanTraces];
+
+const layout = {
+  paper_bgcolor: bg, plot_bgcolor: bg,
+  margin: { l: 0, r: 0, t: 10, b: 0 },
+  hoverdistance: 20,
+  legend: { font: { color: inkPrimary, size: 12 }, orientation: "h", y: -0.02 },
+  scene: {
+    xaxis: { title: { text: "Latency (s)  → lower is better", font: { color: inkMuted, size: 11 } }, range: axLat, color: inkMuted, gridcolor: gridColor, backgroundcolor: bg },
+    yaxis: { title: { text: "Cost (USD)  → lower is better", font: { color: inkMuted, size: 11 } }, range: axCost, color: inkMuted, gridcolor: gridColor, backgroundcolor: bg },
+    zaxis: { title: { text: "Quality (judge mean)  → higher is better", font: { color: inkMuted, size: 11 } }, range: axQual, color: inkMuted, gridcolor: gridColor, backgroundcolor: bg },
+    camera: { eye: { x: 1.6, y: -1.6, z: 0.9 } },
+  },
+};
+
+Plotly.newPlot("plot3d", allTraces, layout, { responsive: true, displayModeBar: true, displaylogo: false });
+
+function applyView(){
+  const mode = document.getElementById("viewMode").value;
+  const showZone = document.getElementById("showZone").checked;
+  const visibility = allTraces.map(tr => {
+    if (tr.group === "zone") return showZone;
+    if (tr.group === "points") return mode === "points" || mode === "both";
+    if (tr.group === "means") return mode === "means" || mode === "both";
+    return true;
+  });
+  Plotly.restyle("plot3d", { visible: visibility });
+}
+document.getElementById("viewMode").addEventListener("change", applyView);
+document.getElementById("showZone").addEventListener("change", applyView);
+applyView();
+
+const legendEl = document.getElementById("chartLegend");
+legendEl.innerHTML = TOPO_ORDER.map(t =>
+  `<span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:2px;background:${TOPO_COLOR[t]};"></span>${TOPO_LABEL[t]}</span>`
+).join("");
+</script>
+</body>
+</html>

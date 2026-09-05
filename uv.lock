@@ -6066,7 +6066,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "agent-framework", specifier = ">=1.11.0" },
+    { name = "agent-framework", specifier = "==1.11.0" },
     { name = "chromadb", specifier = ">=0.6.0" },
     { name = "gradio", specifier = ">=6.20.0" },
     { name = "ipython", specifier = ">=8.0.0" },

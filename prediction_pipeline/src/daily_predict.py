@@ -38,7 +38,7 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
-from src.data_extract_1 import DataExtract
+from src.data_extract_1 import DataExtract  # noqa: E402  (import block continues below)
 from src.data_processing_3 import DataProcessing
 from src.feature_engineering_4 import FeatureEngineering
 from src.model_persistence_9 import ModelPersistence
@@ -188,6 +188,56 @@ class DailyPredictConfig(BaseModel):
 # ═══════════════════════════════════════════════════════════════════════════
 # Pipeline class
 # ═══════════════════════════════════════════════════════════════════════════
+
+
+
+# ---------------------------------------------------------------------------
+# Atomic artifact writing + completion signalling
+# ---------------------------------------------------------------------------
+# Downstream capabilities (diagnose / simulate / recommend / email) may run
+# concurrently with prediction. Two failure modes follow from that, and both were
+# observed on 22-Aug-26:
+#
+#   1. Partial read. A plain to_csv leaves the destination readable while it is still
+#      being written, so a concurrent reader can consume a half-written file.
+#   2. Staggered visibility. Prediction writes the DB tables, then the delayed CSV,
+#      then the sidecar. A reader checking "does the CSV exist?" between those steps
+#      sees a system that is partly updated, and computes on it without error.
+#
+# _atomic_write fixes (1) by writing to a temp file in the same directory and calling
+# os.replace, which is atomic on POSIX. PREDICT_COMPLETE_MARKER fixes (2) by giving
+# downstream a single flag that appears only once every artifact is in place.
+
+PREDICT_COMPLETE_MARKER = "daily_predict_complete.json"
+
+
+def _atomic_write(dest_path: str, write_fn) -> None:
+    """Write via *write_fn(tmp_path)* then atomically move into place.
+
+    The temp file is created in the destination's own directory so os.replace stays
+    within one filesystem, which is what makes it atomic.
+    """
+    dest = Path(dest_path)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dest.with_name(f".{dest.name}.tmp-{os.getpid()}")
+    try:
+        write_fn(str(tmp))
+        os.replace(tmp, dest)
+    finally:
+        if tmp.exists():
+            try:
+                tmp.unlink()
+            except OSError:
+                pass
+
+
+def _write_completion_marker(out_dir, **fields) -> str:
+    """Record that prediction finished and all its artifacts are readable."""
+    from datetime import datetime, timezone
+    marker = Path(out_dir) / PREDICT_COMPLETE_MARKER
+    payload = {"completed_at": datetime.now(timezone.utc).isoformat(), **fields}
+    _atomic_write(str(marker), lambda p: Path(p).write_text(json.dumps(payload)))
+    return str(marker)
 
 
 class DailyPredictionPipeline:
@@ -402,12 +452,7 @@ class DailyPredictionPipeline:
           - "delayed_orders": ALL delayed rows (no cap) so the agent can
                               enrich delay_reason for every record in the CSV
         """
-        import sys as _sys
         effective_csv_dir = csv_dir or str(_PROJECT_ROOT / "data" / "processed")
-        print(
-            f"[Pipeline] build_mcp_response: file={file_path} csv_dir={effective_csv_dir}",
-            file=_sys.stderr,
-        )
 
         result = cls.run_from_file(file_path, csv_dir=effective_csv_dir, display=False)
 
@@ -428,12 +473,20 @@ class DailyPredictionPipeline:
                 delayed[_col] = delayed[_col].round(2)
         display_cols = [c for c in _MCP_DISPLAY_COLS + ["delay_reason", "llm_insights"] if c in delayed.columns]
 
-        # Save delayed-only CSV so the UI can read it directly
+        # Save delayed-only CSV so the UI can read it directly.
+        #
+        # Written atomically (temp file in the same directory, then os.replace) because
+        # downstream capabilities may run concurrently with this one. A plain to_csv
+        # leaves the path readable while it is still being written, so a concurrent
+        # reader can pick up a partial file and produce plausible-but-wrong output with
+        # no error anywhere. os.replace is atomic on POSIX, so a reader sees either the
+        # previous file or the complete new one, never a half-written one.
         import pathlib as _pl
         out_dir = _pl.Path(effective_csv_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         delayed_csv_path = str(out_dir / "daily_delivery_delay_prediction.csv")
-        delayed[display_cols].to_csv(delayed_csv_path, index=False)
+        _atomic_write(delayed_csv_path,
+                      lambda p: delayed[display_cols].to_csv(p, index=False))
 
         top_regions  = _mcp_top_n(delayed["region"], total_delayed)             if "region"            in delayed.columns else []
         top_weather  = _mcp_top_n(delayed["weather_condition"], total_delayed)  if "weather_condition" in delayed.columns else []
@@ -484,21 +537,25 @@ class DailyPredictionPipeline:
         )
         # ---- save sidecar JSON so delivery_app can read summary/stats directly ----
         sidecar_path = str(out_dir / "daily_delivery_delay_prediction_meta.json")
-        with open(sidecar_path, "w") as _f:
-            json.dump(
-                {
-                    "summary": summary,
-                    "formatted_stats": formatted_stats,
-                },
-                _f,
-            )
-
-        print(
-            f"[Pipeline] build_mcp_response done: total_delayed={total_delayed}, "
-            f"sending top {len(all_records)} rows to agent (cap={_MCP_ENRICH_ROWS}), "
-            f"sidecar={sidecar_path}",
-            file=_sys.stderr,
+        _atomic_write(
+            sidecar_path,
+            lambda p: _pl.Path(p).write_text(
+                json.dumps({"summary": summary, "formatted_stats": formatted_stats})
+            ),
         )
+
+        # ---- completion marker: written LAST, after every artifact is in place ----
+        #
+        # Downstream capabilities previously decided "has prediction run?" by testing
+        # whether individual artifacts existed. Those artifacts appear at different
+        # points during this method, so a concurrent reader could find one present and
+        # another still missing, and would then compute on incomplete state. This marker
+        # is the single, atomic "prediction is complete" signal: it exists only once the
+        # DB tables, the delayed CSV and the sidecar have all been written.
+        _write_completion_marker(out_dir, total_orders=total_orders,
+                                 total_delayed=total_delayed,
+                                 delayed_csv_path=delayed_csv_path)
+
         return json.dumps({"summary": summary, "formatted_stats": formatted_stats, "delayed_orders": all_records})
 
     # ------------------------------------------------------------------ #
@@ -509,8 +566,8 @@ class DailyPredictionPipeline:
     def _resolve_env(cls, env_var: str, fallback: str) -> str:
         """Return env-var value, resolving relative paths against workspace root.
 
-        .env paths are relative to the project root (0_supply_chain_capstone/), which is
-        _PROJECT_ROOT.parent (src/ → prediction_pipeline/ → 0_supply_chain_capstone/).
+        .env paths are relative to the project root (0_supply_chain_thesis/), which is
+        _PROJECT_ROOT.parent (src/ → prediction_pipeline/ → 0_supply_chain_thesis/).
         """
         val = os.getenv(env_var, "")
         if val:

@@ -13,8 +13,8 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 # stack name -> app directory (relative to PROJECT_ROOT)
 STACK_APP_DIRS = {
-    "baseline": "supply_chain_delivery_app",  # OpenAI Agents SDK — frozen reference, never edited again
-    "maf":      "sc_delivery_thesis_app",     # Microsoft Agent Framework — actual baseline going forward
+    "baseline": "archive/supply_chain_delivery_app_openai_sdk",  # OpenAI Agents SDK — frozen reference, never edited again
+    "maf":      "supply_chain_topology_app",     # Microsoft Agent Framework — actual baseline going forward
 }
 
 OPENAI_MODEL = "gpt-5.4"

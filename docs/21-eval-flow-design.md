@@ -37,7 +37,7 @@ The RAG pipeline (`retrieve_sla_context`) is embedded inside `recommend_actions`
 ## Directory Structure
 
 ```
-0_supply_chain_capstone/
+0_supply_chain_thesis/
 └── evals/
     ├── conftest.py              # shared pytest fixtures, report writer
     ├── pytest.ini               # asyncio_mode=auto (no ragas marker — RAGAS runs in the default suite)
@@ -59,7 +59,7 @@ The RAG pipeline (`retrieve_sla_context`) is embedded inside `recommend_actions`
 
 ## How to Run
 
-From the `0_supply_chain_capstone/` directory:
+From the `0_supply_chain_thesis/` directory:
 
 | Command | What it runs |
 |---------|-------------|

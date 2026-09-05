@@ -14,11 +14,24 @@ Tables created:
 import sqlite3
 import os
 import re
+import threading
 import numpy as np
 import pandas as pd
 from typing import Optional, Dict, List, Literal
 
 from pydantic import BaseModel, Field, validate_call
+
+# Serializes refresh_daily()'s end-to-end table rebuild across threads within this
+# process. save_daily_predictions/create_summary_tables/create_metadata_dictionary each
+# replace tables via DROP+CREATE or to_sql(if_exists="replace") -- none atomic -- so two
+# concurrent refreshes (e.g. two specialists both dispatching predict_delivery_delays at
+# once) can interleave their drops and creates and raise "table already exists".
+# anyio.to_thread.run_sync in prediction_server.py runs every MCP tool handler in this
+# same process's thread pool, so a lock is sufficient here -- no cross-process
+# contention to handle. Reentrant because refresh_daily() wraps its own call into
+# create_summary_tables(), which also takes this lock when called on its own (e.g. the
+# one-off hist-table build at startup).
+_rebuild_lock = threading.RLock()
 
 
 # Severity label maps (must match notebook definitions)
@@ -263,26 +276,30 @@ class DatabaseOperations:
         Returns dict with keys: daily, daily_csv (optional),
         summary_tables, metadata_count.
         """
-        result = cls.save_daily_predictions(
-            X_daily, daily_ids, pred_delay, pred_severity,
-            severity_labels=severity_labels,
-            db_path=db_path,
-            table_name=table_name,
-            if_exists=if_exists,
-            csv_dir=csv_dir,
-        )
+        # Locked end-to-end: save + summary rebuild + metadata update must complete as
+        # one unit, or a concurrent second refresh can read/overwrite a half-updated
+        # database (see _rebuild_lock above).
+        with _rebuild_lock:
+            result = cls.save_daily_predictions(
+                X_daily, daily_ids, pred_delay, pred_severity,
+                severity_labels=severity_labels,
+                db_path=db_path,
+                table_name=table_name,
+                if_exists=if_exists,
+                csv_dir=csv_dir,
+            )
 
-        # Rebuild daily summary tables
-        summary_tables = cls.create_summary_tables(
-            db_path=db_path,
-            source_table=table_name,
-            prefix="daily_",
-        )
-        result["summary_tables"] = summary_tables
+            # Rebuild daily summary tables
+            summary_tables = cls.create_summary_tables(
+                db_path=db_path,
+                source_table=table_name,
+                prefix="daily_",
+            )
+            result["summary_tables"] = summary_tables
 
-        # Update metadata dictionary for all tables
-        meta_df = cls.create_metadata_dictionary(db_path=db_path)
-        result["metadata_count"] = len(meta_df)
+            # Update metadata dictionary for all tables
+            meta_df = cls.create_metadata_dictionary(db_path=db_path)
+            result["metadata_count"] = len(meta_df)
 
         print(f"\n✓ Daily refresh complete: {len(summary_tables)} summary tables, "
               f"{len(meta_df)} metadata entries")
@@ -571,16 +588,19 @@ class DatabaseOperations:
         )
         created_tables.append(tname)
 
-        # Execute all SQL
-        conn = sqlite3.connect(db_path)
-        try:
-            for i, block in enumerate(sql_blocks, 1):
-                # executescript handles multiple statements separated by ;
-                conn.executescript(block)
-                print(f"✓ Summary table {i}/{len(sql_blocks)}: {created_tables[i-1]}")
-            conn.commit()
-        finally:
-            conn.close()
+        # Execute all SQL. Locked: each block is DROP TABLE IF EXISTS + CREATE TABLE,
+        # two statements -- a second concurrent rebuild of the same table name must wait
+        # for this one to finish, not interleave with it (see _rebuild_lock above).
+        with _rebuild_lock:
+            conn = sqlite3.connect(db_path)
+            try:
+                for i, block in enumerate(sql_blocks, 1):
+                    # executescript handles multiple statements separated by ;
+                    conn.executescript(block)
+                    print(f"✓ Summary table {i}/{len(sql_blocks)}: {created_tables[i-1]}")
+                conn.commit()
+            finally:
+                conn.close()
 
         print(f"\n✓ Created {len(created_tables)} summary tables (prefix={prefix})")
         return created_tables

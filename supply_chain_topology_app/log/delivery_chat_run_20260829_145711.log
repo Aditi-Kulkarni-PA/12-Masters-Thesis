@@ -1,0 +1,15 @@
+2026-08-29 14:57:11 | INFO | supply_chain_delivery_app | logger.initialized path=/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/supply_chain_topology_app/log/delivery_chat_run_20260829_145711.log
+2026-08-29 14:57:55 | INFO | supply_chain_delivery_app | tool.fetch_delayed_orders_for_email.started
+2026-08-29 14:57:55 | INFO | supply_chain_delivery_app | tool.fetch_delayed_orders_for_email.generated count=10
+2026-08-29 14:57:55 | INFO | supply_chain_delivery_app | tool.fetch_delayed_orders_for_email.completed status=ok duration_ms=18 csv_path=/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/processed/daily_delivery_delay_prediction.csv
+2026-08-29 14:58:26 | INFO | supply_chain_delivery_app | tool.recommend_actions.started
+2026-08-29 14:58:26 | INFO | supply_chain_delivery_app | tool.recommend_actions.data diagnosis_chars=4359 dims_compared=6 hist_high_risk=10 daily_high_risk=10 severity_hotspots=5 hist_top_dims=6 daily_top_dims=6 output_chars=8093
+2026-08-29 14:58:29 | INFO | supply_chain_delivery_app | rag.retrieve.started input_len=8093 rerank_top_n=8
+2026-08-29 14:58:31 | INFO | supply_chain_delivery_app | rag.collection.load.started
+2026-08-29 14:58:31 | INFO | supply_chain_delivery_app | rag.collection.load.completed duration_ms=107 count=73
+2026-08-29 14:58:31 | INFO | supply_chain_delivery_app | rag.retrieve.hybrid_prefilter candidates=12
+2026-08-29 14:58:31 | INFO | supply_chain_delivery_app | rag.cross_encoder.load model=cross-encoder/ms-marco-MiniLM-L-6-v2
+2026-08-29 14:58:39 | INFO | supply_chain_delivery_app | rag.cross_encoder.ready
+2026-08-29 14:58:39 | INFO | supply_chain_delivery_app | rag.retrieve.cross_encoder_rerank returned=8
+2026-08-29 14:58:39 | INFO | supply_chain_delivery_app | rag.retrieve.completed duration_ms=9549 retrieved=15 returned=8
+2026-08-29 14:58:39 | INFO | supply_chain_delivery_app | tool.recommend_actions.completed status=ok duration_ms=13118

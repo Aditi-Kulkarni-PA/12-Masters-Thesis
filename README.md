@@ -313,7 +313,7 @@ Taken together, the system enables logistics operations teams to query a convers
 <sub>[↑ Back to TOC](#table-of-contents)</sub>
 
 ```
-0_supply_chain_capstone/
+0_supply_chain_thesis/
 ├── README.md                          ← This file
 ├── pyproject.toml                     ← uv project config (package = false)
 ├── requirements.txt                   ← Pinned dependency list (uv export)
@@ -752,7 +752,7 @@ Structured agents are configured with `agent as a tool` using OpenAI Agent SDK.
 pip install uv
 
 # From the project root
-cd 0_supply_chain_capstone
+cd 0_supply_chain_thesis
 uv sync                  # creates .venv and installs all pinned dependencies
 ```
 

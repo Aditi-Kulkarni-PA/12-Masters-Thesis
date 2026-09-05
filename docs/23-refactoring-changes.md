@@ -319,7 +319,7 @@ prerequisites).
 **Recommended local check** (needs your venv with the OpenAI Agents SDK):
 
 ```bash
-cd 0_supply_chain_capstone
+cd 0_supply_chain_thesis
 pytest tests/ -q                 # pydantic models, MCP server, RAG smoke tests
 python supply_chain_delivery_app/delivery_chat_app.py   # end-to-end UI run
 ```

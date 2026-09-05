@@ -174,13 +174,6 @@ def run_simulation(scenario: str, filters: str, changes: str) -> str:
     Returns:
         A text report with simulation results and a table of affected rows.
     """
-    import sys as _sys
-    print(
-        f"[Simulation] run_simulation: scenario={scenario}, "
-        f"filters={filters}, changes={changes}",
-        file=_sys.stderr,
-    )
-
     # ---- 1. Parse & validate inputs ----
     try:
         filt: dict = json.loads(filters)
@@ -300,8 +293,4 @@ def run_simulation(scenario: str, filters: str, changes: str) -> str:
             "from there, so do NOT try to reproduce all rows.)"
         )
 
-    print(
-        f"[Simulation] done: {n_affected} rows affected, saved to {_SIM_CSV}",
-        file=_sys.stderr,
-    )
     return "\n".join(lines)
