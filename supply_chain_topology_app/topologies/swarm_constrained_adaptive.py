@@ -219,6 +219,16 @@ class BlackboardEntry(BaseModel):
     note: str = Field(description="The specialist's own short note on what it posted "
                                     "and why -- its answer to the write_instruction it was given.")
     result: dict
+    self_reported: bool = Field(
+        default=True,
+        description="True if the specialist itself called write_blackboard. False if "
+                    "it did not, and the wave loop captured its already-produced "
+                    "structured response on its behalf (R61) -- every other topology's "
+                    "final answer is a Pydantic response_format, which is captured "
+                    "unconditionally by the framework; this makes this topology's "
+                    "capture the same guarantee, while still recording whether the "
+                    "mandated self-report actually happened, for orchestration-"
+                    "behaviour analysis.")
 
 
 class BlackboardReadLogRow(BaseModel):
@@ -242,10 +252,10 @@ class Blackboard(BaseModel):
     pending_requests: list[AgentSpec] = Field(default_factory=list)
 
     def write(self, *, capability: Capability, agent_name: str, wave: int,
-              note: str, result: dict) -> None:
+              note: str, result: dict, self_reported: bool = True) -> None:
         self.entries.append(BlackboardEntry(
             capability=capability, agent_name=agent_name, wave=wave,
-            note=note, result=result))
+            note=note, result=result, self_reported=self_reported))
 
     def request(self, spec: AgentSpec) -> None:
         """Called from the request_specialist tool -- a specialist proposing what it
@@ -308,6 +318,12 @@ def _make_read_blackboard_tool(blackboard: Blackboard, reader_capability: Capabi
         email. Returns its result as text if already posted, or a plain message saying
         it has not posted yet."""
         result = blackboard.read(reader_capability, capability)
+        # Printed, not just logged into blackboard.read_log, so a specialist's own
+        # dependency-fetching behaviour is visible in the run's console/log output the
+        # same way write-compliance already is -- read_log was populated before this
+        # print existed but never surfaced anywhere a run's log could show it.
+        print(f"  -- swarm_ca: {reader_capability} read_blackboard({capability}) -> "
+              f"{'hit' if result is not None else 'miss (nothing posted yet)'}", flush=True)
         return f"No result posted yet for '{capability}'." if result is None else str(result)
     return read_blackboard
 
@@ -396,6 +412,22 @@ def _build_specialist(spec: AgentSpec, blackboard: Blackboard, *,
     agent_name = agent_name_for(capability, wave_num)
 
     domain_instructions = get_instruction(_PROMPT_KEY_BY_CAPABILITY[capability])
+    # Read mandate for any TRUE_DEPENDENCIES prerequisite -- R62. The wave loop only
+    # starts a capability once its prerequisites have posted (_prerequisites_met), but
+    # "posted" is not "in this specialist's own context": spec.task was written by the
+    # seed planner in turn 1, before any prerequisite ran, so it cannot carry that
+    # prerequisite's actual content. Without this, tool_choice="required" (below) is
+    # satisfied by calling the domain tool first, with the prerequisite argument left
+    # empty (confirmed live, R62: recommend called recommendation_tool with an empty
+    # diagnosis_summary, which recommend_actions() itself immediately rejected via its
+    # own _MIN_DIAGNOSIS_CHARS guard -- fast, thin, valid JSON, no error surfaced).
+    prereq_caps = sorted(_true_prereq_capabilities(capability))
+    read_mandate = (
+        f"Before calling your domain tool, call read_blackboard for each of: "
+        f"{', '.join(prereq_caps)}. Pass what it returns as that argument -- do not "
+        f"call your domain tool with that argument empty or invented.\n\n"
+        if prereq_caps else ""
+    )
     # The write instruction rides on the system prompt, not just the tool's own
     # docstring -- belt-and-braces, the same reasoning dispatch_router_spec.md gave for
     # Planner-Executor's structural pass-through: schema-level alone is weaker than
@@ -403,6 +435,7 @@ def _build_specialist(spec: AgentSpec, blackboard: Blackboard, *,
     instructions = (
         f"{domain_instructions}\n\n---\n\n"
         f"## Blackboard\n"
+        f"{read_mandate}"
         f"Before you finish, you MUST call write_blackboard to post your result. "
         f"What to post: {spec.write_instruction}\n\n"
         f"You do not need to request any other specialist for this request's known "
@@ -449,21 +482,28 @@ def _build_seed_planner() -> Agent:
     )
 
 
-def _prerequisites_met(capability: Capability, posted_caps: set[str]) -> bool:
-    """True once every real prerequisite *capability* needs has actually posted to the
-    blackboard. Reads measurement/dependencies.py's own TRUE_DEPENDENCIES table (keyed
-    by wrapped tool names) via TOOL_NAME_BY_CAPABILITY, then maps back to capability
-    names for the comparison. This is a FACT about what a tool needs to function
-    (confirmed against tools/recommend_actions.py for recommend's own case), not an
-    orchestration structure being imposed on the agents -- the same table Mesh's
-    measurement layer already uses to JUDGE dependency order on every other topology's
-    runs, reused here to GATE Swarm's own scheduling after two live runs (30-Aug-26)
-    showed free-text propagation of this exact fact was not reliable. predict, with no
-    prerequisites, is always ready."""
+def _true_prereq_capabilities(capability: Capability) -> set[str]:
+    """The capability-name form of *capability*'s real prerequisites, per
+    measurement/dependencies.py's own TRUE_DEPENDENCIES table (keyed by wrapped tool
+    names) mapped back through TOOL_NAME_BY_CAPABILITY. Factored out of
+    _prerequisites_met so the scheduling gate and the specialist's own instructions
+    (below) read the same fact from one place -- a capability whose dependency this
+    table does not know about cannot be told to check for it, and vice versa."""
     tool_name = TOOL_NAME_BY_CAPABILITY[capability]
     prereq_tools = set(TRUE_DEPENDENCIES.get(tool_name, ()))
-    prereq_caps = {cap for cap, name in TOOL_NAME_BY_CAPABILITY.items() if name in prereq_tools}
-    return prereq_caps <= posted_caps
+    return {cap for cap, name in TOOL_NAME_BY_CAPABILITY.items() if name in prereq_tools}
+
+
+def _prerequisites_met(capability: Capability, posted_caps: set[str]) -> bool:
+    """True once every real prerequisite *capability* needs has actually posted to the
+    blackboard. This is a FACT about what a tool needs to function (confirmed against
+    tools/recommend_actions.py for recommend's own case), not an orchestration
+    structure being imposed on the agents -- the same table Mesh's measurement layer
+    already uses to JUDGE dependency order on every other topology's runs, reused here
+    to GATE Swarm's own scheduling after two live runs (30-Aug-26) showed free-text
+    propagation of this exact fact was not reliable. predict, with no prerequisites,
+    is always ready."""
+    return _true_prereq_capabilities(capability) <= posted_caps
 
 
 # ---------------------------------------------------------------------------
@@ -583,14 +623,31 @@ class ConstrainedAdaptiveSwarmEntryPoint:
                     print(f"  !! swarm_ca: {cap} failed in wave {wave_num}: {result}", flush=True)
 
             # Write-compliance check -- mandating write_blackboard in the prompt does
-            # not guarantee the framework enforces the call (see
-            # _make_write_blackboard_tool's docstring). Measured, not assumed.
+            # not guarantee the framework enforces the call (confirmed R61: MAF resets
+            # tool_choice="required" to "auto" after one iteration, agent_framework
+            # _tools.py's own function-invocation loop, so only the specialist's FIRST
+            # tool call is ever forced). Still measured, not silently assumed -- but no
+            # longer left to cost a run its data either: every other topology's final
+            # answer is captured unconditionally via response_format, so a specialist
+            # that skipped write_blackboard gets its already-produced structured result
+            # force-captured here, the same guarantee, with self_reported=False so the
+            # miss stays visible for analysis instead of disappearing into a silent fix.
             posted = {e.capability for e in blackboard.entries[before:]}
             for cap in ready:
-                if cap not in posted:
-                    print(f"  !! swarm_ca: {cap} did not post to the blackboard in wave "
-                          f"{wave_num} despite the write mandate -- write-compliance "
-                          f"miss", flush=True)
+                if cap in posted:
+                    continue
+                print(f"  !! swarm_ca: {cap} did not post to the blackboard in wave "
+                      f"{wave_num} despite the write mandate -- write-compliance "
+                      f"miss (R61: forcing capture of its own structured result)",
+                      flush=True)
+                result = dict(zip(ready, results)).get(cap)
+                value = getattr(result, "value", None)
+                forced_result = value.model_dump() if isinstance(value, BaseModel) else {}
+                blackboard.write(
+                    capability=cap, agent_name=agents[cap].name, wave=wave_num,
+                    note="Auto-captured by the wave loop -- the specialist completed "
+                         "its work but did not call write_blackboard itself.",
+                    result=forced_result, self_reported=False)
 
         if still_needed:
             print(f"  !! swarm_ca: run ended with {sorted(still_needed)} still needed but "

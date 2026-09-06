@@ -1,0 +1,138 @@
+==================================================================
+ topology : swarm_constrained_adaptive
+ run_n    : 1
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 04:23:18
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4-nano  query_id=Q4
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 4 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[04:23:19] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > What will be the delivery impact if there is a storm in the east today?
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+     - swarm_constrained_adaptive_seed_planning agent: 4,485 prompt / 713 completion tokens over 1 message(s)
+  -- swarm_ca: wave 1 running ['predict'] concurrently (prerequisites met); still waiting on ['diagnose', 'recommend', 'simulate']
+  >> tool_start predict_delivery_delays_tool (input=444 chars)
+     - predict_delivery_delays_tool agent: 65,538 prompt / 12,448 completion tokens over 5 message(s)
+  << tool_end   predict_delivery_delays_tool done in 77.62s (output=22,680 chars, valid_json=True)
+  -- swarm_ca: wave 2 running ['diagnose', 'simulate'] concurrently (prerequisites met); still waiting on ['recommend']
+  >> tool_start delay_simulations_tool (input=476 chars)
+  >> tool_start diagnose_delay_patterns_tool (input=633 chars)
+     - delay_simulations_tool agent: 14,436 prompt / 4,199 completion tokens over 5 message(s)
+  << tool_end   delay_simulations_tool done in 33.53s (output=15,063 chars, valid_json=True)
+     - diagnose_delay_patterns_tool agent: 40,543 prompt / 8,696 completion tokens over 5 message(s)
+  << tool_end   diagnose_delay_patterns_tool done in 55.48s (output=17,145 chars, valid_json=True)
+  -- swarm_ca: wave 3 running ['recommend'] concurrently (prerequisites met); still waiting on nothing
+  >> tool_start recommendation_tool (input=462 chars)
+     - recommendation_tool agent: 5,670 prompt / 39 completion tokens over 3 message(s)
+  << tool_end   recommendation_tool done in 2.50s (output=26 chars, valid_json=True)
+  !! swarm_ca: recommend did not post to the blackboard in wave 3 despite the write mandate -- write-compliance miss
+  swarm_ca: 3 wave(s) run; capabilities that posted a result: ['diagnose', 'predict', 'simulate']
+
+============================================================
+[04:25:40] TURN 1 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "Posted what-if simulation results for scenario 'storm in the east today' showing how delay severity shifts for affected orders (severity distribution changes and sample order-level moves).",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[04:25:40] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+
+============================================================
+[04:25:40] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "Posted what-if simulation results for scenario 'storm in the east today' showing how delay severity shifts for affected orders (severity distribution changes and sample order-level moves).",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[04:25:40] SUMMARY — tools, tokens & cost  [model=gpt-5.4-nano, tool calls=4]
+============================================================
+                        tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+predict_delivery_delays_tool     77.62s         444       22,680       True     65,538         12,448    77,986  $0.0287
+      delay_simulations_tool     33.53s         476       15,063       True     14,436          4,199    18,635  $0.0081
+diagnose_delay_patterns_tool     55.48s         633       17,145       True     40,543          8,696    49,239  $0.0190
+         recommendation_tool      2.50s         462           26       True      5,670             39     5,709  $0.0012
+          — Sub-agents TOTAL    169.13s                                None    126,187         25,382   151,569  $0.0570
+       — Orchestration turns                                           None      4,485            713     5,198  $0.0018
+          — Master (2 turns)      5.38s                                None      8,970          1,426    10,396  $0.0036
+               — GRAND TOTAL    140.99s                                None    139,642         27,521   167,163  $0.0623
+
+Persisted run_id: a1491dd8-d687-4c5a-8479-76167621a86f
+
+============================================================
+[04:25:40] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring a1491dd8  topology=swarm_constrained_adaptive  model=gpt-5.4-nano
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  predict_summary                  rel=5.0 faith=5.0 safe=5.0
+  predict_row_insights_sample      rel=5.0 faith=5.0 safe=5.0
+  simulate_row_reasons_sample      rel=4.0 faith=5.0 safe=5.0
+  diagnose_delay_patterns_tool     rel=5.0 faith=5.0 safe=5.0
+  recommendation_tool_raw          rel=1.0 faith=5.0 safe=5.0
+  simulate_narrative               rel=3.0 faith=4.0 safe=5.0
+
+  capability blend:
+    predict              rel=5.00 faith=5.00 safe=5.00   (50% predict_summary / 50% predict_row_insights_sample)
+    diagnose             rel=4.00 faith=4.00 safe=4.00   (80% diagnose_delay_patterns_tool / 20% diagnose_delay_patterns_tool_raw)
+    simulate             rel=3.80 faith=4.80 safe=5.00   (20% simulate_narrative / 80% simulate_row_reasons_sample)
+    recommendation       rel=0.20 faith=1.00 safe=1.00   (10% recommendation_summary / 70% recommendation_tool / 20% recommendation_tool_raw)
+
+  SCOPE-ADJUSTED MEAN 3.50/5   (every implied capability was attempted -- same as judge mean)
+
+  JUDGE WEIGHTED MEAN 3.50/5   (relevance 3.25 x.45, faithfulness 3.70 x.45, safety 3.75 x.10)
+  scored 6 artifact(s) -> 4 capability score(s) -> quality_scores
+
+============================================================
+[04:25:49] RUN VALIDITY
+============================================================
+  topology           : swarm_constrained_adaptive
+  coordinator prompt : swarm_constrained_adaptive/master = ac79b46d
+  plan presented     : NO
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 2 / 4
+  missing tools      : []
+  empty results      : ['recommendation_tool']
+  dependency order   : respected — every capability waited for its inputs
+  scheduling         : 100% of achievable overlap  (0 pair(s) left unoverlapped)
+  coordinator idle   : 0.01s spent deciding between waves (not a scheduling fault)
+  span               : 135.61s vs critical path 135.59s
+
+  execution timeline:
+    turn 1 start    0.00
+    ..... 5.38s model reasoning (no tool running) .....
+    predict         5.38 ->   83.00
+    simulate       83.00 ->  116.54 +
+    diagnose       83.01 ->  138.49 +-- 2 at once
+    recommend     138.50 ->  140.99
+    turn 1 end    140.99
+    turn 2 start  140.99
+    turn 2 end    140.99   (no tools this turn)
+    run end       140.99
+  turn-1 plan text   : (none stored — no plan was produced)
+  (not a problem: recommendation_tool returned empty, but the query never implied it — expected on a topology that runs every capability regardless of query)
+
+  ATTENTION:
+    - no plan was presented on turn 1 — the 2-turn plan/confirm flow did not engage; plan_presented is a measured comparison field.
+
+finished : 2026-09-06 04:25:49

@@ -1,0 +1,71 @@
+{
+  "batch_id": "batch_20260906T064437Z",
+  "log_dir": "/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/supply_chain_topology_app/log/batches/batch_20260906T064437Z",
+  "planned": 10,
+  "succeeded": [
+    {
+      "topology": "swarm_constrained_adaptive",
+      "query_id": "Q11",
+      "run_n": 1,
+      "log": "001_swarm_constrained_adaptive_Q11_n1.log"
+    },
+    {
+      "topology": "swarm_constrained_adaptive",
+      "query_id": "Q2",
+      "run_n": 1,
+      "log": "002_swarm_constrained_adaptive_Q2_n1.log"
+    },
+    {
+      "topology": "swarm_constrained_adaptive",
+      "query_id": "Q6",
+      "run_n": 1,
+      "log": "003_swarm_constrained_adaptive_Q6_n1.log"
+    },
+    {
+      "topology": "swarm_constrained_adaptive",
+      "query_id": "Q7",
+      "run_n": 1,
+      "log": "004_swarm_constrained_adaptive_Q7_n1.log"
+    },
+    {
+      "topology": "swarm_constrained_adaptive",
+      "query_id": "Q4",
+      "run_n": 1,
+      "log": "005_swarm_constrained_adaptive_Q4_n1.log"
+    },
+    {
+      "topology": "swarm_constrained_adaptive",
+      "query_id": "Q3",
+      "run_n": 1,
+      "log": "006_swarm_constrained_adaptive_Q3_n1.log"
+    },
+    {
+      "topology": "swarm_constrained_adaptive",
+      "query_id": "Q1",
+      "run_n": 1,
+      "log": "007_swarm_constrained_adaptive_Q1_n1.log"
+    },
+    {
+      "topology": "swarm_constrained_adaptive",
+      "query_id": "Q8",
+      "run_n": 1,
+      "log": "008_swarm_constrained_adaptive_Q8_n1.log"
+    },
+    {
+      "topology": "swarm_constrained_adaptive",
+      "query_id": "Q5",
+      "run_n": 1,
+      "log": "009_swarm_constrained_adaptive_Q5_n1.log"
+    },
+    {
+      "topology": "swarm_constrained_adaptive",
+      "query_id": "Q10",
+      "run_n": 1,
+      "log": "010_swarm_constrained_adaptive_Q10_n1.log"
+    }
+  ],
+  "failed": [],
+  "timed_out": [],
+  "remaining": 0,
+  "finished_at": "2026-09-06T07:13:33.876084+00:00"
+}

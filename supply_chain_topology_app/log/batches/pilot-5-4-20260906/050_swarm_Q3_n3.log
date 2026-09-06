@@ -1,0 +1,126 @@
+==================================================================
+ topology : swarm
+ run_n    : 3
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 19:13:36
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4  query_id=Q3
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 4 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[19:13:37] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > Identify customers impacted with delivery delays and send an email to them
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+     - swarm_seed_planning agent: 4,500 prompt / 141 completion tokens over 1 message(s)
+  -- swarm: wave 1 running ['predict'] concurrently (agent-requested; no readiness check)
+  >> tool_start predict_delivery_delays_tool (input=264 chars)
+  -- swarm: predict read_blackboard(email) -> miss (nothing posted yet)  -- swarm: predict read_blackboard(diagnose) -> miss (nothing posted yet)
+
+     - predict_delivery_delays_tool agent: 129,433 prompt / 9,667 completion tokens over 9 message(s)
+  << tool_end   predict_delivery_delays_tool done in 61.58s (output=19,014 chars, valid_json=True)
+  -- swarm: wave 2 running ['email'] concurrently (agent-requested; no readiness check)
+  >> tool_start email_alert_tool (input=424 chars)
+  -- swarm: email read_blackboard(predict) -> hit
+  -- swarm: email read_blackboard(simulate) -> miss (nothing posted yet)
+  -- swarm: email read_blackboard(email) -> miss (nothing posted yet)
+     - email_alert_tool agent: 46,621 prompt / 1,262 completion tokens over 11 message(s)
+  << tool_end   email_alert_tool done in 13.56s (output=2,512 chars, valid_json=True)
+  swarm: 2 wave(s) run; capabilities that posted a result: ['email', 'predict']
+
+============================================================
+[19:14:55] TURN 1 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "",
+  "email_alert_summary": "Posting generated customer email alerts because the user asked to identify impacted customers and send delay emails, and the predict output with delay... [214 characters]"
+}
+
+============================================================
+[19:14:55] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+
+============================================================
+[19:14:55] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "",
+  "email_alert_summary": "Posting generated customer email alerts because the user asked to identify impacted customers and send delay emails, and the predict output with delay... [214 characters]"
+}
+
+============================================================
+[19:14:55] SUMMARY — tools, tokens & cost  [model=gpt-5.4, tool calls=2]
+============================================================
+                        tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+predict_delivery_delays_tool     61.58s         264       19,014       True    129,433          9,667   139,100  $0.4686
+            email_alert_tool     13.56s         424        2,512       True     46,621          1,262    47,883  $0.1355
+          — Sub-agents TOTAL     75.14s                                None    176,054         10,929   186,983  $0.6041
+       — Orchestration turns                                           None      4,500            141     4,641  $0.0134
+          — Master (2 turns)      2.97s                                None      9,000            282     9,282  $0.0267
+               — GRAND TOTAL     78.11s                                None    189,554         11,352   200,906  $0.6442
+
+Persisted run_id: 4017d902-6404-4dd2-bf52-c5db7ff41bb5
+
+============================================================
+[19:14:55] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring 4017d902  topology=swarm  model=gpt-5.4
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  predict_summary                  rel=5.0 faith=5.0 safe=5.0
+  predict_row_insights_sample      rel=5.0 faith=5.0 safe=5.0
+  email_alert_tool                 rel=5.0 faith=5.0 safe=5.0
+  email_alert_summary              rel=2.0 faith=2.0 safe=5.0
+
+  capability blend:
+    predict              rel=5.00 faith=5.00 safe=5.00   (50% predict_summary / 50% predict_row_insights_sample)
+    email                rel=3.70 faith=3.70 safe=4.00   (10% email_alert_summary / 70% email_alert_tool / 20% email_alert_tool_raw)
+
+  SCOPE-ADJUSTED MEAN 4.36/5   (every implied capability was attempted -- same as judge mean)
+
+  JUDGE WEIGHTED MEAN 4.36/5   (relevance 4.35 x.45, faithfulness 4.35 x.45, safety 4.50 x.10)
+  scored 4 artifact(s) -> 2 capability score(s) -> quality_scores
+
+============================================================
+[19:15:02] RUN VALIDITY
+============================================================
+  topology           : swarm
+  coordinator prompt : swarm/master = 4b404fc6
+  plan presented     : NO
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 2 / 2
+  missing tools      : []
+  empty results      : none
+  dependency order   : respected — every capability waited for its inputs
+  scheduling         : 100% of achievable overlap  (0 pair(s) left unoverlapped)
+  coordinator idle   : 0.01s spent deciding between waves (not a scheduling fault)
+  span               : 75.14s vs critical path 75.13s
+
+  execution timeline:
+    turn 1 start    0.00
+    ..... 2.97s model reasoning (no tool running) .....
+    predict         2.97 ->   64.54
+    email          64.55 ->   78.11
+    turn 1 end     78.11
+    turn 2 start   78.11
+    turn 2 end     78.11   (no tools this turn)
+    run end        78.11
+  turn-1 plan text   : (none stored — no plan was produced)
+
+  ATTENTION:
+    - no plan was presented on turn 1 — the 2-turn plan/confirm flow did not engage; plan_presented is a measured comparison field.
+
+finished : 2026-09-06 19:15:02

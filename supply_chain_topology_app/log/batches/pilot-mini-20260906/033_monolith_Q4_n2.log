@@ -1,0 +1,151 @@
+==================================================================
+ topology : monolith
+ run_n    : 2
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 15:21:41
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4-mini  query_id=Q4
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 0 derived file(s), 0 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[15:21:42] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > What will be the delivery impact if there is a storm in the east today?
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+  >> tool_start simulate_order_delays (input=70 chars)
+  << tool_end   simulate_order_delays done in 0.00s (output=246 chars, valid_json=True)
+  >> tool_start predict_delivery_delays (input=142 chars)
+  << tool_end   predict_delivery_delays done in 0.89s (output=70,498 chars, valid_json=True)
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+
+============================================================
+[15:22:04] TURN 1 — master response
+============================================================
+{
+  "total_orders_emailed": 0,
+  "template_breakdown": "",
+  "chat_response": "I can only simulate delivery impact after the prediction pipeline runs first. I\u2019ve now completed the prediction step for today\u2019s file, so the east-reg... [253 characters]",
+  "simulate_summary": "Prediction completed, but the simulation step was attempted too early and returned: \"Prediction has not completed yet. Run predict_delivery_delays first.\"",
+  "recommendation_summary": "",
+  "email_alert_summary": "",
+  "predict_summary": "### Cross-Dimensional Delay Insights\n\nToday\u2019s delayed orders are concentrated in long-haul, weather-sensitive routes where urgency and load pressure s... [1946 characters]",
+  "delayed_orders": "<50 item(s)>",
+  "diagnosis_summary": "",
+  "high_risk_patterns": "<0 item(s)>",
+  "comparison": "<0 item(s)>",
+  "simulations": "<0 item(s)>",
+  "recommended_actions": "<0 item(s)>",
+  "content": "<0 item(s)>"
+}
+
+============================================================
+[15:22:04] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+  >> tool_start simulate_order_delays (input=70 chars)
+  << tool_end   simulate_order_delays done in 0.03s (output=12,249 chars, valid_json=False)
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+  .. still writing (24s since the last tool call)
+
+============================================================
+[15:22:45] TURN 2 — master response
+============================================================
+{
+  "total_orders_emailed": 0,
+  "template_breakdown": "",
+  "chat_response": "",
+  "simulate_summary": "**stormy** weather in the **east** pushes many delayed orders into worse buckets, with the simulated mix shifting from **122 Short (1-2h)** / **97 Med... [439 characters]",
+  "recommendation_summary": "",
+  "email_alert_summary": "",
+  "predict_summary": "### Cross-Dimensional Delay Insights\n\nToday\u2019s delayed orders are concentrated in long-haul, weather-sensitive routes where urgency and load pressure s... [1946 characters]",
+  "delayed_orders": "<50 item(s)>",
+  "diagnosis_summary": "",
+  "high_risk_patterns": "<0 item(s)>",
+  "comparison": "<0 item(s)>",
+  "simulations": "<40 item(s)>",
+  "recommended_actions": "<0 item(s)>",
+  "content": "<0 item(s)>"
+}
+
+============================================================
+[15:22:45] SUMMARY — tools, tokens & cost  [model=gpt-5.4-mini, tool calls=3]
+============================================================
+                   tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+  simulate_order_delays      0.00s          70          246       True          0              0         0  $0.0000
+predict_delivery_delays      0.89s         142       70,498       True          0              0         0  $0.0000
+  simulate_order_delays      0.03s          70       12,249      False          0              0         0  $0.0000
+     — Sub-agents TOTAL      0.92s                                None          0              0         0  $0.0000
+     — Master (2 turns)     41.18s                                None    160,071         13,365   173,436  $0.1802
+          — GRAND TOTAL     63.40s                                None    160,071         13,365   173,436  $0.1802
+
+Persisted run_id: 6394848b-2759-4314-8c8e-78bc9687ce9a
+
+============================================================
+[15:22:45] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring 6394848b  topology=monolith  model=gpt-5.4-mini
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  predict_summary                  rel=5.0 faith=5.0 safe=5.0
+  predict_row_insights_sample      rel=5.0 faith=5.0 safe=5.0
+  simulate_row_reasons_sample      rel=4.0 faith=5.0 safe=5.0
+  simulate_narrative               rel=5.0 faith=5.0 safe=5.0
+  coordinator_narrative            rel=4.0 faith=5.0 safe=5.0
+
+  capability blend:
+    predict              rel=5.00 faith=5.00 safe=5.00   (50% predict_summary / 50% predict_row_insights_sample)
+    simulate             rel=4.20 faith=5.00 safe=5.00   (20% simulate_narrative / 80% simulate_row_reasons_sample)
+    coordinator_narrative rel=4.00 faith=5.00 safe=5.00   (100% coordinator_narrative)
+
+  SCOPE-ADJUSTED MEAN 4.73/5   (every implied capability was attempted -- same as judge mean)
+
+  JUDGE WEIGHTED MEAN 4.73/5   (relevance 4.40 x.45, faithfulness 5.00 x.45, safety 5.00 x.10)
+  scored 5 artifact(s) -> 3 capability score(s) -> quality_scores
+
+============================================================
+[15:22:54] RUN VALIDITY
+============================================================
+  topology           : monolith
+  coordinator prompt : monolith/master = b89e77c6
+  plan presented     : yes
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 2 / 3
+  missing tools      : []
+  empty results      : none
+  dependency order   : 1 VIOLATION(S)
+    ! delay_simulations_tool started at 1.86s, before predict_delivery_delays_tool finished at 4.14s
+  scheduling         : 98% of achievable overlap  (0 pair(s) left unoverlapped)
+  coordinator idle   : 21.31s spent deciding between waves (not a scheduling fault)
+  span               : 22.22s vs critical path 0.89s
+
+  execution timeline:
+    turn 1 start    0.00
+    ..... 1.86s model reasoning (no tool running) .....
+    simulate        1.86 ->    1.86
+    ....... 1.39s idle .......
+    predict         3.26 ->    4.14
+    ..... 18.03s model composing answer .....
+    turn 1 end     22.17
+    turn 2 start   22.17
+    ....... 1.88s idle .......
+    simulate       24.05 ->   24.08
+    ..... 39.32s model composing answer .....
+    turn 2 end     63.40
+    run end        63.40
+
+  turn-1 plan text (stored verbatim, T94):
+    | I can only simulate delivery impact after the prediction pipeline runs first. I’ve now completed the prediction step for today’s file, so the east-region storm scenario can be analyzed from the predicted delayed orders if you want me to proceed further.
+
+  ATTENTION:
+    - dependency order violated (1): a capability acted before the work it consumes had finished. Recoverable via upstream_missing, but it is the orchestration quality being measured — see run.dependency_violations_json.
+
+finished : 2026-09-06 15:22:54

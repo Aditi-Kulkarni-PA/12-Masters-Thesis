@@ -1,0 +1,133 @@
+==================================================================
+ topology : swarm
+ run_n    : 1
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 04:46:19
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4-nano  query_id=Q5
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 5 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[04:46:21] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > Find out which customer orders will be late and what are the reasons for the delay
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+     - swarm_seed_planning agent: 4,504 prompt / 306 completion tokens over 1 message(s)
+  -- swarm: wave 1 running ['diagnose', 'predict'] concurrently (agent-requested; no readiness check)
+  >> tool_start predict_delivery_delays_tool (input=272 chars)
+  >> tool_start diagnose_delay_patterns_tool (input=272 chars)
+     - diagnose_delay_patterns_tool agent: 13,433 prompt / 223 completion tokens over 5 message(s)
+  << tool_end   diagnose_delay_patterns_tool done in 6.15s (output=132 chars, valid_json=True)
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+  .. still writing (25s since the last tool call)
+  .. still writing (45s since the last tool call)
+  .. still writing (65s since the last tool call)
+     - predict_delivery_delays_tool agent: 68,908 prompt / 12,947 completion tokens over 5 message(s)
+  << tool_end   predict_delivery_delays_tool done in 79.91s (output=23,073 chars, valid_json=True)
+  !! swarm: diagnose did not post to the blackboard in wave 1 despite the write mandate -- write-compliance miss
+  -- swarm: wave 2 running ['predict'] concurrently (agent-requested; no readiness check)
+  >> tool_start predict_delivery_delays_tool (input=440 chars)
+     - predict_delivery_delays_tool agent: 69,049 prompt / 13,157 completion tokens over 5 message(s)
+  << tool_end   predict_delivery_delays_tool done in 77.11s (output=23,988 chars, valid_json=True)
+  swarm: 2 wave(s) run; capabilities that posted a result: ['predict']
+
+============================================================
+[04:49:01] TURN 1 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[04:49:01] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+
+============================================================
+[04:49:01] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[04:49:01] SUMMARY — tools, tokens & cost  [model=gpt-5.4-nano, tool calls=3]
+============================================================
+                        tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+predict_delivery_delays_tool     79.91s         272       23,073       True     68,908         12,947    81,855  $0.0300
+diagnose_delay_patterns_tool      6.15s         272          132       True     13,433            223    13,656  $0.0030
+predict_delivery_delays_tool     77.11s         440       23,988       True     69,049         13,157    82,206  $0.0303
+          — Sub-agents TOTAL    163.17s                                None    151,390         26,327   177,717  $0.0632
+       — Orchestration turns                                           None      4,504            306     4,810  $0.0013
+          — Master (2 turns)      3.18s                                None      9,008            612     9,620  $0.0026
+               — GRAND TOTAL    160.20s                                None    164,902         27,245   192,147  $0.0670
+
+Persisted run_id: 80ad69db-49c0-45af-870a-b30e7a1e1cda
+
+============================================================
+[04:49:01] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring 80ad69db  topology=swarm  model=gpt-5.4-nano
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  predict_summary                  rel=5.0 faith=5.0 safe=5.0
+  predict_row_insights_sample      rel=5.0 faith=5.0 safe=5.0
+  diagnose_delay_patterns_tool     rel=1.0 faith=5.0 safe=5.0
+
+  capability blend:
+    predict              rel=5.00 faith=5.00 safe=5.00   (50% predict_summary / 50% predict_row_insights_sample)
+    diagnose             rel=0.80 faith=4.00 safe=4.00   (80% diagnose_delay_patterns_tool / 20% diagnose_delay_patterns_tool_raw)
+
+  SCOPE-ADJUSTED MEAN 3.78/5   (every implied capability was attempted -- same as judge mean)
+
+  JUDGE WEIGHTED MEAN 3.78/5   (relevance 2.90 x.45, faithfulness 4.50 x.45, safety 4.50 x.10)
+  scored 3 artifact(s) -> 2 capability score(s) -> quality_scores
+
+============================================================
+[04:49:06] RUN VALIDITY
+============================================================
+  topology           : swarm
+  coordinator prompt : swarm/master = 4b404fc6
+  plan presented     : NO
+  input path source  : DERIVED from query (good)
+  run status         : partial
+  tools expected/ran : 2 / 3
+  missing tools      : []
+  empty results      : ['diagnose_delay_patterns_tool']
+  dependency order   : 1 VIOLATION(S)
+    ! diagnose_delay_patterns_tool started at 0.01s, before predict_delivery_delays_tool finished at 79.91s
+  scheduling         : 55% of achievable overlap  (0 pair(s) left unoverlapped)
+  coordinator idle   : 0.0s spent deciding between waves (not a scheduling fault)
+  span               : 157.02s vs critical path 86.05s
+
+  execution timeline:
+    turn 1 start    0.00
+    ..... 3.18s model reasoning (no tool running) .....
+    predict         3.18 ->   83.09 +
+    diagnose        3.19 ->    9.34 +-- 2 at once
+    predict        83.09 ->  160.20
+    turn 1 end    160.20
+    turn 2 start  160.20
+    turn 2 end    160.20   (no tools this turn)
+    run end       160.20
+  turn-1 plan text   : (none stored — no plan was produced)
+
+  ATTENTION:
+    - no plan was presented on turn 1 — the 2-turn plan/confirm flow did not engage; plan_presented is a measured comparison field.
+    - produced no data: diagnose_delay_patterns_tool — returned valid JSON with an empty result list. Check whether a dependency was missing at call time.
+    - dependency order violated (1): a capability acted before the work it consumes had finished. Recoverable via upstream_missing, but it is the orchestration quality being measured — see run.dependency_violations_json.
+
+finished : 2026-09-06 04:49:06

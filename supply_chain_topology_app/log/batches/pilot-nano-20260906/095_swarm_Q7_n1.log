@@ -1,0 +1,123 @@
+==================================================================
+ topology : swarm
+ run_n    : 1
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 05:01:02
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4-nano  query_id=Q7
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 4 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[05:01:03] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > What patterns are driving today's delays, and would that get worse if a storm hit the East?
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+     - swarm_seed_planning agent: 4,506 prompt / 315 completion tokens over 1 message(s)
+  -- swarm: wave 1 running ['diagnose', 'simulate'] concurrently (agent-requested; no readiness check)
+  >> tool_start diagnose_delay_patterns_tool (input=281 chars)
+  >> tool_start delay_simulations_tool (input=281 chars)
+     - delay_simulations_tool agent: 159,240 prompt / 7,691 completion tokens over 9 message(s)
+  << tool_end   delay_simulations_tool done in 55.58s (output=14,822 chars, valid_json=True)
+     - diagnose_delay_patterns_tool agent: 121,925 prompt / 9,240 completion tokens over 9 message(s)
+  << tool_end   diagnose_delay_patterns_tool done in 59.79s (output=16,091 chars, valid_json=True)
+  swarm: 1 wave(s) run; capabilities that posted a result: ['diagnose', 'simulate']
+
+============================================================
+[05:02:06] TURN 1 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "Posted storm-vs-today simulation for East region by changing weather_condition to stormy and re-scoring severity using historical patterns. Includes t... [222 characters]",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[05:02:06] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+
+============================================================
+[05:02:06] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "Posted storm-vs-today simulation for East region by changing weather_condition to stormy and re-scoring severity using historical patterns. Includes t... [222 characters]",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[05:02:07] SUMMARY — tools, tokens & cost  [model=gpt-5.4-nano, tool calls=2]
+============================================================
+                        tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+diagnose_delay_patterns_tool     59.79s         281       16,091       True    121,925          9,240   131,165  $0.0359
+      delay_simulations_tool     55.58s         281       14,822       True    159,240          7,691   166,931  $0.0415
+          — Sub-agents TOTAL    115.37s                                None    281,165         16,931   298,096  $0.0774
+       — Orchestration turns                                           None      4,506            315     4,821  $0.0013
+          — Master (2 turns)      3.16s                                None      9,012            630     9,642  $0.0026
+               — GRAND TOTAL     62.95s                                None    294,683         17,876   312,559  $0.0813
+
+Persisted run_id: 80b0f44c-c459-4749-a4b9-298b28c957e3
+
+============================================================
+[05:02:07] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring 80b0f44c  topology=swarm  model=gpt-5.4-nano
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  simulate_row_reasons_sample      rel=4.0 faith=5.0 safe=5.0
+  diagnose_delay_patterns_tool     rel=5.0 faith=5.0 safe=5.0
+  simulate_narrative               rel=3.0 faith=4.0 safe=5.0
+
+  capability blend:
+    diagnose             rel=4.00 faith=4.00 safe=4.00   (80% diagnose_delay_patterns_tool / 20% diagnose_delay_patterns_tool_raw)
+    simulate             rel=3.80 faith=4.80 safe=5.00   (20% simulate_narrative / 80% simulate_row_reasons_sample)
+
+  SCOPE-ADJUSTED MEAN 2.79/5   (zero-filled, implied but never attempted: predict)
+
+  JUDGE WEIGHTED MEAN 4.19/5   (relevance 3.90 x.45, faithfulness 4.40 x.45, safety 4.50 x.10)
+  scored 3 artifact(s) -> 2 capability score(s) -> quality_scores
+
+============================================================
+[05:02:11] RUN VALIDITY
+============================================================
+  topology           : swarm
+  coordinator prompt : swarm/master = 4b404fc6
+  plan presented     : NO
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 3 / 2
+  missing tools      : ["predict_delivery_delays_tool"]
+  empty results      : none
+  dependency order   : 2 VIOLATION(S)
+    ! diagnose_delay_patterns_tool ran but predict_delivery_delays_tool never did
+    ! delay_simulations_tool ran but predict_delivery_delays_tool never did
+  scheduling         : 100% of achievable overlap  (0 pair(s) left unoverlapped)
+  coordinator idle   : 0.0s spent deciding between waves (not a scheduling fault)
+  span               : 59.79s vs critical path 59.79s
+
+  execution timeline:
+    turn 1 start    0.00
+    ..... 3.16s model reasoning (no tool running) .....
+    diagnose        3.16 ->   62.95 +
+    simulate        3.17 ->   58.75 +-- 2 at once
+    turn 1 end     62.95
+    turn 2 start   62.95
+    turn 2 end     62.95   (no tools this turn)
+    run end        62.95
+  turn-1 plan text   : (none stored — no plan was produced)
+
+  ATTENTION:
+    - expected tools never ran: ["predict_delivery_delays_tool"]
+    - no plan was presented on turn 1 — the 2-turn plan/confirm flow did not engage; plan_presented is a measured comparison field.
+    - dependency order violated (2): a capability acted before the work it consumes had finished. Recoverable via upstream_missing, but it is the orchestration quality being measured — see run.dependency_violations_json.
+
+finished : 2026-09-06 05:02:11

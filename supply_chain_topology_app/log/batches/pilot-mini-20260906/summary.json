@@ -1,0 +1,17 @@
+{
+  "batch_id": "pilot-mini-20260906",
+  "log_dir": "/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/supply_chain_topology_app/log/batches/pilot-mini-20260906",
+  "planned": 1,
+  "succeeded": [
+    {
+      "topology": "swarm",
+      "query_id": "Q5",
+      "run_n": 2,
+      "log": "001_swarm_Q5_n2.log"
+    }
+  ],
+  "failed": [],
+  "timed_out": [],
+  "remaining": 0,
+  "finished_at": "2026-09-06T15:37:15.084033+00:00"
+}

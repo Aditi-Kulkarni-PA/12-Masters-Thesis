@@ -517,7 +517,15 @@ def _merge_all_turns(all_turns_json: str | None) -> dict[str, str | list]:
             if not val:
                 continue
             cur = merged.get(field)
-            if cur is None or len(val) > len(cur):
+            if cur is None:
+                merged[field] = val
+            elif isinstance(val, (int, float)) and isinstance(cur, (int, float)):
+                # total_orders_emailed (EmailCounts) is the one numeric _MERGE_FIELDS
+                # entry -- "longest wins" is meaningless for a count, so this branch
+                # keeps the larger value instead of calling len() on an int (R60).
+                if val > cur:
+                    merged[field] = val
+            elif hasattr(val, "__len__") and hasattr(cur, "__len__") and len(val) > len(cur):
                 merged[field] = val
 
     return merged

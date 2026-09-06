@@ -29,4 +29,28 @@ cd "$SCRIPT_DIR/.."   # repo root: pyproject.toml, uv.lock and .env live there
 # already in the store).
 export UV_PROJECT_ENVIRONMENT="$PWD/.venv"
 
+# Whole-batch start/end/duration banner -- separate from execute_topology.sh's own
+# per-run "started/finished" timestamps, which cover one run each. SECONDS is bash's
+# built-in elapsed-time counter, reset just before the batch starts. The command runs
+# with -e temporarily off so a failing/interrupted batch still prints its end time and
+# duration instead of the script dying silently mid-batch; the original exit code is
+# preserved and returned at the very end.
+BATCH_START="$(date '+%Y-%m-%d %H:%M:%S')"
+echo "=================================================================="
+echo " batch started : $BATCH_START"
+echo "=================================================================="
+SECONDS=0
+
+set +e
 uv run --env-file .env python supply_chain_topology_app/run_experiment.py "$@"
+rc=$?
+set -e
+
+elapsed=$SECONDS
+printf -v DURATION_FMT '%02d:%02d:%02d' $((elapsed/3600)) $((elapsed%3600/60)) $((elapsed%60))
+echo "=================================================================="
+echo " batch started  : $BATCH_START"
+echo " batch finished : $(date '+%Y-%m-%d %H:%M:%S')"
+echo " total duration : $DURATION_FMT"
+echo "=================================================================="
+exit $rc

@@ -1,0 +1,205 @@
+==================================================================
+ topology : swarm
+ run_n    : 3
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 19:41:49
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4  query_id=Q2
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 4 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[19:41:50] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > Which of today's orders are predicted to be delayed?
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+     - swarm_seed_planning agent: 4,497 prompt / 147 completion tokens over 1 message(s)
+  -- swarm: wave 1 running ['predict'] concurrently (agent-requested; no readiness check)
+  >> tool_start predict_delivery_delays_tool (input=282 chars)
+  -- swarm: predict read_blackboard(diagnose) -> miss (nothing posted yet)  -- swarm: predict read_blackboard(simulate) -> miss (nothing posted yet)
+
+  -- swarm: predict read_blackboard(recommend) -> miss (nothing posted yet)
+  -- swarm: predict read_blackboard(email) -> miss (nothing posted yet)
+     - predict_delivery_delays_tool agent: 183,515 prompt / 10,059 completion tokens over 13 message(s)
+  << tool_end   predict_delivery_delays_tool done in 66.88s (output=18,924 chars, valid_json=True)
+  -- swarm: wave 2 running ['diagnose', 'email', 'simulate'] concurrently (agent-requested; no readiness check)
+  >> tool_start diagnose_delay_patterns_tool (input=284 chars)
+  >> tool_start delay_simulations_tool (input=463 chars)
+  >> tool_start email_alert_tool (input=339 chars)
+  -- swarm: diagnose read_blackboard(predict) -> hit
+  -- swarm: email read_blackboard(predict) -> hit
+  -- swarm: simulate read_blackboard(predict) -> hit
+  -- swarm: email read_blackboard(diagnose) -> miss (nothing posted yet)  -- swarm: email read_blackboard(simulate) -> miss (nothing posted yet)  -- swarm: email read_blackboard(recommend) -> miss (nothing posted yet)
+
+  -- swarm: email read_blackboard(email) -> miss (nothing posted yet)
+
+  -- swarm: diagnose read_blackboard(recommend) -> miss (nothing posted yet)
+  -- swarm: diagnose read_blackboard(email) -> miss (nothing posted yet)
+  -- swarm: diagnose read_blackboard(simulate) -> miss (nothing posted yet)
+     - delay_simulations_tool agent: 28,289 prompt / 306 completion tokens over 7 message(s)
+  << tool_end   delay_simulations_tool done in 9.36s (output=18 chars, valid_json=True)
+     - email_alert_tool agent: 47,561 prompt / 1,574 completion tokens over 11 message(s)
+  << tool_end   email_alert_tool done in 16.70s (output=2,512 chars, valid_json=True)
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+  .. still writing (24s since the last tool call)
+  .. still writing (44s since the last tool call)
+     - diagnose_delay_patterns_tool agent: 133,315 prompt / 10,684 completion tokens over 13 message(s)
+  << tool_end   diagnose_delay_patterns_tool done in 65.65s (output=17,973 chars, valid_json=True)
+  -- swarm: wave 3 running ['diagnose', 'email', 'recommend', 'simulate'] concurrently (agent-requested; no readiness check)
+  >> tool_start diagnose_delay_patterns_tool (input=338 chars)
+  >> tool_start delay_simulations_tool (input=322 chars)
+  >> tool_start recommendation_tool (input=214 chars)
+  >> tool_start email_alert_tool (input=167 chars)
+  -- swarm: email read_blackboard(predict) -> hit
+  -- swarm: diagnose read_blackboard(predict) -> hit
+  -- swarm: recommend read_blackboard(diagnose) -> hit
+  -- swarm: recommend read_blackboard(predict) -> hit
+  -- swarm: simulate read_blackboard(predict) -> hit
+  -- swarm: email read_blackboard(simulate) -> hit  -- swarm: email read_blackboard(recommend) -> miss (nothing posted yet)  -- swarm: email read_blackboard(email) -> hit
+
+
+  -- swarm: email read_blackboard(diagnose) -> hit
+  -- swarm: diagnose read_blackboard(recommend) -> miss (nothing posted yet)  -- swarm: diagnose read_blackboard(simulate) -> hit  -- swarm: diagnose read_blackboard(email) -> hit
+
+
+  -- swarm: simulate read_blackboard(recommend) -> miss (nothing posted yet)
+     - delay_simulations_tool agent: 36,415 prompt / 240 completion tokens over 9 message(s)
+  << tool_end   delay_simulations_tool done in 11.95s (output=18 chars, valid_json=True)
+     - email_alert_tool agent: 68,167 prompt / 1,383 completion tokens over 11 message(s)
+  << tool_end   email_alert_tool done in 13.69s (output=2,512 chars, valid_json=True)
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+  -- swarm: recommend read_blackboard(simulate) -> hit  -- swarm: recommend read_blackboard(email) -> hit
+
+  .. still writing (25s since the last tool call)
+     - diagnose_delay_patterns_tool agent: 112,261 prompt / 10,530 completion tokens over 11 message(s)
+  << tool_end   diagnose_delay_patterns_tool done in 55.00s (output=17,934 chars, valid_json=True)
+  .. still writing (45s since the last tool call)
+     - recommendation_tool agent: 87,660 prompt / 7,841 completion tokens over 9 message(s)
+  << tool_end   recommendation_tool done in 64.45s (output=13,085 chars, valid_json=True)
+  -- swarm: wave 4 running ['recommend'] concurrently (agent-requested; no readiness check)
+  >> tool_start recommendation_tool (input=222 chars)
+  -- swarm: recommend read_blackboard(diagnose) -> hit
+  -- swarm: recommend read_blackboard(predict) -> hit
+  -- swarm: recommend read_blackboard(simulate) -> hit
+  -- swarm: recommend read_blackboard(email) -> hit
+     - recommendation_tool agent: 87,612 prompt / 8,710 completion tokens over 9 message(s)
+  << tool_end   recommendation_tool done in 58.77s (output=15,008 chars, valid_json=True)
+  swarm: 4 wave(s) run; capabilities that posted a result: ['diagnose', 'email', 'predict', 'recommend', 'simulate']
+
+============================================================
+[19:46:08] TURN 1 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "Posting simulation result. The user did not specify an actual what-if change, and the simulation tool returned an error because at least one change is... [271 characters]",
+  "recommendation_summary": "Post optimization recommendations to the blackboard because predict and diagnose outputs are already available, so recommend is now ready to run.",
+  "email_alert_summary": "Posting generated customer email alerts to the blackboard because predict output is already available and email depends on it and is now ready to run."
+}
+
+============================================================
+[19:46:08] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+
+============================================================
+[19:46:08] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "Posting simulation result. The user did not specify an actual what-if change, and the simulation tool returned an error because at least one change is... [271 characters]",
+  "recommendation_summary": "Post optimization recommendations to the blackboard because predict and diagnose outputs are already available, so recommend is now ready to run.",
+  "email_alert_summary": "Posting generated customer email alerts to the blackboard because predict output is already available and email depends on it and is now ready to run."
+}
+
+============================================================
+[19:46:09] SUMMARY — tools, tokens & cost  [model=gpt-5.4, tool calls=9]
+============================================================
+                        tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+predict_delivery_delays_tool     66.88s         282       18,924       True    183,515         10,059   193,574  $0.6097
+diagnose_delay_patterns_tool     65.65s         284       17,973       True    133,315         10,684   143,999  $0.4935
+      delay_simulations_tool      9.36s         463           18       True     28,289            306    28,595  $0.0753
+            email_alert_tool     16.70s         339        2,512       True     47,561          1,574    49,135  $0.1425
+diagnose_delay_patterns_tool     55.00s         338       17,934       True    112,261         10,530   122,791  $0.4386
+      delay_simulations_tool     11.95s         322           18       True     36,415            240    36,655  $0.0946
+         recommendation_tool     64.45s         214       13,085       True     87,660          7,841    95,501  $0.3368
+            email_alert_tool     13.69s         167        2,512       True     68,167          1,383    69,550  $0.1912
+         recommendation_tool     58.77s         222       15,008       True     87,612          8,710    96,322  $0.3497
+          — Sub-agents TOTAL    362.45s                                None    784,795         51,327   836,122  $2.7319
+       — Orchestration turns                                           None      4,497            147     4,644  $0.0134
+          — Master (2 turns)      2.41s                                None      8,994            294     9,288  $0.0269
+               — GRAND TOTAL    258.21s                                None    798,286         51,768   850,054  $2.7722
+
+Persisted run_id: 8857fff2-e729-4971-b5a5-461f664a512d
+
+============================================================
+[19:46:09] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring 8857fff2  topology=swarm  model=gpt-5.4
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  predict_summary                  rel=5.0 faith=5.0 safe=5.0
+  predict_row_insights_sample      rel=5.0 faith=5.0 safe=5.0
+  diagnose_delay_patterns_tool     rel=5.0 faith=5.0 safe=5.0
+  recommendation_tool              rel=5.0 faith=5.0 safe=5.0
+  recommendation_summary           rel=2.0 faith=4.0 safe=5.0
+  email_alert_tool                 rel=5.0 faith=5.0 safe=5.0
+  email_alert_summary              rel=2.0 faith=2.0 safe=5.0
+  simulate_narrative               rel=3.0 faith=5.0 safe=5.0
+
+  capability blend:
+    predict              rel=5.00 faith=5.00 safe=5.00   (50% predict_summary / 50% predict_row_insights_sample)
+    diagnose             rel=4.00 faith=4.00 safe=4.00   (80% diagnose_delay_patterns_tool / 20% diagnose_delay_patterns_tool_raw)
+    simulate             rel=0.60 faith=1.00 safe=1.00   (20% simulate_narrative / 80% simulate_row_reasons_sample)
+    recommendation       rel=3.70 faith=3.90 safe=4.00   (10% recommendation_summary / 70% recommendation_tool / 20% recommendation_tool_raw)
+    email                rel=3.70 faith=3.70 safe=4.00   (10% email_alert_summary / 70% email_alert_tool / 20% email_alert_tool_raw)
+
+  SCOPE-ADJUSTED MEAN 3.47/5   (every implied capability was attempted -- same as judge mean)
+
+  JUDGE WEIGHTED MEAN 3.47/5   (relevance 3.40 x.45, faithfulness 3.52 x.45, safety 3.60 x.10)
+  scored 8 artifact(s) -> 5 capability score(s) -> quality_scores
+
+============================================================
+[19:46:23] RUN VALIDITY
+============================================================
+  topology           : swarm
+  coordinator prompt : swarm/master = 4b404fc6
+  plan presented     : NO
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 1 / 9
+  missing tools      : []
+  empty results      : ['delay_simulations_tool', 'delay_simulations_tool']
+  dependency order   : respected — every capability waited for its inputs
+  scheduling         : 77% of achievable overlap  (0 pair(s) left unoverlapped)
+  coordinator idle   : 0.03s spent deciding between waves (not a scheduling fault)
+  span               : 255.79s vs critical path 196.98s
+
+  execution timeline:
+    turn 1 start    0.00
+    ..... 2.42s model reasoning (no tool running) .....
+    predict         2.42 ->   69.30
+    diagnose       69.31 ->  134.96 +
+    simulate       69.32 ->   78.68 |-- 3 at once
+    email          69.33 ->   86.03 +
+    diagnose      134.97 ->  189.97 +
+    simulate      134.98 ->  146.93 |
+    recommend     134.99 ->  199.43 |-- 4 at once
+    email         134.99 ->  148.68 +
+    recommend     199.44 ->  258.21
+    turn 1 end    258.21
+    turn 2 start  258.21
+    turn 2 end    258.21   (no tools this turn)
+    run end       258.21
+  turn-1 plan text   : (none stored — no plan was produced)
+  (not a problem: delay_simulations_tool, delay_simulations_tool returned empty, but the query never implied it — expected on a topology that runs every capability regardless of query)
+
+  ATTENTION:
+    - no plan was presented on turn 1 — the 2-turn plan/confirm flow did not engage; plan_presented is a measured comparison field.
+
+finished : 2026-09-06 19:46:24

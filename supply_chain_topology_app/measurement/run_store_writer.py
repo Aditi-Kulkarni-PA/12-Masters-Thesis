@@ -167,6 +167,69 @@ def _consume_path_fallback_marker(run_started_at: datetime) -> bool:
     _FALLBACK_MARKER.unlink(missing_ok=True)
     return fired_during_this_run
 
+def write_failed_run(
+    *,
+    query_id: str,
+    topology: str,
+    run_n: int,
+    model: str,
+    failure_category: str,
+    log_path: str | None = None,
+    run_phase: str | None = None,
+    batch_id: str | None = None,
+    execution_order: int | None = None,
+    db_path: str = DB_PATH,
+) -> str:
+    """Record a run that never completed. Returns the new run_id.
+
+    A run killed by an error or a timeout never reaches write_run(), so before this
+    existed it left no trace in the store at all. Every rate computed from the store
+    then used a denominator that silently excluded it, and a topology that failed
+    outright scored better than one that completed poorly. Dynamic Graph is the case
+    that exposed this: it produced no result for the highest-complexity queries, and
+    its completion rate still read as 1.00 because the missing runs were invisible.
+
+    The row carries only what the harness knows: which combination was attempted, that
+    it did not complete, and where its log is. No cost, token or quality figures are
+    written, because none were produced. They stay NULL rather than 0, so a failed run
+    never contributes a false zero to a cost or quality average.
+
+    config_hash holds a sentinel rather than a real hash. The run never established a
+    configuration, and a sentinel that cannot be mistaken for a hash is more honest
+    than a fabricated one.
+
+    Re-running the same combination replaces the failed row rather than adding a second
+    one, so a batch retried after a fix does not accumulate duplicates.
+    """
+    run_id = str(uuid.uuid4())
+    migrate_schema(db_path)
+
+    conn = sqlite3.connect(db_path)
+    try:
+        # Clear any earlier failed attempt at the same combination. Completed runs are
+        # left untouched: only a row that itself records a non-completion is replaced.
+        conn.execute(
+            "DELETE FROM run WHERE topology = ? AND query_id = ? AND run_n = ? "
+            "AND model = ? AND run_status = 'failed'",
+            (topology, query_id, run_n, model),
+        )
+        conn.execute(
+            "INSERT INTO run (run_id, query_id, topology, run_n, model, config_hash, "
+            "started_at, run_status, failure_category, log_path, run_phase, batch_id, "
+            "execution_order, capture_version, path_fallback_used) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, 'failed', ?, ?, ?, ?, ?, ?, 0)",
+            (run_id, query_id, topology, run_n, model,
+             "unavailable:run_did_not_complete",
+             datetime.now(timezone.utc).isoformat(),
+             failure_category, log_path, run_phase, batch_id, execution_order,
+             CAPTURE_VERSION),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return run_id
+
+
 def write_run(
     *,
     recorder,
@@ -227,6 +290,20 @@ def write_run(
                 (topology, query_id),
             ).fetchone()
             run_n = row[0] + 1
+
+        # Clear an earlier non-completion at this same slot, matching what
+        # write_failed_run() already does when a failed run is re-recorded. Without this
+        # a retry after a timeout left both rows in the store: the original 'failed' row
+        # and the new completed one, so the slot counted twice and the tier's run total
+        # exceeded the grid. Only rows that record a non-completion are removed; a
+        # completed run is never replaced by another completed run, so a genuine
+        # repetition at the same run_n still has to be deliberate.
+        conn.execute(
+            "DELETE FROM run WHERE topology = ? AND query_id = ? AND run_n = ? "
+            "AND model = ? AND run_status = 'failed'",
+            (topology, query_id, run_n, model),
+        )
+
         run_finished_at = datetime.now(timezone.utc)
         run_started_at = run_finished_at - timedelta(seconds=wall_time_s)  # approximation, fine for this check
         path_fallback_used = _consume_path_fallback_marker(run_started_at)        
@@ -269,10 +346,16 @@ def write_run(
                           for raw, tc in zip(recorder.tool_calls, tool_calls)]
         empty_tools = {tc["tool_name"] for tc, e in zip(tool_calls, empty_by_index) if e}
         fabricated = _detect_fabricated_narrative(empty_tools, final_answer)
+        # Turn-1-relative anchor, computed here (not just below at its storage site) so
+        # check_dependencies() can shift its violation "detail" text into the same frame
+        # the execution timeline displays in -- see dependencies.py's docstring (6-Sep-26
+        # fix). None when no tool ran at all; check_dependencies() defaults to 0.0 then.
+        _tool_base_offset_s = (round(recorder._first_start() - run_t0, 3)
+                               if run_t0 is not None and recorder.tool_calls else None)
         # T97: did each capability wait for what it consumes? Compares a dependent's
         # START against its prerequisite's END, so concurrent dispatch is judged
         # correctly rather than passing on start-order alone.
-        dep_violations = check_dependencies(tool_calls)
+        dep_violations = check_dependencies(tool_calls, base_offset_s=_tool_base_offset_s or 0.0)
         # A tool the query never implied returning nothing is not evidence of a defect --
         # it is the expected, correct behaviour on a topology that runs every capability
         # regardless of query (Static-Graph DAG's documented design: e.g. a "predict,
@@ -329,8 +412,7 @@ def write_run(
                 json.dumps(env_config) if env_config else None,
                 json.dumps(turn_times) if turn_times else None,
                 str(log_path) if log_path else None,
-                (round(recorder._first_start() - run_t0, 3)
-                 if run_t0 is not None and recorder.tool_calls else None),
+                _tool_base_offset_s,
                 json.dumps([_turn_answer_text(r) for r in responses]),
                 orch_usage["prompt_tokens"] or None,
                 orch_usage["completion_tokens"] or None,

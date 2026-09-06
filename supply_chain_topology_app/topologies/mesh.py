@@ -257,7 +257,18 @@ def _build_agents(entry_prefix: str) -> dict[str, Agent]:
         # Only the entry node carries the security/scope framing every other condition
         # gets in a turn-1 coordinator call, prepended at CONSTRUCTION so the shared
         # domain prompt underneath stays byte-identical to every other condition's copy.
-        "predict":   build_predict_agent(chat_client, instructions_prefix=entry_prefix),
+        # tool_choice="required" (R58 REVERTED 6-Sep-26): "auto" let predict take
+        # entry_point.md's text-only decline branch on Q1, but live pilot data (5 of 11
+        # mesh/Q1-Q11 re-runs) showed it just as often skipping its own tool call on
+        # QUERIES THAT WERE IN SCOPE (e.g. Q3, Q7) -- a text-only "here's my plan..."
+        # response with an empty result, cascading into every downstream capability
+        # reading nothing. That is a worse trade than the one being fixed: guaranteed
+        # over-execution on out-of-scope queries (the original defect) versus
+        # non-deterministic silent under-execution on in-scope ones (this regression).
+        # Reverted to "required" pending a structural (not prompt-only) way to gate
+        # entry restraint without touching whether predict's own tool call happens.
+        "predict":   build_predict_agent(chat_client, instructions_prefix=entry_prefix,
+                                          tool_choice="required"),
         "diagnose":  build_diagnose_agent(chat_client),
         "simulate":  build_simulate_agent(chat_client),
         "recommend": build_recommend_agent(chat_client),
@@ -453,6 +464,29 @@ class PeerNode(Executor):
             # exactly Mesh's documented failure mode, recorded rather than papered over.
             print(f"  !! mesh routing failed for {self._capability}: {exc}", flush=True)
             return
+
+        # Enforce the router's OWN stated rule in code rather than hoping it holds --
+        # R63. _routing_schema's field description already tells the router "never name
+        # one already addressed, even if it has not finished yet"; confirmed live (pilot
+        # batch, mesh/Q1 and mesh/Q7) that nano names one anyway when two routers fire
+        # moments apart off the same predict output, before either has learned anything
+        # new. Dropping it here does not restrict WHICH peers a router may choose --
+        # that scope judgment stays entirely the router's own, unconstrained by code, per
+        # this module's own design contrast with Static-Graph DAG -- it only stops a
+        # second, redundant dispatch of something already in flight with nothing new to
+        # act on. A target already FINISHED is still allowed through unfiltered: that is
+        # the legitimate "re-ask once new information exists" case MAX_RUNS_PER_CAPABILITY
+        # exists for, and this filter does not touch it.
+        finished_caps = set(self._run.results)
+        addressed_caps = set(self._run.run_counts)
+        in_flight = addressed_caps - finished_caps
+        redundant = tuple(t for t in targets if t in in_flight)
+        if redundant:
+            print(f"  -- mesh: {self._capability} router named {list(redundant)} "
+                  f"again while still in flight (addressed, not yet finished) -- "
+                  f"dropped, not sent (R63)", flush=True)
+        targets = tuple(t for t in targets if t not in in_flight)
+
         if targets:
             await ctx.send_message(
                 PeerMessage(sender=self._capability, targets=targets,

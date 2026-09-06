@@ -1,0 +1,129 @@
+==================================================================
+ topology : swarm_constrained_adaptive
+ run_n    : 1
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 03:32:58
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4-nano  query_id=Q8
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 0 derived file(s), 0 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[03:32:59] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > What are the typical delay patterns and how can we optimize last-mile delivery?
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+     - swarm_constrained_adaptive_seed_planning agent: 4,484 prompt / 384 completion tokens over 1 message(s)
+  -- swarm_ca: wave 1 running ['predict'] concurrently (prerequisites met); still waiting on ['diagnose', 'recommend']
+  >> tool_start predict_delivery_delays_tool (input=444 chars)
+     - predict_delivery_delays_tool agent: 60,402 prompt / 7,518 completion tokens over 5 message(s)
+  << tool_end   predict_delivery_delays_tool done in 47.44s (output=23,421 chars, valid_json=True)
+  -- swarm_ca: wave 2 running ['diagnose'] concurrently (prerequisites met); still waiting on ['recommend']
+  >> tool_start diagnose_delay_patterns_tool (input=284 chars)
+     - diagnose_delay_patterns_tool agent: 41,476 prompt / 9,831 completion tokens over 5 message(s)
+  << tool_end   diagnose_delay_patterns_tool done in 58.93s (output=17,012 chars, valid_json=True)
+  -- swarm_ca: wave 3 running ['recommend'] concurrently (prerequisites met); still waiting on nothing
+  >> tool_start recommendation_tool (input=228 chars)
+     - recommendation_tool agent: 18,560 prompt / 5,984 completion tokens over 5 message(s)
+  << tool_end   recommendation_tool done in 46.94s (output=11,158 chars, valid_json=True)
+  swarm_ca: 3 wave(s) run; capabilities that posted a result: ['diagnose', 'predict', 'recommend']
+
+============================================================
+[03:35:36] TURN 1 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "Posted data-driven delivery optimization recommendations (quick-win, short-term, long-term) grounded in today's predicted delay hotspots/dimensions and the retrieved SLA weather/mode/severity rules.",
+  "email_alert_summary": ""
+}
+
+============================================================
+[03:35:36] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+
+============================================================
+[03:35:36] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "Posted data-driven delivery optimization recommendations (quick-win, short-term, long-term) grounded in today's predicted delay hotspots/dimensions and the retrieved SLA weather/mode/severity rules.",
+  "email_alert_summary": ""
+}
+
+============================================================
+[03:35:36] SUMMARY — tools, tokens & cost  [model=gpt-5.4-nano, tool calls=3]
+============================================================
+                        tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+predict_delivery_delays_tool     47.44s         444       23,421       True     60,402          7,518    67,920  $0.0215
+diagnose_delay_patterns_tool     58.93s         284       17,012       True     41,476          9,831    51,307  $0.0206
+         recommendation_tool     46.94s         228       11,158       True     18,560          5,984    24,544  $0.0112
+          — Sub-agents TOTAL    153.31s                                None    120,438         23,333   143,771  $0.0533
+       — Orchestration turns                                           None      4,484            384     4,868  $0.0014
+          — Master (2 turns)      3.26s                                None      8,968            768     9,736  $0.0028
+               — GRAND TOTAL    156.58s                                None    133,890         24,485   158,375  $0.0574
+
+Persisted run_id: 0ff6a8e2-14be-49fa-9796-62a837e00dd8
+
+============================================================
+[03:35:36] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring 0ff6a8e2  topology=swarm_constrained_adaptive  model=gpt-5.4-nano
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  predict_summary                  rel=5.0 faith=5.0 safe=5.0
+  predict_row_insights_sample      rel=5.0 faith=5.0 safe=5.0
+  diagnose_delay_patterns_tool     rel=5.0 faith=5.0 safe=5.0
+  recommendation_tool              rel=5.0 faith=5.0 safe=5.0
+  recommendation_summary           rel=3.0 faith=4.0 safe=5.0
+
+  capability blend:
+    predict              rel=5.00 faith=5.00 safe=5.00   (50% predict_summary / 50% predict_row_insights_sample)
+    diagnose             rel=4.00 faith=4.00 safe=4.00   (80% diagnose_delay_patterns_tool / 20% diagnose_delay_patterns_tool_raw)
+    recommendation       rel=3.80 faith=3.90 safe=4.00   (10% recommendation_summary / 70% recommendation_tool / 20% recommendation_tool_raw)
+
+  SCOPE-ADJUSTED MEAN 4.29/5   (every implied capability was attempted -- same as judge mean)
+
+  JUDGE WEIGHTED MEAN 4.29/5   (relevance 4.27 x.45, faithfulness 4.30 x.45, safety 4.33 x.10)
+  scored 5 artifact(s) -> 3 capability score(s) -> quality_scores
+
+============================================================
+[03:35:45] RUN VALIDITY
+============================================================
+  topology           : swarm_constrained_adaptive
+  coordinator prompt : swarm_constrained_adaptive/master = ac79b46d
+  plan presented     : NO
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 3 / 3
+  missing tools      : []
+  empty results      : none
+  dependency order   : respected — every capability waited for its inputs
+  scheduling         : 100% of achievable overlap  (0 pair(s) left unoverlapped)
+  coordinator idle   : 0.0s spent deciding between waves (not a scheduling fault)
+  span               : 153.32s vs critical path 153.32s
+
+  execution timeline:
+    turn 1 start    0.00
+    ..... 3.26s model reasoning (no tool running) .....
+    predict         3.26 ->   50.70
+    diagnose       50.71 ->  109.64
+    recommend     109.64 ->  156.58
+    turn 1 end    156.58
+    turn 2 start  156.58
+    turn 2 end    156.58   (no tools this turn)
+    run end       156.58
+  turn-1 plan text   : (none stored — no plan was produced)
+
+  ATTENTION:
+    - no plan was presented on turn 1 — the 2-turn plan/confirm flow did not engage; plan_presented is a measured comparison field.
+
+finished : 2026-09-06 03:35:45

@@ -1,0 +1,17 @@
+{
+  "batch_id": "batch_20260906T055118Z",
+  "log_dir": "/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/supply_chain_topology_app/log/batches/batch_20260906T055118Z",
+  "planned": 1,
+  "succeeded": [
+    {
+      "topology": "swarm_constrained_adaptive",
+      "query_id": "Q9",
+      "run_n": 1,
+      "log": "001_swarm_constrained_adaptive_Q9_n1.log"
+    }
+  ],
+  "failed": [],
+  "timed_out": [],
+  "remaining": 0,
+  "finished_at": "2026-09-06T05:54:23.849712+00:00"
+}

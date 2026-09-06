@@ -77,11 +77,19 @@ Post-split (applied separately to train and test to prevent data leakage):
                          fitted on the training set only.
 """
 
+# Lazy annotations so the StandardScaler type hints below don't require sklearn to be
+# importable at module load time -- see the local imports inside train_test_split_data
+# and scale_features for why: those are the only two places in this file that touch
+# sklearn, and both are training-only (daily_predict.py's actual inference call only
+# ever reaches feature_eng_pre_split_pipeline, never these). Diagnosed 5-Sep-26:
+# importing sklearn eagerly here forced the MCP server's startup (prediction_server.py)
+# to pay sklearn's own __check_build compiled-extension load on every run, for every
+# query, even ones that never touch predict_delivery_delays at all.
+from __future__ import annotations
+
 import pandas as pd
 import numpy as np
 from typing import List, Optional, Tuple
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
 from .data_processing_3 import DataProcessing
 
 class FeatureEngineering:
@@ -603,6 +611,8 @@ class FeatureEngineering:
         y_train: Series, training target
         y_test: Series, testing target
         """
+        from sklearn.model_selection import train_test_split  # training-only, see module note
+
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, 
             test_size=test_size, 
@@ -649,21 +659,23 @@ class FeatureEngineering:
         X_test_scaled: DataFrame, scaled testing features
         scaler: StandardScaler, fitted scaler object
         """
+        from sklearn.preprocessing import StandardScaler  # training-only, see module note
+
         X_train_scaled = X_train.copy()
         X_test_scaled = X_test.copy()
-        
+
         # Auto-detect numeric columns if not provided
         if numeric_columns is None:
             numeric_columns = X_train.select_dtypes(include=[np.number]).columns.tolist()
-        
+
         # Remove any columns that don't exist in the dataframes
         numeric_columns = [col for col in numeric_columns if col in X_train.columns]
-        
+
         if not numeric_columns:
             if display:
                 print("Warning: No numeric columns found to scale.")
             return X_train_scaled, X_test_scaled, None
-        
+
         # Initialize and fit scaler on training data
         scaler = StandardScaler()
         X_train_scaled[numeric_columns] = scaler.fit_transform(X_train[numeric_columns])

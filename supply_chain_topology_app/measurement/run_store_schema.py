@@ -579,6 +579,61 @@ _MIGRATIONS: tuple[tuple[str, str, str], ...] = (
     # boundaries have exactly one definition, same reasoning as query_complexity_score
     # itself. NULL for a query not yet assigned a bucket.
     ("query_metadata", "complexity_bin", "TEXT"),
+    # Scheduling efficiency, persisted rather than recomputed at report time
+    # (6-Sep-26, Risk Log R65). The measure is critical_path_s / busy, where busy is
+    # the span minus coordinator idle time. 1.0 is the ceiling: it is the floor the
+    # dependency graph implies, so a value ABOVE 1.0 is arithmetically unreachable
+    # while respecting that graph and means a dependent pair ran concurrently.
+    #
+    # Three columns rather than one, because a single ratio cannot carry the
+    # distinction the analysis needs:
+    #   scheduling_ratio       the raw figure, kept for traceability
+    #   scheduling_deviation   abs(1 - ratio); 0 is optimal, and this is the value
+    #                          aggregated across runs
+    #   infeasible_overlap     1 when ratio > 1.0, i.e. the overlap exceeded what the
+    #                          dependency graph permits; aggregated as a rate and
+    #                          reported alongside the deviation
+    #
+    # All three are NULL for a run with no capability tool calls (a correct decline on
+    # the out-of-scope probe, for example), where the measure is undefined rather than
+    # zero.
+    ("run", "scheduling_ratio", "REAL"),
+    ("run", "scheduling_deviation", "REAL"),
+    ("run", "infeasible_overlap", "INTEGER"),
+
+    # Execution-timing measures the proposal lists in Sections 7.2.1 and 7.2.2 but that
+    # were never persisted (6-Sep-26). concurrency_report() computed all four from the
+    # tool_call offsets at report time and kept only the scheduling ratio derived from
+    # them, so critical-path latency and the two concurrency measures could not be
+    # aggregated at all.
+    #
+    #   critical_path_s      longest dependency-constrained sequence of tool calls. The
+    #                        floor the dependency graph implies. Proposal: Critical-path
+    #                        latency.
+    #   actual_span_s        wall-clock from first tool start to last tool end.
+    #   fully_serial_s       sum of every capability call's duration, i.e. the time the
+    #                        run would take with no overlap at all.
+    #   coordinator_idle_s   time inside the span where no tool was running. For a
+    #                        model-driven coordinator this is deliberation, not a
+    #                        scheduling failure, so it is kept separate.
+    #
+    # Achievable concurrency (fully_serial_s / critical_path_s) and actual concurrency
+    # (fully_serial_s / actual_span_s) are derived from these in analysis/measures.py
+    # rather than stored, because both are ratios of columns already here.
+    ("run", "critical_path_s", "REAL"),
+    ("run", "actual_span_s", "REAL"),
+    ("run", "fully_serial_s", "REAL"),
+    ("run", "coordinator_idle_s", "REAL"),
+
+    # Analysis exclusion, per proposal Section 7.4. The proposal requires four
+    # pre-specified categories, three of which are excluded from analysis and logged,
+    # but the store had no way to mark a run as excluded (6-Sep-26). Without it the only
+    # way to remove a contaminated run from the aggregates was to delete it, which
+    # destroys real API spend and is irreversible.
+    #
+    # NULL means the run is included. A non-NULL value is the reason string and removes
+    # the run from every aggregate while leaving the row and its children intact.
+    ("run", "excluded_reason", "TEXT"),
 )
 
 # Every table carrying lock_rows. `run` is the unit a human locks; the rest are

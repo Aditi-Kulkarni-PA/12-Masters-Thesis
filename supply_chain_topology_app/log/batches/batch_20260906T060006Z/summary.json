@@ -1,0 +1,95 @@
+{
+  "batch_id": "batch_20260906T060006Z",
+  "log_dir": "/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/supply_chain_topology_app/log/batches/batch_20260906T060006Z",
+  "planned": 22,
+  "succeeded": [
+    {
+      "topology": "mesh",
+      "query_id": "Q1",
+      "run_n": 1,
+      "log": "001_mesh_Q1_n1.log"
+    },
+    {
+      "topology": "mesh",
+      "query_id": "Q7",
+      "run_n": 1,
+      "log": "002_mesh_Q7_n1.log"
+    },
+    {
+      "topology": "swarm",
+      "query_id": "Q1",
+      "run_n": 1,
+      "log": "003_swarm_Q1_n1.log"
+    },
+    {
+      "topology": "swarm",
+      "query_id": "Q5",
+      "run_n": 1,
+      "log": "004_swarm_Q5_n1.log"
+    },
+    {
+      "topology": "mesh",
+      "query_id": "Q4",
+      "run_n": 1,
+      "log": "005_mesh_Q4_n1.log"
+    },
+    {
+      "topology": "swarm",
+      "query_id": "Q2",
+      "run_n": 1,
+      "log": "006_swarm_Q2_n1.log"
+    },
+    {
+      "topology": "mesh",
+      "query_id": "Q11",
+      "run_n": 1,
+      "log": "007_mesh_Q11_n1.log"
+    },
+    {
+      "topology": "swarm",
+      "query_id": "Q6",
+      "run_n": 1,
+      "log": "008_swarm_Q6_n1.log"
+    },
+    {
+      "topology": "mesh",
+      "query_id": "Q3",
+      "run_n": 1,
+      "log": "009_mesh_Q3_n1.log"
+    },
+    {
+      "topology": "swarm",
+      "query_id": "Q11",
+      "run_n": 1,
+      "log": "010_swarm_Q11_n1.log"
+    },
+    {
+      "topology": "swarm",
+      "query_id": "Q7",
+      "run_n": 1,
+      "log": "011_swarm_Q7_n1.log"
+    },
+    {
+      "topology": "swarm",
+      "query_id": "Q3",
+      "run_n": 1,
+      "log": "012_swarm_Q3_n1.log"
+    },
+    {
+      "topology": "mesh",
+      "query_id": "Q8",
+      "run_n": 1,
+      "log": "013_mesh_Q8_n1.log"
+    },
+    {
+      "topology": "swarm",
+      "query_id": "Q10",
+      "run_n": 1,
+      "log": "014_swarm_Q10_n1.log"
+    }
+  ],
+  "failed": [],
+  "timed_out": [],
+  "remaining": 8,
+  "finished_at": "2026-09-06T06:21:14.750454+00:00"
+}

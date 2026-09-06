@@ -1,0 +1,94 @@
+==================================================================
+ topology : static_graph_routed
+ run_n    : 1
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 02:05:02
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4-nano  query_id=Q9
+  tiktoken cache     : warm (0.2s)
+  run isolation: cleared 3 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[02:05:10] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > What patterns are driving today's delays, what should we do about it, and let affected customers know
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+  >> router selected: predict -> diagnose -> recommend -> email
+
+============================================================
+[02:05:12] TURN 1 — master response
+============================================================
+{
+  "proceed": true,
+  "chat_response": "Here's my plan:\n1. Predict delivery delays\n2. Diagnose delay patterns driving today\u2019s delays\n3. Generate optimization recommendations to reduce delays... [236 characters]",
+  "capabilities": "<4 item(s)>"
+}
+
+============================================================
+[02:05:12] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+  >> tool_start predict_delivery_delays_tool (input=291 chars)
+     - predict_delivery_delays_tool agent: 30,878 prompt / 6,593 completion tokens over 3 message(s)
+  << tool_end   predict_delivery_delays_tool done in 47.06s (output=24,769 chars, valid_json=True)
+  >> tool_start diagnose_delay_patterns_tool (input=291 chars)
+  >> tool_start email_alert_tool (input=291 chars)
+     - email_alert_tool agent: 3,525 prompt / 578 completion tokens over 3 message(s)
+  << tool_end   email_alert_tool done in 6.99s (output=2,446 chars, valid_json=True)
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+     - diagnose_delay_patterns_tool agent: 18,952 prompt / 4,863 completion tokens over 3 message(s)
+  << tool_end   diagnose_delay_patterns_tool done in 28.83s (output=17,191 chars, valid_json=True)
+  >> tool_start recommendation_tool (input=3,939 chars)
+/Users/aditikulkarni/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/events.py:88: RuntimeWarning: The executor did not finishing joining its threads within 300 seconds.
+  self._context.run(self._callback, *self._args)
+Traceback (most recent call last):
+  File "/Users/aditikulkarni/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/aditikulkarni/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/supply_chain_topology_app/execute_topology.py", line 420, in main
+    r = await master.run(msg, session=session, middleware=[recorder.middleware])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/supply_chain_topology_app/topologies/static_graph_routed.py", line 324, in run
+    result = await _build_workflow(run).run(self._query)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/.venv/lib/python3.12/site-packages/agent_framework/_types.py", line 3389, in get_final_response
+    async for _ in self:
+  File "/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/.venv/lib/python3.12/site-packages/agent_framework/_types.py", line 3257, in __anext__
+    update: UpdateT = await self._iterator.__anext__()
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/.venv/lib/python3.12/site-packages/agent_framework/_workflows/_workflow.py", line 836, in _run_core
+    async for event in self._run_workflow_with_tracing(
+  File "/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/.venv/lib/python3.12/site-packages/agent_framework/_workflows/_workflow.py", line 575, in _run_workflow_with_tracing
+    async for event in self._runner.run_until_convergence():
+  File "/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/.venv/lib/python3.12/site-packages/agent_framework/_workflows/_runner.py", line 134, in run_until_convergence
+    event = await asyncio.wait_for(self._ctx.next_event(), timeout=0.05)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/aditikulkarni/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/.venv/lib/python3.12/site-packages/agent_framework/_workflows/_runner_context.py", line 355, in next_event
+    return await self._get_event_queue().get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/aditikulkarni/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/queues.py", line 158, in get
+    await getter
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/supply_chain_topology_app/execute_topology.py", line 788, in <module>
+    asyncio.run(main())
+  File "/Users/aditikulkarni/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Users/aditikulkarni/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py", line 123, in run
+    raise KeyboardInterrupt()
+KeyboardInterrupt

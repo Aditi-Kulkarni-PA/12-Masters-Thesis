@@ -1,0 +1,88 @@
+==================================================================
+ topology : swarm_constrained_adaptive
+ run_n    : 1
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 11:04:59
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4-mini  query_id=Q9
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 4 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[11:05:01] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > What patterns are driving today's delays, what should we do about it, and let affected customers know
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+     - swarm_constrained_adaptive_seed_planning agent: 4,489 prompt / 342 completion tokens over 1 message(s)
+  !! swarm_ca: run ended with ['diagnose', 'email', 'recommend'] still needed but never ready -- a prerequisite likely never posted
+  swarm_ca: 0 wave(s) run; capabilities that posted a result: []
+
+============================================================
+[11:05:05] TURN 1 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[11:05:05] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+
+============================================================
+[11:05:05] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[11:05:05] SUMMARY — tools, tokens & cost  [model=gpt-5.4-mini, tool calls=0]
+============================================================
+                 tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+   — Sub-agents TOTAL      0.00s        None         None       None          0              0         0  $0.0000
+— Orchestration turns                   None         None       None      4,489            342     4,831  $0.0049
+   — Master (2 turns)      3.63s        None         None       None      8,978            684     9,662  $0.0098
+        — GRAND TOTAL      3.63s        None         None       None     13,467          1,026    14,493  $0.0147
+
+Persisted run_id: 23ce5de8-17b7-4f1d-b27a-bbc0b916910e
+
+============================================================
+[11:05:05] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring 23ce5de8  topology=swarm_constrained_adaptive  model=gpt-5.4-mini
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  no scorable output on this run — nothing written.
+
+============================================================
+[11:05:05] RUN VALIDITY
+============================================================
+  topology           : swarm_constrained_adaptive
+  coordinator prompt : swarm_constrained_adaptive/master = ac79b46d
+  plan presented     : NO
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 4 / 0
+  missing tools      : ["diagnose_delay_patterns_tool", "email_alert_tool", "predict_delivery_delays_tool", "recommendation_tool"]
+  empty results      : none
+  dependency order   : N/A — no tool calls were made (see tools expected/ran above)
+  turn-1 plan text   : (none stored — no plan was produced)
+
+  ATTENTION:
+    - expected tools never ran: ["diagnose_delay_patterns_tool", "email_alert_tool", "predict_delivery_delays_tool", "recommendation_tool"]
+    - no plan was presented on turn 1 — the 2-turn plan/confirm flow did not engage; plan_presented is a measured comparison field.
+
+finished : 2026-09-06 11:05:05

@@ -85,12 +85,25 @@ CRITICAL_PATH: tuple[str, ...] = (
 )
 
 
-def check_dependencies(calls: list[dict]) -> list[dict]:
+def check_dependencies(calls: list[dict], base_offset_s: float = 0.0) -> list[dict]:
     """Return one entry per dependency violation.
 
     *calls* is a list of dicts with: tool_name, started_offset_s, ended_offset_s.
-    Offsets are relative to the first tool start; absolute values do not matter, only
-    their ordering relative to one another.
+    Offsets are relative to the first tool start; absolute values do not matter to the
+    comparison itself, only their ordering relative to one another -- adding the same
+    constant to both sides of `dep_start < pre_end` cannot change the verdict.
+
+    *base_offset_s* (default 0.0, so old callers are unaffected) shifts only the numbers
+    baked into each violation's "detail" TEXT, to the same turn-1-relative frame
+    run.tool_base_offset_s already puts the execution timeline in. Found 6-Sep-26: the
+    stored detail string used the raw first-tool-start-relative offsets directly (e.g.
+    "started at 0.01s ... finished at 78.97s"), while the timeline printed in the same
+    run-validity report shifts everything by tool_base_offset_s for readability (e.g.
+    "6.10 -> 85.07") -- both numbers were individually correct in their own frame and the
+    violation verdict was never wrong, but the two frames disagreeing within one report
+    made a real violation read as a self-contradicting one. Distinct from R38 (a genuine
+    false-positive from mixing a rounded duration into an offset comparison): this is a
+    display-frame mismatch on an otherwise-real violation, not a miscomputed verdict.
 
     Two violation kinds:
       - "missing"   the prerequisite never ran at all in this run
@@ -121,10 +134,13 @@ def check_dependencies(calls: list[dict]) -> list[dict]:
             if dep_start is None or pre_end is None:
                 continue  # timing unavailable (older run) — cannot judge, do not guess
             if dep_start < pre_end:
+                # Comparison above is on raw offsets (anchor-invariant); the text below
+                # is shifted to base_offset_s so it reads consistently with the timeline
+                # printed alongside it -- see this function's docstring.
                 violations.append({
                     "tool": name, "requires": prereq, "kind": "premature",
-                    "detail": (f"{name} started at {dep_start:.2f}s, before {prereq} "
-                               f"finished at {pre_end:.2f}s"),
+                    "detail": (f"{name} started at {dep_start + base_offset_s:.2f}s, before "
+                               f"{prereq} finished at {pre_end + base_offset_s:.2f}s"),
                 })
     return violations
 

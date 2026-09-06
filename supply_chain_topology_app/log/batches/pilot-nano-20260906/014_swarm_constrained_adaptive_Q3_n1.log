@@ -1,0 +1,121 @@
+==================================================================
+ topology : swarm_constrained_adaptive
+ run_n    : 1
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 02:43:40
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4-nano  query_id=Q3
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 4 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[02:43:41] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > Identify customers impacted with delivery delays and send an email to them
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+     - swarm_constrained_adaptive_seed_planning agent: 4,482 prompt / 357 completion tokens over 1 message(s)
+  -- swarm_ca: wave 1 running ['predict'] concurrently (prerequisites met); still waiting on ['email']
+  >> tool_start predict_delivery_delays_tool (input=444 chars)
+     - predict_delivery_delays_tool agent: 66,005 prompt / 13,196 completion tokens over 5 message(s)
+  << tool_end   predict_delivery_delays_tool done in 81.17s (output=24,048 chars, valid_json=True)
+  -- swarm_ca: wave 2 running ['email'] concurrently (prerequisites met); still waiting on nothing
+  >> tool_start email_alert_tool (input=374 chars)
+     - email_alert_tool agent: 7,968 prompt / 1,178 completion tokens over 5 message(s)
+  << tool_end   email_alert_tool done in 10.60s (output=2,446 chars, valid_json=True)
+  swarm_ca: 2 wave(s) run; capabilities that posted a result: ['email', 'predict']
+
+============================================================
+[02:45:16] TURN 1 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "",
+  "email_alert_summary": "Posting severity-based customer email alerts generated from delayed orders prediction CSV. Includes recipient identifier and full rendered email content per sample."
+}
+
+============================================================
+[02:45:16] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+
+============================================================
+[02:45:16] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "",
+  "email_alert_summary": "Posting severity-based customer email alerts generated from delayed orders prediction CSV. Includes recipient identifier and full rendered email content per sample."
+}
+
+============================================================
+[02:45:16] SUMMARY — tools, tokens & cost  [model=gpt-5.4-nano, tool calls=2]
+============================================================
+                        tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+predict_delivery_delays_tool     81.17s         444       24,048       True     66,005         13,196    79,201  $0.0297
+            email_alert_tool     10.60s         374        2,446       True      7,968          1,178     9,146  $0.0031
+          — Sub-agents TOTAL     91.77s                                None     73,973         14,374    88,347  $0.0328
+       — Orchestration turns                                           None      4,482            357     4,839  $0.0013
+          — Master (2 turns)      3.76s                                None      8,964            714     9,678  $0.0027
+               — GRAND TOTAL     95.53s                                None     87,419         15,445   102,864  $0.0368
+
+Persisted run_id: ff3d84ab-9cb4-40c8-8cc6-59c8b25140d0
+
+============================================================
+[02:45:16] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring ff3d84ab  topology=swarm_constrained_adaptive  model=gpt-5.4-nano
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  predict_summary                  rel=5.0 faith=5.0 safe=5.0
+  predict_row_insights_sample      rel=5.0 faith=5.0 safe=5.0
+  email_alert_tool                 rel=5.0 faith=5.0 safe=5.0
+  email_alert_summary              rel=2.0 faith=2.0 safe=5.0
+
+  capability blend:
+    predict              rel=5.00 faith=5.00 safe=5.00   (50% predict_summary / 50% predict_row_insights_sample)
+    email                rel=3.70 faith=3.70 safe=4.00   (10% email_alert_summary / 70% email_alert_tool / 20% email_alert_tool_raw)
+
+  SCOPE-ADJUSTED MEAN 4.36/5   (every implied capability was attempted -- same as judge mean)
+
+  JUDGE WEIGHTED MEAN 4.36/5   (relevance 4.35 x.45, faithfulness 4.35 x.45, safety 4.50 x.10)
+  scored 4 artifact(s) -> 2 capability score(s) -> quality_scores
+
+============================================================
+[02:45:23] RUN VALIDITY
+============================================================
+  topology           : swarm_constrained_adaptive
+  coordinator prompt : swarm_constrained_adaptive/master = ac79b46d
+  plan presented     : NO
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 2 / 2
+  missing tools      : []
+  empty results      : none
+  dependency order   : respected — every capability waited for its inputs
+  scheduling         : 100% of achievable overlap  (0 pair(s) left unoverlapped)
+  coordinator idle   : 0.0s spent deciding between waves (not a scheduling fault)
+  span               : 91.77s vs critical path 91.77s
+
+  execution timeline:
+    turn 1 start    0.00
+    ..... 3.76s model reasoning (no tool running) .....
+    predict         3.76 ->   84.92
+    email          84.93 ->   95.53
+    turn 1 end     95.53
+    turn 2 start   95.53
+    turn 2 end     95.53   (no tools this turn)
+    run end        95.53
+  turn-1 plan text   : (none stored — no plan was produced)
+
+  ATTENTION:
+    - no plan was presented on turn 1 — the 2-turn plan/confirm flow did not engage; plan_presented is a measured comparison field.
+
+finished : 2026-09-06 02:45:24

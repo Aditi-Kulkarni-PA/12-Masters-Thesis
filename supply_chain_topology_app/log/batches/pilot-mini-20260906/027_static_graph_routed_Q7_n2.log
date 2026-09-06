@@ -1,0 +1,132 @@
+==================================================================
+ topology : static_graph_routed
+ run_n    : 2
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 15:18:08
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4-mini  query_id=Q7
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 5 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[15:18:10] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > What patterns are driving today's delays, and would that get worse if a storm hit the East?
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+  >> router selected: predict -> diagnose -> simulate
+
+============================================================
+[15:18:12] TURN 1 — master response
+============================================================
+{
+  "proceed": true,
+  "chat_response": "Here's my plan:\n1. Predict delivery delays\n2. Diagnose delay patterns\n3. Simulate what-if scenarios\nShall I proceed?",
+  "capabilities": "<3 item(s)>"
+}
+
+============================================================
+[15:18:12] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+  >> tool_start predict_delivery_delays_tool (input=281 chars)
+     - predict_delivery_delays_tool agent: 31,005 prompt / 4,638 completion tokens over 3 message(s)
+  << tool_end   predict_delivery_delays_tool done in 18.98s (output=17,607 chars, valid_json=True)
+  >> tool_start delay_simulations_tool (input=281 chars)
+  >> tool_start diagnose_delay_patterns_tool (input=281 chars)
+     - diagnose_delay_patterns_tool agent: 18,950 prompt / 4,926 completion tokens over 3 message(s)
+  << tool_end   diagnose_delay_patterns_tool done in 19.32s (output=17,198 chars, valid_json=True)
+     - delay_simulations_tool agent: 105,845 prompt / 4,102 completion tokens over 7 message(s)
+  << tool_end   delay_simulations_tool done in 20.90s (output=16,432 chars, valid_json=True)
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+
+============================================================
+[15:18:55] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "Under **stormy** conditions in the **East**, delays generally worsen for **express** and **same-day** shipments, especially on **long** routes and lig... [409 characters]",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[15:18:56] SUMMARY — tools, tokens & cost  [model=gpt-5.4-mini, tool calls=3]
+============================================================
+                        tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+predict_delivery_delays_tool     18.98s         281       17,607       True     31,005          4,638    35,643  $0.0441
+      delay_simulations_tool     20.90s         281       16,432       True    105,845          4,102   109,947  $0.0978
+diagnose_delay_patterns_tool     19.32s         281       17,198       True     18,950          4,926    23,876  $0.0364
+          — Sub-agents TOTAL     59.20s                                None    155,800         13,666   169,466  $0.1783
+          — Master (2 turns)      5.82s                                None     18,339            170    18,509  $0.0145
+               — GRAND TOTAL     45.71s                                None    174,139         13,836   187,975  $0.1929
+
+Persisted run_id: bc63664d-56d9-4f91-90ec-aac93a948f65
+
+============================================================
+[15:18:56] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring bc63664d  topology=static_graph_routed  model=gpt-5.4-mini
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  predict_summary                  rel=5.0 faith=5.0 safe=5.0
+  predict_row_insights_sample      rel=5.0 faith=5.0 safe=5.0
+  simulate_row_reasons_sample      rel=4.0 faith=5.0 safe=5.0
+  diagnose_delay_patterns_tool     rel=5.0 faith=5.0 safe=5.0
+  simulate_narrative               rel=4.0 faith=4.0 safe=5.0
+  coordinator_narrative            rel=3.0 faith=5.0 safe=5.0
+
+  capability blend:
+    predict              rel=5.00 faith=5.00 safe=5.00   (50% predict_summary / 50% predict_row_insights_sample)
+    diagnose             rel=4.00 faith=4.00 safe=4.00   (80% diagnose_delay_patterns_tool / 20% diagnose_delay_patterns_tool_raw)
+    simulate             rel=4.00 faith=4.80 safe=5.00   (20% simulate_narrative / 80% simulate_row_reasons_sample)
+    coordinator_narrative rel=3.00 faith=5.00 safe=5.00   (100% coordinator_narrative)
+
+  SCOPE-ADJUSTED MEAN 4.39/5   (every implied capability was attempted -- same as judge mean)
+
+  JUDGE WEIGHTED MEAN 4.39/5   (relevance 4.00 x.45, faithfulness 4.70 x.45, safety 4.75 x.10)
+  scored 6 artifact(s) -> 4 capability score(s) -> quality_scores
+
+============================================================
+[15:19:05] RUN VALIDITY
+============================================================
+  topology           : static_graph_routed
+  coordinator prompt : static_graph_routed/coordinator = 41f848fc
+  plan presented     : yes
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 3 / 3
+  missing tools      : []
+  empty results      : none
+  dependency order   : respected — every capability waited for its inputs
+  scheduling         : 100% of achievable overlap  (0 pair(s) left unoverlapped)
+  coordinator idle   : 0.0s spent deciding between waves (not a scheduling fault)
+  span               : 39.89s vs critical path 39.89s
+
+  execution timeline:
+    turn 1 start    0.00
+    turn 1 end      1.87   (plan / no tools yet)
+    turn 2 start    1.87
+    ..... 1.88s model reasoning (no tool running) .....
+    predict         1.88 ->   20.86
+    simulate       20.86 ->   41.76 +
+    diagnose       20.87 ->   40.19 +-- 2 at once
+    ..... 3.95s model composing answer .....
+    turn 2 end     45.71
+    run end        45.71
+
+  turn-1 plan text (stored verbatim, T94):
+    | Here's my plan:
+    | 1. Predict delivery delays
+    | 2. Diagnose delay patterns
+    | 3. Simulate what-if scenarios
+    | Shall I proceed?
+
+  All run-validity checks clean.
+
+finished : 2026-09-06 15:19:05

@@ -1,0 +1,120 @@
+==================================================================
+ topology : swarm_constrained_adaptive
+ run_n    : 1
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 03:35:45
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4-nano  query_id=Q5
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 3 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[03:35:47] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > Find out which customer orders will be late and what are the reasons for the delay
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+     - swarm_constrained_adaptive_seed_planning agent: 4,486 prompt / 400 completion tokens over 1 message(s)
+  -- swarm_ca: wave 1 running ['predict'] concurrently (prerequisites met); still waiting on ['diagnose']
+  >> tool_start predict_delivery_delays_tool (input=444 chars)
+     - predict_delivery_delays_tool agent: 65,568 prompt / 12,454 completion tokens over 5 message(s)
+  << tool_end   predict_delivery_delays_tool done in 84.22s (output=21,980 chars, valid_json=True)
+  -- swarm_ca: wave 2 running ['diagnose'] concurrently (prerequisites met); still waiting on nothing
+  >> tool_start diagnose_delay_patterns_tool (input=522 chars)
+     - diagnose_delay_patterns_tool agent: 40,580 prompt / 8,879 completion tokens over 5 message(s)
+  << tool_end   diagnose_delay_patterns_tool done in 52.74s (output=17,810 chars, valid_json=True)
+  swarm_ca: 2 wave(s) run; capabilities that posted a result: ['diagnose', 'predict']
+
+============================================================
+[03:38:07] TURN 1 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[03:38:07] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+
+============================================================
+[03:38:07] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[03:38:07] SUMMARY — tools, tokens & cost  [model=gpt-5.4-nano, tool calls=2]
+============================================================
+                        tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+predict_delivery_delays_tool     84.22s         444       21,980       True     65,568         12,454    78,022  $0.0287
+diagnose_delay_patterns_tool     52.74s         522       17,810       True     40,580          8,879    49,459  $0.0192
+          — Sub-agents TOTAL    136.96s                                None    106,148         21,333   127,481  $0.0479
+       — Orchestration turns                                           None      4,486            400     4,886  $0.0014
+          — Master (2 turns)      3.45s                                None      8,972            800     9,772  $0.0028
+               — GRAND TOTAL    140.42s                                None    119,606         22,533   142,139  $0.0521
+
+Persisted run_id: 5adaf7da-9d61-4d70-bc7b-5e4dda7484f9
+
+============================================================
+[03:38:07] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring 5adaf7da  topology=swarm_constrained_adaptive  model=gpt-5.4-nano
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  predict_summary                  rel=5.0 faith=5.0 safe=5.0
+  predict_row_insights_sample      rel=5.0 faith=5.0 safe=5.0
+  diagnose_delay_patterns_tool     rel=5.0 faith=5.0 safe=5.0
+
+  capability blend:
+    predict              rel=5.00 faith=5.00 safe=5.00   (50% predict_summary / 50% predict_row_insights_sample)
+    diagnose             rel=4.00 faith=4.00 safe=4.00   (80% diagnose_delay_patterns_tool / 20% diagnose_delay_patterns_tool_raw)
+
+  SCOPE-ADJUSTED MEAN 4.50/5   (every implied capability was attempted -- same as judge mean)
+
+  JUDGE WEIGHTED MEAN 4.50/5   (relevance 4.50 x.45, faithfulness 4.50 x.45, safety 4.50 x.10)
+  scored 3 artifact(s) -> 2 capability score(s) -> quality_scores
+
+============================================================
+[03:38:12] RUN VALIDITY
+============================================================
+  topology           : swarm_constrained_adaptive
+  coordinator prompt : swarm_constrained_adaptive/master = ac79b46d
+  plan presented     : NO
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 2 / 2
+  missing tools      : []
+  empty results      : none
+  dependency order   : respected — every capability waited for its inputs
+  scheduling         : 100% of achievable overlap  (0 pair(s) left unoverlapped)
+  coordinator idle   : 0.01s spent deciding between waves (not a scheduling fault)
+  span               : 136.97s vs critical path 136.96s
+
+  execution timeline:
+    turn 1 start    0.00
+    ..... 3.46s model reasoning (no tool running) .....
+    predict         3.46 ->   87.68
+    diagnose       87.68 ->  140.42
+    turn 1 end    140.42
+    turn 2 start  140.42
+    turn 2 end    140.42   (no tools this turn)
+    run end       140.42
+  turn-1 plan text   : (none stored — no plan was produced)
+
+  ATTENTION:
+    - no plan was presented on turn 1 — the 2-turn plan/confirm flow did not engage; plan_presented is a measured comparison field.
+
+finished : 2026-09-06 03:38:12

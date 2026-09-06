@@ -1,0 +1,599 @@
+{
+  "batch_id": "pilot-nano-20260906",
+  "log_dir": "/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/supply_chain_topology_app/log/batches/pilot-nano-20260906",
+  "planned": 98,
+  "succeeded": [
+    {
+      "topology": "static_graph_routed",
+      "query_id": "Q11",
+      "run_n": 1,
+      "log": "001_static_graph_routed_Q11_n1.log"
+    },
+    {
+      "topology": "planner_executor",
+      "query_id": "Q2",
+      "run_n": 1,
+      "log": "002_planner_executor_Q2_n1.log"
+    },
+    {
+      "topology": "dynamic_graph",
+      "query_id": "Q8",
+      "run_n": 1,
+      "log": "003_dynamic_graph_Q8_n1.log"
+    },
+    {
+      "topology": "monolith",
+      "query_id": "Q4",
+      "run_n": 1,
+      "log": "004_monolith_Q4_n1.log"
+    },
+    {
+      "topology": "planner_executor",
+      "query_id": "Q3",
+      "run_n": 1,
+      "log": "005_planner_executor_Q3_n1.log"
+    },
+    {
+      "topology": "swarm_constrained_adaptive",
+      "query_id": "Q6",
+      "run_n": 1,
+      "log": "006_swarm_constrained_adaptive_Q6_n1.log"
+    },
+    {
+      "topology": "dynamic_graph",
+      "query_id": "Q6",
+      "run_n": 1,
+      "log": "007_dynamic_graph_Q6_n1.log"
+    },
+    {
+      "topology": "monolith",
+      "query_id": "Q1",
+      "run_n": 1,
+      "log": "008_monolith_Q1_n1.log"
+    },
+    {
+      "topology": "static_graph_dag",
+      "query_id": "Q8",
+      "run_n": 1,
+      "log": "009_static_graph_dag_Q8_n1.log"
+    },
+    {
+      "topology": "dynamic_graph",
+      "query_id": "Q2",
+      "run_n": 1,
+      "log": "010_dynamic_graph_Q2_n1.log"
+    },
+    {
+      "topology": "sequential",
+      "query_id": "Q8",
+      "run_n": 1,
+      "log": "011_sequential_Q8_n1.log"
+    },
+    {
+      "topology": "swarm",
+      "query_id": "Q2",
+      "run_n": 1,
+      "log": "012_swarm_Q2_n1.log"
+    },
+    {
+      "topology": "planner_executor",
+      "query_id": "Q9",
+      "run_n": 1,
+      "log": "013_planner_executor_Q9_n1.log"
+    },
+    {
+      "topology": "swarm_constrained_adaptive",
+      "query_id": "Q3",
+      "run_n": 1,
+      "log": "014_swarm_constrained_adaptive_Q3_n1.log"
+    },
+    {
+      "topology": "monolith",
+      "query_id": "Q8",
+      "run_n": 1,
+      "log": "015_monolith_Q8_n1.log"
+    },
+    {
+      "topology": "mesh",
+      "query_id": "Q11",
+      "run_n": 1,
+      "log": "016_mesh_Q11_n1.log"
+    },
+    {
+      "topology": "planner_executor",
+      "query_id": "Q11",
+      "run_n": 1,
+      "log": "017_planner_executor_Q11_n1.log"
+    },
+    {
+      "topology": "swarm_constrained_adaptive",
+      "query_id": "Q7",
+      "run_n": 1,
+      "log": "018_swarm_constrained_adaptive_Q7_n1.log"
+    },
+    {
+      "topology": "mesh",
+      "query_id": "Q6",
+      "run_n": 1,
+      "log": "019_mesh_Q6_n1.log"
+    },
+    {
+      "topology": "swarm_constrained_adaptive",
+      "query_id": "Q10",
+      "run_n": 1,
+      "log": "020_swarm_constrained_adaptive_Q10_n1.log"
+    },
+    {
+      "topology": "planner_executor",
+      "query_id": "Q7",
+      "run_n": 1,
+      "log": "021_planner_executor_Q7_n1.log"
+    },
+    {
+      "topology": "sequential",
+      "query_id": "Q3",
+      "run_n": 1,
+      "log": "022_sequential_Q3_n1.log"
+    },
+    {
+      "topology": "planner_executor",
+      "query_id": "Q5",
+      "run_n": 1,
+      "log": "023_planner_executor_Q5_n1.log"
+    },
+    {
+      "topology": "dynamic_graph",
+      "query_id": "Q5",
+      "run_n": 1,
+      "log": "024_dynamic_graph_Q5_n1.log"
+    },
+    {
+      "topology": "mesh",
+      "query_id": "Q9",
+      "run_n": 1,
+      "log": "025_mesh_Q9_n1.log"
+    },
+    {
+      "topology": "static_graph_routed",
+      "query_id": "Q2",
+      "run_n": 1,
+      "log": "026_static_graph_routed_Q2_n1.log"
+    },
+    {
+      "topology": "static_graph_dag",
+      "query_id": "Q4",
+      "run_n": 1,
+      "log": "027_static_graph_dag_Q4_n1.log"
+    },
+    {
+      "topology": "dynamic_graph",
+      "query_id": "Q3",
+      "run_n": 1,
+      "log": "028_dynamic_graph_Q3_n1.log"
+    },
+    {
+      "topology": "mesh",
+      "query_id": "Q2",
+      "run_n": 1,
+      "log": "029_mesh_Q2_n1.log"
+    },
+    {
+      "topology": "static_graph_routed",
+      "query_id": "Q8",
+      "run_n": 1,
+      "log": "030_static_graph_routed_Q8_n1.log"
+    },
+    {
+      "topology": "static_graph_dag",
+      "query_id": "Q5",
+      "run_n": 1,
+      "log": "031_static_graph_dag_Q5_n1.log"
+    },
+    {
+      "topology": "sequential",
+      "query_id": "Q7",
+      "run_n": 1,
+      "log": "032_sequential_Q7_n1.log"
+    },
+    {
+      "topology": "static_graph_routed",
+      "query_id": "Q5",
+      "run_n": 1,
+      "log": "033_static_graph_routed_Q5_n1.log"
+    },
+    {
+      "topology": "planner_executor",
+      "query_id": "Q10",
+      "run_n": 1,
+      "log": "035_planner_executor_Q10_n1.log"
+    },
+    {
+      "topology": "monolith",
+      "query_id": "Q7",
+      "run_n": 1,
+      "log": "036_monolith_Q7_n1.log"
+    },
+    {
+      "topology": "sequential",
+      "query_id": "Q9",
+      "run_n": 1,
+      "log": "037_sequential_Q9_n1.log"
+    },
+    {
+      "topology": "mesh",
+      "query_id": "Q10",
+      "run_n": 1,
+      "log": "038_mesh_Q10_n1.log"
+    },
+    {
+      "topology": "monolith",
+      "query_id": "Q5",
+      "run_n": 1,
+      "log": "039_monolith_Q5_n1.log"
+    },
+    {
+      "topology": "mesh",
+      "query_id": "Q4",
+      "run_n": 1,
+      "log": "040_mesh_Q4_n1.log"
+    },
+    {
+      "topology": "static_graph_routed",
+      "query_id": "Q10",
+      "run_n": 1,
+      "log": "042_static_graph_routed_Q10_n1.log"
+    },
+    {
+      "topology": "swarm_constrained_adaptive",
+      "query_id": "Q8",
+      "run_n": 1,
+      "log": "043_swarm_constrained_adaptive_Q8_n1.log"
+    },
+    {
+      "topology": "swarm_constrained_adaptive",
+      "query_id": "Q5",
+      "run_n": 1,
+      "log": "044_swarm_constrained_adaptive_Q5_n1.log"
+    },
+    {
+      "topology": "static_graph_routed",
+      "query_id": "Q7",
+      "run_n": 1,
+      "log": "045_static_graph_routed_Q7_n1.log"
+    },
+    {
+      "topology": "static_graph_routed",
+      "query_id": "Q6",
+      "run_n": 1,
+      "log": "046_static_graph_routed_Q6_n1.log"
+    },
+    {
+      "topology": "swarm",
+      "query_id": "Q10",
+      "run_n": 1,
+      "log": "047_swarm_Q10_n1.log"
+    },
+    {
+      "topology": "monolith",
+      "query_id": "Q10",
+      "run_n": 1,
+      "log": "048_monolith_Q10_n1.log"
+    },
+    {
+      "topology": "static_graph_dag",
+      "query_id": "Q7",
+      "run_n": 1,
+      "log": "049_static_graph_dag_Q7_n1.log"
+    },
+    {
+      "topology": "dynamic_graph",
+      "query_id": "Q1",
+      "run_n": 1,
+      "log": "050_dynamic_graph_Q1_n1.log"
+    },
+    {
+      "topology": "planner_executor",
+      "query_id": "Q8",
+      "run_n": 1,
+      "log": "051_planner_executor_Q8_n1.log"
+    },
+    {
+      "topology": "static_graph_routed",
+      "query_id": "Q3",
+      "run_n": 1,
+      "log": "052_static_graph_routed_Q3_n1.log"
+    },
+    {
+      "topology": "swarm",
+      "query_id": "Q11",
+      "run_n": 1,
+      "log": "053_swarm_Q11_n1.log"
+    },
+    {
+      "topology": "monolith",
+      "query_id": "Q9",
+      "run_n": 1,
+      "log": "054_monolith_Q9_n1.log"
+    },
+    {
+      "topology": "sequential",
+      "query_id": "Q10",
+      "run_n": 1,
+      "log": "055_sequential_Q10_n1.log"
+    },
+    {
+      "topology": "static_graph_routed",
+      "query_id": "Q1",
+      "run_n": 1,
+      "log": "056_static_graph_routed_Q1_n1.log"
+    },
+    {
+      "topology": "dynamic_graph",
+      "query_id": "Q7",
+      "run_n": 1,
+      "log": "057_dynamic_graph_Q7_n1.log"
+    },
+    {
+      "topology": "static_graph_dag",
+      "query_id": "Q2",
+      "run_n": 1,
+      "log": "059_static_graph_dag_Q2_n1.log"
+    },
+    {
+      "topology": "swarm_constrained_adaptive",
+      "query_id": "Q2",
+      "run_n": 1,
+      "log": "060_swarm_constrained_adaptive_Q2_n1.log"
+    },
+    {
+      "topology": "sequential",
+      "query_id": "Q4",
+      "run_n": 1,
+      "log": "061_sequential_Q4_n1.log"
+    },
+    {
+      "topology": "planner_executor",
+      "query_id": "Q4",
+      "run_n": 1,
+      "log": "062_planner_executor_Q4_n1.log"
+    },
+    {
+      "topology": "mesh",
+      "query_id": "Q1",
+      "run_n": 1,
+      "log": "063_mesh_Q1_n1.log"
+    },
+    {
+      "topology": "swarm",
+      "query_id": "Q8",
+      "run_n": 1,
+      "log": "064_swarm_Q8_n1.log"
+    },
+    {
+      "topology": "sequential",
+      "query_id": "Q6",
+      "run_n": 1,
+      "log": "065_sequential_Q6_n1.log"
+    },
+    {
+      "topology": "swarm",
+      "query_id": "Q1",
+      "run_n": 1,
+      "log": "066_swarm_Q1_n1.log"
+    },
+    {
+      "topology": "swarm_constrained_adaptive",
+      "query_id": "Q11",
+      "run_n": 1,
+      "log": "067_swarm_constrained_adaptive_Q11_n1.log"
+    },
+    {
+      "topology": "swarm",
+      "query_id": "Q3",
+      "run_n": 1,
+      "log": "068_swarm_Q3_n1.log"
+    },
+    {
+      "topology": "static_graph_dag",
+      "query_id": "Q11",
+      "run_n": 1,
+      "log": "069_static_graph_dag_Q11_n1.log"
+    },
+    {
+      "topology": "sequential",
+      "query_id": "Q1",
+      "run_n": 1,
+      "log": "070_sequential_Q1_n1.log"
+    },
+    {
+      "topology": "monolith",
+      "query_id": "Q2",
+      "run_n": 1,
+      "log": "071_monolith_Q2_n1.log"
+    },
+    {
+      "topology": "swarm_constrained_adaptive",
+      "query_id": "Q1",
+      "run_n": 1,
+      "log": "072_swarm_constrained_adaptive_Q1_n1.log"
+    },
+    {
+      "topology": "planner_executor",
+      "query_id": "Q1",
+      "run_n": 1,
+      "log": "073_planner_executor_Q1_n1.log"
+    },
+    {
+      "topology": "static_graph_dag",
+      "query_id": "Q1",
+      "run_n": 1,
+      "log": "074_static_graph_dag_Q1_n1.log"
+    },
+    {
+      "topology": "static_graph_dag",
+      "query_id": "Q3",
+      "run_n": 1,
+      "log": "075_static_graph_dag_Q3_n1.log"
+    },
+    {
+      "topology": "swarm_constrained_adaptive",
+      "query_id": "Q4",
+      "run_n": 1,
+      "log": "076_swarm_constrained_adaptive_Q4_n1.log"
+    },
+    {
+      "topology": "static_graph_routed",
+      "query_id": "Q4",
+      "run_n": 1,
+      "log": "077_static_graph_routed_Q4_n1.log"
+    },
+    {
+      "topology": "mesh",
+      "query_id": "Q7",
+      "run_n": 1,
+      "log": "078_mesh_Q7_n1.log"
+    },
+    {
+      "topology": "sequential",
+      "query_id": "Q5",
+      "run_n": 1,
+      "log": "079_sequential_Q5_n1.log"
+    },
+    {
+      "topology": "swarm_constrained_adaptive",
+      "query_id": "Q9",
+      "run_n": 1,
+      "log": "080_swarm_constrained_adaptive_Q9_n1.log"
+    },
+    {
+      "topology": "mesh",
+      "query_id": "Q3",
+      "run_n": 1,
+      "log": "081_mesh_Q3_n1.log"
+    },
+    {
+      "topology": "swarm",
+      "query_id": "Q9",
+      "run_n": 1,
+      "log": "082_swarm_Q9_n1.log"
+    },
+    {
+      "topology": "mesh",
+      "query_id": "Q5",
+      "run_n": 1,
+      "log": "083_mesh_Q5_n1.log"
+    },
+    {
+      "topology": "planner_executor",
+      "query_id": "Q6",
+      "run_n": 1,
+      "log": "084_planner_executor_Q6_n1.log"
+    },
+    {
+      "topology": "sequential",
+      "query_id": "Q2",
+      "run_n": 1,
+      "log": "085_sequential_Q2_n1.log"
+    },
+    {
+      "topology": "sequential",
+      "query_id": "Q11",
+      "run_n": 1,
+      "log": "086_sequential_Q11_n1.log"
+    },
+    {
+      "topology": "swarm",
+      "query_id": "Q5",
+      "run_n": 1,
+      "log": "087_swarm_Q5_n1.log"
+    },
+    {
+      "topology": "monolith",
+      "query_id": "Q11",
+      "run_n": 1,
+      "log": "088_monolith_Q11_n1.log"
+    },
+    {
+      "topology": "static_graph_dag",
+      "query_id": "Q10",
+      "run_n": 1,
+      "log": "089_static_graph_dag_Q10_n1.log"
+    },
+    {
+      "topology": "mesh",
+      "query_id": "Q8",
+      "run_n": 1,
+      "log": "090_mesh_Q8_n1.log"
+    },
+    {
+      "topology": "swarm",
+      "query_id": "Q4",
+      "run_n": 1,
+      "log": "091_swarm_Q4_n1.log"
+    },
+    {
+      "topology": "dynamic_graph",
+      "query_id": "Q4",
+      "run_n": 1,
+      "log": "092_dynamic_graph_Q4_n1.log"
+    },
+    {
+      "topology": "static_graph_routed",
+      "query_id": "Q9",
+      "run_n": 1,
+      "log": "093_static_graph_routed_Q9_n1.log"
+    },
+    {
+      "topology": "monolith",
+      "query_id": "Q3",
+      "run_n": 1,
+      "log": "094_monolith_Q3_n1.log"
+    },
+    {
+      "topology": "swarm",
+      "query_id": "Q7",
+      "run_n": 1,
+      "log": "095_swarm_Q7_n1.log"
+    },
+    {
+      "topology": "static_graph_dag",
+      "query_id": "Q9",
+      "run_n": 1,
+      "log": "096_static_graph_dag_Q9_n1.log"
+    },
+    {
+      "topology": "monolith",
+      "query_id": "Q6",
+      "run_n": 1,
+      "log": "097_monolith_Q6_n1.log"
+    },
+    {
+      "topology": "static_graph_dag",
+      "query_id": "Q6",
+      "run_n": 1,
+      "log": "098_static_graph_dag_Q6_n1.log"
+    }
+  ],
+  "failed": [
+    {
+      "topology": "dynamic_graph",
+      "query_id": "Q9",
+      "run_n": 1,
+      "log": "034_dynamic_graph_Q9_n1.log"
+    },
+    {
+      "topology": "dynamic_graph",
+      "query_id": "Q11",
+      "run_n": 1,
+      "log": "041_dynamic_graph_Q11_n1.log"
+    },
+    {
+      "topology": "dynamic_graph",
+      "query_id": "Q10",
+      "run_n": 1,
+      "log": "058_dynamic_graph_Q10_n1.log"
+    }
+  ],
+  "remaining": 0,
+  "finished_at": "2026-09-05T23:38:40.141198+00:00"
+}

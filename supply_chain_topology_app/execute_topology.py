@@ -167,8 +167,8 @@ def _final_answer_text(r) -> str:
         return r.value.model_dump_json()
     return r.text or ""
 
-def _resolve_query(query_id: str) -> tuple[str, str]:
-    """Return (query_id, query_text) for this run.
+def _resolve_query(query_id: str) -> tuple[str, str, bool]:
+    """Return (query_id, query_text, implies_capability) for this run.
 
     The frozen eval set (query_metadata, built by T16) is the source of query text, so
     the run row can be joined back to its implied-tools list — without that,
@@ -176,17 +176,24 @@ def _resolve_query(query_id: str) -> tuple[str, str]:
     checks do nothing. SC_QUERY overrides the text for an ad-hoc run, which cannot be a
     frozen query any more, so it is labelled as such rather than borrowing an ID whose
     implied tools no longer describe it.
+
+    implies_capability is False only when implied_tools_json is an empty array, i.e. the
+    query is an out-of-scope/refusal probe (currently Q1). It drives whether the
+    confirmation turn is sent at all — see the `turns` construction in main(). An ad-hoc
+    SC_QUERY run has no metadata to read, so it is treated as implying capability and
+    keeps the full two-turn flow.
     """
     import sqlite3
     from measurement.run_store_schema import DB_PATH
 
     override = os.getenv("SC_QUERY", "").strip()
     if override:
-        return "Q_ADHOC", override
+        return "Q_ADHOC", override, True
     try:
         conn = sqlite3.connect(DB_PATH)
         row = conn.execute(
-            "SELECT query_text FROM query_metadata WHERE query_id = ?", (query_id,)
+            "SELECT query_text, implied_tools_json FROM query_metadata WHERE query_id = ?",
+            (query_id,),
         ).fetchone()
         conn.close()
     except Exception as exc:
@@ -196,7 +203,13 @@ def _resolve_query(query_id: str) -> tuple[str, str]:
             f"ABORT: query_id {query_id!r} is not in query_metadata. Run "
             f"measurement/build_query_metadata.py, or set SC_QUERY for an ad-hoc run."
         )
-    return query_id, row[0]
+    # A NULL implied_tools_json means query_metadata was never populated for this query,
+    # which is not the same as "implies nothing" -- fall back to the two-turn flow rather
+    # than silently skipping a turn on incomplete metadata.
+    implies_capability = True
+    if row[1] is not None:
+        implies_capability = bool(json.loads(row[1]))
+    return query_id, row[0], implies_capability
 
 
 def _turn1_plan_text(responses: list) -> str | None:
@@ -212,6 +225,84 @@ def _turn1_plan_text(responses: list) -> str | None:
     text = getattr(value, "chat_response", None) if value is not None else None
     text = (text or "").strip()
     return text or None
+
+
+# Encodings warmed before the run clock starts. cl100k_base is the one this stack was
+# observed fetching (5-Sep-26); o200k_base is warmed alongside it because newer OpenAI
+# models tokenize with it and a second cold fetch mid-run would cost the same stall.
+# ~3.5 MB total, downloaded once per machine and then reused from disk.
+_TIKTOKEN_WARM_ENCODINGS = ("cl100k_base", "o200k_base")
+
+# Above this, the encoders were almost certainly fetched over the network rather than
+# read from disk. A warm load is ~0.1s, so 5s is far outside normal variation.
+_TIKTOKEN_SLOW_S = 5.0
+
+
+def _preflight_tiktoken() -> None:
+    """Resolve tiktoken's BPE encoders before the run clock starts.
+
+    tiktoken does not bundle its encoder files. On a cache miss it downloads them from
+    openaipublic.blob.core.windows.net at first tokenizer use, which happens inside turn 1
+    and therefore inside the measured wall time -- observed 29.2s cold versus 0.08s warm
+    (5-Sep-26). Because nothing is printed between the query echo and the first API call,
+    that download presents as an unexplained hang with no indication of cause.
+
+    Running it here moves the cost outside every timed turn and converts a silent stall
+    into a named, actionable message. Never fatal: if the encoders cannot be fetched the
+    run proceeds and fails at its own API call, which reports a real error rather than
+    this one's guess at the cause.
+    """
+    try:
+        import tiktoken
+    except ImportError:
+        return  # not in the dependency tree on this machine -- nothing to warm
+
+    import tempfile
+
+    # tiktoken reads TIKTOKEN_CACHE_DIR, falling back to a directory under the OS temp
+    # path. On macOS that resolves under /var/folders/.../T/, which the OS purges
+    # periodically -- so an unset variable means the cache can silently vanish between
+    # runs and reintroduce the stall mid-experiment.
+    cache_dir = os.getenv("TIKTOKEN_CACHE_DIR", "").strip()
+    if not cache_dir:
+        default_dir = os.path.join(tempfile.gettempdir(), "data-gym-cache")
+        print(f"  tiktoken cache     : WARNING — TIKTOKEN_CACHE_DIR is unset, so the cache "
+              f"lives at {default_dir}")
+        print(f"                       The OS purges that path periodically. When it is "
+              f"purged, the next run re-downloads the")
+        print(f"                       encoders inside turn 1 and stalls ~30s with no "
+              f"output. Set TIKTOKEN_CACHE_DIR in .env")
+        print(f"                       to a persistent path to prevent this.")
+
+    t0 = time.perf_counter()
+    try:
+        for name in _TIKTOKEN_WARM_ENCODINGS:
+            tiktoken.get_encoding(name)
+    except Exception as exc:
+        # Almost always a network failure reaching the encoder host. Say so plainly and
+        # continue -- the run may not need a tokenizer at all, and if it does, its own
+        # error will be more accurate than anything guessed here.
+        elapsed = round(time.perf_counter() - t0, 1)
+        print(f"  tiktoken cache     : COULD NOT WARM after {elapsed}s — {type(exc).__name__}: {exc}")
+        print(f"                       tiktoken fetches its encoders from "
+              f"openaipublic.blob.core.windows.net, which is a")
+        print(f"                       different host from api.openai.com and can be "
+              f"blocked independently of it. Verify with:")
+        print(f"                         curl -sSf --max-time 10 -o /dev/null "
+              f"https://openaipublic.blob.core.windows.net/encodings/cl100k_base.tiktoken")
+        print(f"                       Continuing — if a tokenizer is needed, the run will "
+              f"fail with its own error.")
+        return
+
+    elapsed = round(time.perf_counter() - t0, 1)
+    if elapsed >= _TIKTOKEN_SLOW_S:
+        print(f"  tiktoken cache     : COLD — encoders downloaded, took {elapsed}s "
+              f"(warm is ~0.1s)")
+        print(f"                       This cost is now outside the measured turns, so this "
+              f"run's timings are unaffected.")
+        print(f"                       Cache dir: {cache_dir or 'OS temp (unset)'}")
+    else:
+        print(f"  tiktoken cache     : warm ({elapsed}s)")
 
 
 async def main():
@@ -230,7 +321,8 @@ async def main():
     # order -- see query_set_v1.xlsx's Q1 note for the full old-ID -> new-ID mapping).
     # SC_QUERY still overrides the text for an ad-hoc run; see _resolve_query for what
     # that costs.
-    query_id, query = _resolve_query(os.getenv("SC_QUERY_ID", "").strip() or "Q11")
+    query_id, query, _implies_capability = _resolve_query(
+        os.getenv("SC_QUERY_ID", "").strip() or "Q11")
     query += f"\n\nThe input orders data is in the file at path: {_ORDERS}"
 
     # no-cache when 0, will do a freshness check and add a system message to the query 
@@ -258,6 +350,10 @@ async def main():
           f"SC_DEV_PATH_FALLBACK={os.getenv('SC_DEV_PATH_FALLBACK', '<unset>')}  "
           f"model={MODEL}  query_id={query_id}")
 
+    # Before anything is timed -- see the function's docstring for why this is not
+    # left to happen on its own inside turn 1.
+    _preflight_tiktoken()
+
     if not _no_cache:
         query += build_freshness_system_msg()
     else:
@@ -271,10 +367,24 @@ async def main():
     # Reuse one session across turns so planner and executor share context.
     session = master.create_session()
 
-    turns = [
-        ("TURN 1 — sending query (expecting plan)", query),
-        ("TURN 2 — confirming ('Yes, proceed.') — tools will run now", "Yes, proceed."),
-    ]
+    # Turn 2 exists to approve a plan the coordinator offered on turn 1. A query that
+    # implies zero capabilities (Q1, the out-of-scope probe) has no plan to approve --
+    # the correct turn-1 outcome is a refusal, and sending "Yes, proceed." anyway
+    # overrides that refusal and drives tool execution the query never warranted. The
+    # measured behaviour for such a query is entirely turn 1's restraint, so the
+    # confirmation turn is not sent at all.
+    #
+    # Gated on implied_tools_json being empty rather than on query_id == "Q1", so any
+    # future out-of-scope probe is covered without touching this code, and on metadata
+    # rather than on parsing the coordinator's text, so nothing here depends on matching
+    # a refusal string across nine differently-worded conditions.
+    turns = [("TURN 1 — sending query (expecting plan)", query)]
+    if _implies_capability:
+        turns.append(
+            ("TURN 2 — confirming ('Yes, proceed.') — tools will run now", "Yes, proceed."))
+    else:
+        print(f"  turn-2 gate        : SKIPPED — {query_id} implies no capability "
+              f"(out-of-scope probe); turn-1 restraint is the measured outcome")
 
     responses = []
     turn_times = []
@@ -382,7 +492,8 @@ async def main():
                      "completion_tok": orch_totals["completion_tokens"],
                      "total_tok": orch_totals["total_tokens"],
                      "cost_usd": estimate_cost(MODEL, orch_totals)})
-    rows.append({"tool": f"— Master ({len(responses)} turns)", "duration_s": master_time,
+    _turn_word = "turn" if len(responses) == 1 else "turns"
+    rows.append({"tool": f"— Master ({len(responses)} {_turn_word})", "duration_s": master_time,
                  "input_chars": None, "output_chars": None, "valid_json": None,
                  "prompt_tok": master_totals["prompt_tokens"],
                  "completion_tok": master_totals["completion_tokens"],
@@ -535,7 +646,18 @@ def _print_run_validity(run_id: str) -> None:
         return
 
     plan = row["plan_presented"]
-    plan_txt = {1: "yes", 0: "NO", None: "n/a (structural)"}.get(plan, str(plan))
+    # A query implying zero capabilities (Q1, the out-of-scope probe) inverts two checks:
+    # there is no plan to present, and any tool call is a restraint failure rather than
+    # expected work. implied is an empty set for such a query and None only when
+    # query_metadata was never populated, so the two cases stay distinguishable.
+    zero_capability = implied is not None and not implied
+    if zero_capability:
+        # plan_presented is derived from turn-1 chat_response being non-empty, which a
+        # refusal satisfies. Reporting that as "yes" would read as a plan having been
+        # offered, so it is labelled for what it actually is on this query.
+        plan_txt = "n/a — out-of-scope probe; turn-1 text is a decline, not a plan"
+    else:
+        plan_txt = {1: "yes", 0: "NO", None: "n/a (structural)"}.get(plan, str(plan))
     fallback = row["path_fallback_used"]
     missing = row["missing_expected_tools_json"] or "[]"
 
@@ -562,10 +684,17 @@ def _print_run_validity(run_id: str) -> None:
     print(f"  empty results      : {empty_tools if empty_tools else 'none'}")
 
     violations = json.loads(row["dependency_violations_json"] or "[]")
+    # check_dependencies() returns an empty list both when every dependency was genuinely
+    # respected AND when zero capabilities ran at all (nothing to check is vacuously
+    # "no violations"). Found 6-Sep-26 on dynamic_graph/Q8: tools expected/ran 3/0 still
+    # printed "respected", reading as an orderly run when the real story is that nothing
+    # executed. Distinguish the two by whether any tool call actually happened.
     if violations:
         print(f"  dependency order   : {len(violations)} VIOLATION(S)")
         for v in violations:
             print(f"    ! {v['detail']}")
+    elif not row["tool_call_count_actual"]:
+        print("  dependency order   : N/A — no tool calls were made (see tools expected/ran above)")
     else:
         print("  dependency order   : respected — every capability waited for its inputs")
 
@@ -580,8 +709,27 @@ def _print_run_validity(run_id: str) -> None:
     if conc and conc.get("exploited") is not None:
         busy = conc["actual_span_s"] - conc.get("coordinator_idle_s", 0.0)
         sched = (conc["critical_path_s"] / busy) if busy else None
-        print(f"  scheduling         : {sched:.0%} of achievable overlap"
-              f"  ({len(missed)} pair(s) left unoverlapped)" if sched is not None else "")
+        # A ratio above 1.0 is not a better-than-perfect schedule. critical_path_s is
+        # the floor the dependency graph implies, so busy time coming in under it is
+        # only possible by running a dependent pair at the same time. Printing the raw
+        # percentage made those runs read as the best-scheduled ones: the pilot batch
+        # shows Mesh values from 97% to 146%, with the 146% run also carrying a
+        # dependency violation. report_topology_run.py already guarded this; this
+        # printer did not, and it is the one every batch run uses (Risk Log R65).
+        # Tolerance matches backfill_scheduling._INFEASIBLE_TOLERANCE: a ratio
+        # marginally above 1.0 is timing noise from two-decimal offsets on short calls,
+        # not a breach. Pilot values separate cleanly, with everything from 1.046 upward
+        # carrying a recorded violation and the values below that carrying none.
+        if sched is None:
+            pass
+        elif sched > 1.02:
+            print(f"  scheduling         : n/a -- busy time ({busy:.2f}s) came in UNDER the "
+                  f"dependency-respecting floor ({conc['critical_path_s']:.2f}s),")
+            print(f"                       which is only possible by running a dependent pair "
+                  f"concurrently. See the violation(s) above.")
+        else:
+            print(f"  scheduling         : {sched:.0%} of achievable overlap"
+                  f"  ({len(missed)} pair(s) left unoverlapped)")
         print(f"  coordinator idle   : {conc.get('coordinator_idle_s', 0.0)}s spent deciding "
               f"between waves (not a scheduling fault)")
         print(f"  span               : {conc['actual_span_s']}s vs critical path "
@@ -610,7 +758,17 @@ def _print_run_validity(run_id: str) -> None:
                         "a default was substituted. This run is NOT valid for measurement (R10).")
     if missing not in ("[]", "", None):
         problems.append(f"expected tools never ran: {missing}")
-    if plan == 0:
+    if zero_capability:
+        # Restraint is the measured outcome here (design spec F14). Running any tool for a
+        # query that implies none is the failure mode, and it would otherwise pass silently
+        # because missing_expected_tools_json is empty when nothing was expected.
+        ran = row["tool_call_count_actual"] or 0
+        if ran:
+            problems.append(
+                f"{ran} tool call(s) ran for {row['query_id']}, which implies no capability — "
+                "the out-of-scope request was acted on rather than declined. This is the "
+                "restraint failure F14 measures, not a valid capability run.")
+    elif plan == 0:
         problems.append("no plan was presented on turn 1 — the 2-turn plan/confirm flow did not "
                         "engage; plan_presented is a measured comparison field.")
     concerning_empty = ([t for t in empty_tools if implied_canonical is None or canonical(t) in implied_canonical])

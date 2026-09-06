@@ -1,0 +1,140 @@
+==================================================================
+ topology : dynamic_graph
+ run_n    : 2
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 15:27:59
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4-mini  query_id=Q10
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 4 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[15:28:00] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > Diagnose today's delay patterns, check how a storm in the East would affect things, and tell me how to optimize delivery
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+
+============================================================
+[15:28:02] TURN 1 — master response
+============================================================
+{
+  "proceed": true,
+  "chat_response": ""
+}
+
+============================================================
+[15:28:02] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+  >> tool_start predict_delivery_delays (input=176 chars)
+  << tool_end   predict_delivery_delays done in 0.84s (output=70,166 chars, valid_json=True)
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+  >> tool_start get_delay_diagnosis (input=0 chars)
+  << tool_end   get_delay_diagnosis done in 0.04s (output=42,878 chars, valid_json=True)
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+  >> tool_start simulate_order_delays (input=64 chars)
+  << tool_end   simulate_order_delays done in 0.03s (output=12,237 chars, valid_json=False)
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+  >> tool_start recommend_actions (input=372 chars)
+  << tool_end   recommend_actions done in 11.81s (output=12,204 chars, valid_json=False)
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+
+============================================================
+[15:29:59] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "Under **stormy** conditions in the **East**, delayed orders shift sharply from **short** into **medium** and **long** delays, with the worst impact co... [228 characters]",
+  "recommendation_summary": "The optimization focus is to reduce exposure where delay risk compounds: weather-sensitive express and same-day lanes, especially on longer routes and... [348 characters]",
+  "email_alert_summary": ""
+}
+
+============================================================
+[15:29:59] SUMMARY — tools, tokens & cost  [model=gpt-5.4-mini, tool calls=4]
+============================================================
+                        tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+predict_delivery_delays_tool     24.62s           0       20,097       True     30,872          5,321    36,193  $0.0471
+diagnose_delay_patterns_tool     17.39s           0       16,844       True     75,036          4,729    79,765  $0.0776
+      delay_simulations_tool     17.96s           0       17,014       True     99,192          4,098   103,290  $0.0928
+         recommendation_tool     25.85s           0       10,574       True      8,347          2,570    10,917  $0.0178
+          — Sub-agents TOTAL     85.82s                                None    213,447         16,718   230,165  $0.2353
+       — Orchestration turns                                           None  1,022,821          3,671 1,026,492  $0.7836
+          — Master (2 turns)     17.58s                                None      4,644            156     4,800  $0.0042
+               — GRAND TOTAL    118.90s                                None  1,240,912         20,545 1,261,457  $1.0231
+
+Persisted run_id: d5dbb328-8c7a-42e2-b33f-af8f2d1de80d
+
+============================================================
+[15:29:59] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring d5dbb328  topology=dynamic_graph  model=gpt-5.4-mini
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  predict_summary                  rel=5.0 faith=5.0 safe=5.0
+  predict_row_insights_sample      rel=5.0 faith=5.0 safe=5.0
+  simulate_row_reasons_sample      rel=4.0 faith=5.0 safe=5.0
+  diagnose_delay_patterns_tool     rel=5.0 faith=5.0 safe=5.0
+  recommendation_tool              rel=5.0 faith=5.0 safe=5.0
+  recommendation_summary           rel=4.0 faith=5.0 safe=5.0
+  simulate_narrative               rel=4.0 faith=5.0 safe=5.0
+
+  capability blend:
+    predict              rel=5.00 faith=5.00 safe=5.00   (50% predict_summary / 50% predict_row_insights_sample)
+    diagnose             rel=4.00 faith=4.00 safe=4.00   (80% diagnose_delay_patterns_tool / 20% diagnose_delay_patterns_tool_raw)
+    simulate             rel=4.00 faith=5.00 safe=5.00   (20% simulate_narrative / 80% simulate_row_reasons_sample)
+    recommendation       rel=3.90 faith=4.00 safe=4.00   (10% recommendation_summary / 70% recommendation_tool / 20% recommendation_tool_raw)
+
+  SCOPE-ADJUSTED MEAN 4.38/5   (every implied capability was attempted -- same as judge mean)
+
+  JUDGE WEIGHTED MEAN 4.38/5   (relevance 4.22 x.45, faithfulness 4.50 x.45, safety 4.50 x.10)
+  scored 7 artifact(s) -> 4 capability score(s) -> quality_scores
+
+============================================================
+[15:30:12] RUN VALIDITY
+============================================================
+  topology           : dynamic_graph
+  coordinator prompt : dynamic_graph/coordinator = 9670f683
+  plan presented     : NO
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 4 / 4
+  missing tools      : []
+  empty results      : none
+  dependency order   : respected — every capability waited for its inputs
+  scheduling         : 79% of achievable overlap  (2 pair(s) left unoverlapped)
+  coordinator idle   : 15.49s spent deciding between waves (not a scheduling fault)
+  span               : 101.32s vs critical path 67.87s
+
+  execution timeline:
+    turn 1 start    0.00
+    turn 1 end      1.46   (plan / no tools yet)
+    turn 2 start    1.46
+    ..... 10.21s model reasoning (no tool running) .....
+    predict        10.21 ->   34.83
+    ....... 2.12s idle .......
+    diagnose       36.95 ->   54.34
+    ....... 2.36s idle .......
+    simulate       56.70 ->   74.66
+    ....... 11.01s idle .......
+    recommend      85.67 ->  111.53
+    ..... 7.37s model composing answer .....
+    turn 2 end    118.90
+    run end       118.90
+
+    ~ delay_simulations_tool could have run alongside diagnose_delay_patterns_tool (ready at 24.62s, actually started 46.49s)
+    ~ recommendation_tool could have run alongside delay_simulations_tool (ready at 44.13s, actually started 75.47s)
+  turn-1 plan text   : (none stored — no plan was produced)
+
+  ATTENTION:
+    - no plan was presented on turn 1 — the 2-turn plan/confirm flow did not engage; plan_presented is a measured comparison field.
+    - 2 pair(s) were free to overlap but ran sequentially. Not an error — the dependency order was respected — but it is what separates a code-scheduled topology from one that has to reason the independence out.
+
+finished : 2026-09-06 15:30:12

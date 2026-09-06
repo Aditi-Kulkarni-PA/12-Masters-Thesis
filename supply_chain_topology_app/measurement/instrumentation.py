@@ -102,13 +102,57 @@ def is_json(s: str) -> bool:
 
 # Usage-details normalizer: converts framework-specific token fields into the
 # project's stable prompt/completion/total shape.
+# Keys a provider may use for the cached portion of the prompt. The field is not part of
+# the flat usage_details surface, so it is looked for under several spellings and, when
+# present, under the nested details object the Responses API uses. Capturing it is what
+# lets cost separate cached prompt tokens from fresh ones -- see the note in
+# extract_usage below for why that matters.
+_CACHED_TOKEN_KEYS = (
+    "cached_token_count",
+    "cached_tokens",
+    "input_cached_token_count",
+    "prompt_cached_token_count",
+)
+
+
+def _cached_tokens(usage: Any) -> int:
+    """Cached prompt tokens for one response, or 0 when the provider reports none."""
+    if not usage:
+        return 0
+    for key in _CACHED_TOKEN_KEYS:
+        value = usage.get(key) if isinstance(usage, dict) else getattr(usage, key, None)
+        if value:
+            return int(value)
+    # Responses API nests it: usage.input_tokens_details.cached_tokens
+    for parent in ("input_token_details", "input_tokens_details", "prompt_tokens_details"):
+        nested = usage.get(parent) if isinstance(usage, dict) else getattr(usage, parent, None)
+        if nested:
+            for key in _CACHED_TOKEN_KEYS:
+                value = (nested.get(key) if isinstance(nested, dict)
+                         else getattr(nested, key, None))
+                if value:
+                    return int(value)
+    return 0
+
+
 def extract_usage(response: Any) -> dict:
-    """Normalize an AgentResponse's usage_details into a flat int dict."""
+    """Normalize an AgentResponse's usage_details into a flat int dict.
+
+    cached_tokens is the portion of prompt_tokens the provider served from its prompt
+    cache. It is captured because cached prompt tokens are billed at a fraction of the
+    fresh input rate, so charging every prompt token at the full rate overstates cost.
+    The overstatement grows with the size of the repeated prompt prefix and with the
+    input price, which is why it is largest at the most expensive tier.
+
+    A provider that reports no cached count yields 0, which prices the run exactly as
+    before. Nothing here depends on the field existing.
+    """
     usage = getattr(response, "usage_details", None) or {}
     return {
         "prompt_tokens":     int(usage.get("input_token_count") or 0),
         "completion_tokens": int(usage.get("output_token_count") or 0),
         "total_tokens":      int(usage.get("total_token_count") or 0),
+        "cached_tokens":     _cached_tokens(usage),
     }
 
 # Aggregate token usage across all sub-agents and master agent

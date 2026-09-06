@@ -1,0 +1,122 @@
+==================================================================
+ topology : swarm_constrained_adaptive
+ run_n    : 3
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 20:14:36
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4  query_id=Q4
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 3 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[20:14:37] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > What will be the delivery impact if there is a storm in the east today?
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+     - swarm_constrained_adaptive_seed_planning agent: 4,485 prompt / 255 completion tokens over 1 message(s)
+  -- swarm_ca: wave 1 running ['predict'] concurrently (prerequisites met); still waiting on ['simulate']
+  >> tool_start predict_delivery_delays_tool (input=271 chars)
+     - predict_delivery_delays_tool agent: 64,038 prompt / 9,413 completion tokens over 5 message(s)
+  << tool_end   predict_delivery_delays_tool done in 54.77s (output=18,529 chars, valid_json=True)
+  -- swarm_ca: wave 2 running ['simulate'] concurrently (prerequisites met); still waiting on nothing
+  >> tool_start delay_simulations_tool (input=367 chars)
+  -- swarm_ca: simulate read_blackboard(predict) -> hit
+     - delay_simulations_tool agent: 34,742 prompt / 7,877 completion tokens over 7 message(s)
+  << tool_end   delay_simulations_tool done in 43.24s (output=16,296 chars, valid_json=True)
+  swarm_ca: 2 wave(s) run; capabilities that posted a result: ['predict', 'simulate']
+
+============================================================
+[20:16:18] TURN 1 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "Posting simulation results for east-region delayed orders under stormy weather, including only the 40 rows shown by the simulation tool and enriching ... [245 characters]",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[20:16:18] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+
+============================================================
+[20:16:18] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "Posting simulation results for east-region delayed orders under stormy weather, including only the 40 rows shown by the simulation tool and enriching ... [245 characters]",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[20:16:18] SUMMARY — tools, tokens & cost  [model=gpt-5.4, tool calls=2]
+============================================================
+                        tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+predict_delivery_delays_tool     54.77s         271       18,529       True     64,038          9,413    73,451  $0.3013
+      delay_simulations_tool     43.24s         367       16,296       True     34,742          7,877    42,619  $0.2050
+          — Sub-agents TOTAL     98.01s                                None     98,780         17,290   116,070  $0.5063
+       — Orchestration turns                                           None      4,485            255     4,740  $0.0150
+          — Master (2 turns)      2.82s                                None      8,970            510     9,480  $0.0301
+               — GRAND TOTAL    100.84s                                None    112,235         18,055   130,290  $0.5514
+
+Persisted run_id: 77349a92-9e80-48d4-9782-801b5bcb6b2b
+
+============================================================
+[20:16:18] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring 77349a92  topology=swarm_constrained_adaptive  model=gpt-5.4
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  predict_summary                  rel=5.0 faith=5.0 safe=5.0
+  predict_row_insights_sample      rel=5.0 faith=5.0 safe=5.0
+  simulate_row_reasons_sample      rel=4.0 faith=4.0 safe=5.0
+  simulate_narrative               rel=3.0 faith=4.0 safe=5.0
+
+  capability blend:
+    predict              rel=5.00 faith=5.00 safe=5.00   (50% predict_summary / 50% predict_row_insights_sample)
+    simulate             rel=3.80 faith=4.00 safe=5.00   (20% simulate_narrative / 80% simulate_row_reasons_sample)
+
+  SCOPE-ADJUSTED MEAN 4.50/5   (every implied capability was attempted -- same as judge mean)
+
+  JUDGE WEIGHTED MEAN 4.50/5   (relevance 4.40 x.45, faithfulness 4.50 x.45, safety 5.00 x.10)
+  scored 4 artifact(s) -> 2 capability score(s) -> quality_scores
+
+============================================================
+[20:16:25] RUN VALIDITY
+============================================================
+  topology           : swarm_constrained_adaptive
+  coordinator prompt : swarm_constrained_adaptive/master = ac79b46d
+  plan presented     : NO
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 2 / 2
+  missing tools      : []
+  empty results      : none
+  dependency order   : respected — every capability waited for its inputs
+  scheduling         : 100% of achievable overlap  (0 pair(s) left unoverlapped)
+  coordinator idle   : 0.0s spent deciding between waves (not a scheduling fault)
+  span               : 98.02s vs critical path 98.02s
+
+  execution timeline:
+    turn 1 start    0.00
+    ..... 2.82s model reasoning (no tool running) .....
+    predict         2.82 ->   57.59
+    simulate       57.59 ->  100.84
+    turn 1 end    100.84
+    turn 2 start  100.84
+    turn 2 end    100.84   (no tools this turn)
+    run end       100.84
+  turn-1 plan text   : (none stored — no plan was produced)
+
+  ATTENTION:
+    - no plan was presented on turn 1 — the 2-turn plan/confirm flow did not engage; plan_presented is a measured comparison field.
+
+finished : 2026-09-06 20:16:25

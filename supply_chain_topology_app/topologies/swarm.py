@@ -97,6 +97,7 @@ from core.schemas import (
 )
 from core.tool_descriptions import CAPABILITY_DESCRIPTIONS, TOOL_NAME_BY_CAPABILITY
 from tools import recommend_actions, fetch_delayed_orders_for_email
+from measurement.dependencies import TRUE_DEPENDENCIES
 from measurement.instrumentation import run_agent_as_tool_call, run_sub_agent
 
 TOPOLOGY = "swarm"
@@ -224,6 +225,15 @@ class BlackboardEntry(BaseModel):
     note: str = Field(description="The specialist's own short note on what it posted "
                                     "and why -- its answer to the write_instruction it was given.")
     result: dict
+    self_reported: bool = Field(
+        default=True,
+        description="True if the specialist itself called write_blackboard. False if "
+                    "it did not, and the wave loop captured its already-produced "
+                    "structured response on its behalf (R61) -- every other topology's "
+                    "final answer is a Pydantic response_format, which is captured "
+                    "unconditionally by the framework; this makes Swarm's capture the "
+                    "same guarantee, while still recording whether the mandated "
+                    "self-report actually happened, for orchestration-behaviour analysis.")
 
 
 class BlackboardReadLogRow(BaseModel):
@@ -247,10 +257,10 @@ class Blackboard(BaseModel):
     pending_requests: list[AgentSpec] = Field(default_factory=list)
 
     def write(self, *, capability: Capability, agent_name: str, wave: int,
-              note: str, result: dict) -> None:
+              note: str, result: dict, self_reported: bool = True) -> None:
         self.entries.append(BlackboardEntry(
             capability=capability, agent_name=agent_name, wave=wave,
-            note=note, result=result))
+            note=note, result=result, self_reported=self_reported))
 
     def request(self, spec: AgentSpec) -> None:
         """Called from the request_specialist tool -- a specialist proposing what it
@@ -323,6 +333,12 @@ def _make_read_blackboard_tool(blackboard: Blackboard, reader_capability: Capabi
         email. Returns its result as text if already posted, or a plain message saying
         it has not posted yet."""
         result = blackboard.read(reader_capability, capability)
+        # Printed, not just logged into blackboard.read_log, so a specialist's own
+        # dependency-fetching behaviour is visible in the run's console/log output the
+        # same way write-compliance already is -- read_log was populated before this
+        # print existed but never surfaced anywhere a run's log could show it.
+        print(f"  -- swarm: {reader_capability} read_blackboard({capability}) -> "
+              f"{'hit' if result is not None else 'miss (nothing posted yet)'}", flush=True)
         return f"No result posted yet for '{capability}'." if result is None else str(result)
     return read_blackboard
 
@@ -376,6 +392,19 @@ def agent_name_for(capability: Capability, wave_num: int) -> str:
     plain Swarm and Constrained Adaptive Swarm, which share this construction shape,
     cannot silently drift apart on how an agent is named."""
     return f"Swarm {capability.title()} Specialist (wave {wave_num})"
+
+
+def _true_prereq_capabilities(capability: Capability) -> set[str]:
+    """The capability-name form of *capability*'s real prerequisites, per
+    measurement/dependencies.py's own TRUE_DEPENDENCIES table (keyed by wrapped tool
+    names) mapped back through TOOL_NAME_BY_CAPABILITY. Same helper as Constrained
+    Adaptive Swarm's own (swarm_constrained_adaptive.py) -- kept as a duplicate
+    function rather than a shared import because the two modules' capability sets and
+    TOOL_NAME_BY_CAPABILITY mapping are otherwise independent of each other; this is
+    the one fact both need from measurement/dependencies.py."""
+    tool_name = TOOL_NAME_BY_CAPABILITY[capability]
+    prereq_tools = set(TRUE_DEPENDENCIES.get(tool_name, ()))
+    return {cap for cap, name in TOOL_NAME_BY_CAPABILITY.items() if name in prereq_tools}
 
 
 def _build_specialist(spec: AgentSpec, blackboard: Blackboard, *,
@@ -440,11 +469,29 @@ def _build_specialist(spec: AgentSpec, blackboard: Blackboard, *,
     # its own error-handling instructions -- a genuinely underspecified task, not a
     # simulate-side failure.
     input_handling = get_instruction("input_handling")
+    # Read mandate for any TRUE_DEPENDENCIES prerequisite -- R62. spec.task was
+    # authored by whichever specialist called request_specialist for this one (or by
+    # the seed call, for wave 1), at a point before this specialist's prerequisites
+    # necessarily had real content yet -- it cannot carry that content. Without this,
+    # tool_choice="required" (below) is satisfied by calling the domain tool first,
+    # with the prerequisite argument left empty (confirmed live, R62: recommend called
+    # recommendation_tool with an empty diagnosis_summary, which recommend_actions()
+    # itself immediately rejected via its own _MIN_DIAGNOSIS_CHARS guard -- fast, thin,
+    # valid JSON, no error surfaced). dependency_facts above tells this specialist WHAT
+    # depends on what; this tells it what to DO about its own prerequisites.
+    prereq_caps = sorted(_true_prereq_capabilities(capability))
+    read_mandate = (
+        f"Before calling your domain tool, call read_blackboard for each of: "
+        f"{', '.join(prereq_caps)}. Pass what it returns as that argument -- do not "
+        f"call your domain tool with that argument empty or invented.\n\n"
+        if prereq_caps else ""
+    )
     instructions = (
         f"{domain_instructions}\n\n---\n\n"
         f"{dependency_facts}\n\n---\n\n"
         f"{input_handling}\n\n---\n\n"
         f"## Blackboard\n"
+        f"{read_mandate}"
         f"Before you finish, you MUST call write_blackboard to post your result. "
         f"What to post: {spec.write_instruction}\n\n"
         f"Nothing else in this system checks what the request still needs -- that is "
@@ -605,13 +652,31 @@ class SwarmEntryPoint:
                     print(f"  !! swarm: {cap} failed in wave {wave_num}: {result}", flush=True)
 
             # Write-compliance check -- mandating write_blackboard in the prompt does
-            # not guarantee the framework enforces the call. Measured, not assumed.
+            # not guarantee the framework enforces the call (confirmed R61: MAF resets
+            # tool_choice="required" to "auto" after one iteration, agent_framework
+            # _tools.py's own function-invocation loop, so only the specialist's FIRST
+            # tool call is ever forced). Still measured, not silently assumed -- but no
+            # longer left to cost a run its data either: every other topology's final
+            # answer is captured unconditionally via response_format, so a specialist
+            # that skipped write_blackboard gets its already-produced structured result
+            # force-captured here, the same guarantee, with self_reported=False so the
+            # miss stays visible for analysis instead of disappearing into a silent fix.
             posted = {e.capability for e in blackboard.entries[before:]}
-            for cap in run_this_wave:
-                if cap not in posted:
-                    print(f"  !! swarm: {cap} did not post to the blackboard in wave "
-                          f"{wave_num} despite the write mandate -- write-compliance "
-                          f"miss", flush=True)
+            for cap, spec in run_this_wave.items():
+                if cap in posted:
+                    continue
+                print(f"  !! swarm: {cap} did not post to the blackboard in wave "
+                      f"{wave_num} despite the write mandate -- write-compliance "
+                      f"miss (R61: forcing capture of its own structured result)",
+                      flush=True)
+                result = dict(zip(run_this_wave, results)).get(cap)
+                value = getattr(result, "value", None)
+                forced_result = value.model_dump() if isinstance(value, BaseModel) else {}
+                blackboard.write(
+                    capability=cap, agent_name=agents[cap].name, wave=wave_num,
+                    note="Auto-captured by the wave loop -- the specialist completed "
+                         "its work but did not call write_blackboard itself.",
+                    result=forced_result, self_reported=False)
 
             # The NEXT wave is exactly what got requested during this one, run
             # unconditionally -- no check that a requested capability's own

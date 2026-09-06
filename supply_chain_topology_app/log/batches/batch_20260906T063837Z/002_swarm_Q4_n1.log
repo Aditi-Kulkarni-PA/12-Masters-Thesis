@@ -1,0 +1,120 @@
+==================================================================
+ topology : swarm
+ run_n    : 1
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 12:11:16
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4-nano  query_id=Q4
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 3 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[12:11:17] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > What will be the delivery impact if there is a storm in the east today?
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+     - swarm_seed_planning agent: 4,503 prompt / 165 completion tokens over 1 message(s)
+  -- swarm: wave 1 running ['simulate'] concurrently (agent-requested; no readiness check)
+  >> tool_start delay_simulations_tool (input=261 chars)
+  -- swarm: simulate read_blackboard(predict) -> miss (nothing posted yet)  -- swarm: simulate read_blackboard(diagnose) -> miss (nothing posted yet)  -- swarm: simulate read_blackboard(simulate) -> miss (nothing posted yet)  -- swarm: simulate read_blackboard(recommend) -> miss (nothing posted yet)
+
+
+
+  -- swarm: simulate read_blackboard(email) -> miss (nothing posted yet)
+     - delay_simulations_tool agent: 97,076 prompt / 4,256 completion tokens over 11 message(s)
+  << tool_end   delay_simulations_tool done in 34.42s (output=14,907 chars, valid_json=True)
+  swarm: 1 wave(s) run; capabilities that posted a result: ['simulate']
+
+============================================================
+[12:11:54] TURN 1 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "Posted what-if simulation impact for today assuming stormy weather in the east region. Includes severity shift counts and key affected segments from the simulation output.",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[12:11:54] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+
+============================================================
+[12:11:54] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "Posted what-if simulation impact for today assuming stormy weather in the east region. Includes severity shift counts and key affected segments from the simulation output.",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[12:11:54] SUMMARY — tools, tokens & cost  [model=gpt-5.4-nano, tool calls=1]
+============================================================
+                  tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+delay_simulations_tool     34.42s         261       14,907       True     97,076          4,256   101,332  $0.0247
+    — Sub-agents TOTAL     34.42s                                None     97,076          4,256   101,332  $0.0247
+ — Orchestration turns                                           None      4,503            165     4,668  $0.0011
+    — Master (2 turns)      2.36s                                None      9,006            330     9,336  $0.0022
+         — GRAND TOTAL     36.78s                                None    110,585          4,751   115,336  $0.0281
+
+Persisted run_id: 93af9071-6691-48b1-8e4e-b5f22b21cfff
+
+============================================================
+[12:11:54] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring 93af9071  topology=swarm  model=gpt-5.4-nano
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  simulate_row_reasons_sample      rel=4.0 faith=5.0 safe=5.0
+  simulate_narrative               rel=3.0 faith=4.0 safe=5.0
+
+  capability blend:
+    simulate             rel=3.80 faith=4.80 safe=5.00   (20% simulate_narrative / 80% simulate_row_reasons_sample)
+
+  SCOPE-ADJUSTED MEAN 2.19/5   (zero-filled, implied but never attempted: predict)
+
+  JUDGE WEIGHTED MEAN 4.37/5   (relevance 3.80 x.45, faithfulness 4.80 x.45, safety 5.00 x.10)
+  scored 2 artifact(s) -> 1 capability score(s) -> quality_scores
+
+============================================================
+[12:11:57] RUN VALIDITY
+============================================================
+  topology           : swarm
+  coordinator prompt : swarm/master = 4b404fc6
+  plan presented     : NO
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 2 / 1
+  missing tools      : ["predict_delivery_delays_tool"]
+  empty results      : none
+  dependency order   : 1 VIOLATION(S)
+    ! delay_simulations_tool ran but predict_delivery_delays_tool never did
+  scheduling         : 100% of achievable overlap  (0 pair(s) left unoverlapped)
+  coordinator idle   : 0.0s spent deciding between waves (not a scheduling fault)
+  span               : 34.42s vs critical path 34.42s
+
+  execution timeline:
+    turn 1 start    0.00
+    ..... 2.36s model reasoning (no tool running) .....
+    simulate        2.36 ->   36.78
+    turn 1 end     36.78
+    turn 2 start   36.78
+    turn 2 end     36.78   (no tools this turn)
+    run end        36.78
+  turn-1 plan text   : (none stored — no plan was produced)
+
+  ATTENTION:
+    - expected tools never ran: ["predict_delivery_delays_tool"]
+    - no plan was presented on turn 1 — the 2-turn plan/confirm flow did not engage; plan_presented is a measured comparison field.
+    - dependency order violated (1): a capability acted before the work it consumes had finished. Recoverable via upstream_missing, but it is the orchestration quality being measured — see run.dependency_violations_json.
+
+finished : 2026-09-06 12:11:57

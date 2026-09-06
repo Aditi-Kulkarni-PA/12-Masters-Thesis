@@ -1,0 +1,119 @@
+==================================================================
+ topology : dynamic_graph
+ run_n    : 1
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 03:04:55
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4-nano  query_id=Q3
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 0 derived file(s), 0 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[03:04:56] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > Identify customers impacted with delivery delays and send an email to them
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+
+============================================================
+[03:04:57] TURN 1 — master response
+============================================================
+{
+  "proceed": true,
+  "chat_response": ""
+}
+
+============================================================
+[03:04:57] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+  >> tool_start predict_delivery_delays (input=176 chars)
+  << tool_end   predict_delivery_delays done in 0.82s (output=70,166 chars, valid_json=True)
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+  .. still writing (25s since the last tool call)
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+  >> tool_start fetch_delayed_orders_for_email (input=0 chars)
+  << tool_end   fetch_delayed_orders_for_email done in 0.02s (output=4,817 chars, valid_json=False)
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+
+============================================================
+[03:06:02] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "",
+  "email_alert_summary": "Emails generated for **1,346** delayed orders (**Long** 3 / **Medium** 1 / **Short** 6); **3** rendered sample emails returned."
+}
+
+============================================================
+[03:06:02] SUMMARY — tools, tokens & cost  [model=gpt-5.4-nano, tool calls=2]
+============================================================
+                        tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+predict_delivery_delays_tool     41.86s           0       24,876       True     30,914          6,681    37,595  $0.0145
+            email_alert_tool      5.74s           0        2,446       True     62,387            578    62,965  $0.0132
+          — Sub-agents TOTAL     47.60s                                None     93,301          7,259   100,560  $0.0277
+       — Orchestration turns                                           None    226,164          1,764   227,928  $0.0474
+          — Master (2 turns)     15.50s                                None      4,225             80     4,305  $0.0009
+               — GRAND TOTAL     65.96s                                None    323,690          9,103   332,793  $0.0761
+
+Persisted run_id: bd4c943a-3623-492f-a7aa-40c9650864a3
+
+============================================================
+[03:06:02] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring bd4c943a  topology=dynamic_graph  model=gpt-5.4-nano
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  predict_summary                  rel=5.0 faith=5.0 safe=5.0
+  predict_row_insights_sample      rel=5.0 faith=5.0 safe=5.0
+  email_alert_tool                 rel=5.0 faith=5.0 safe=5.0
+  email_alert_summary              rel=5.0 faith=5.0 safe=5.0
+
+  capability blend:
+    predict              rel=5.00 faith=5.00 safe=5.00   (50% predict_summary / 50% predict_row_insights_sample)
+    email                rel=4.00 faith=4.00 safe=4.00   (10% email_alert_summary / 70% email_alert_tool / 20% email_alert_tool_raw)
+
+  SCOPE-ADJUSTED MEAN 4.50/5   (every implied capability was attempted -- same as judge mean)
+
+  JUDGE WEIGHTED MEAN 4.50/5   (relevance 4.50 x.45, faithfulness 4.50 x.45, safety 4.50 x.10)
+  scored 4 artifact(s) -> 2 capability score(s) -> quality_scores
+
+============================================================
+[03:06:08] RUN VALIDITY
+============================================================
+  topology           : dynamic_graph
+  coordinator prompt : dynamic_graph/coordinator = 9670f683
+  plan presented     : NO
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 2 / 2
+  missing tools      : []
+  empty results      : none
+  dependency order   : respected — every capability waited for its inputs
+  scheduling         : 100% of achievable overlap  (0 pair(s) left unoverlapped)
+  coordinator idle   : 2.86s spent deciding between waves (not a scheduling fault)
+  span               : 50.46s vs critical path 47.6s
+
+  execution timeline:
+    turn 1 start    0.00
+    turn 1 end      1.34   (plan / no tools yet)
+    turn 2 start    1.34
+    ..... 8.29s model reasoning (no tool running) .....
+    predict         8.29 ->   50.15
+    ....... 2.85s idle .......
+    email          53.01 ->   58.75
+    ..... 7.21s model composing answer .....
+    turn 2 end     65.96
+    run end        65.96
+  turn-1 plan text   : (none stored — no plan was produced)
+
+  ATTENTION:
+    - no plan was presented on turn 1 — the 2-turn plan/confirm flow did not engage; plan_presented is a measured comparison field.
+
+finished : 2026-09-06 03:06:08

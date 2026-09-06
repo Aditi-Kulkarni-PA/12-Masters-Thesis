@@ -145,11 +145,18 @@ def report(run_id):
 
     viol = json.loads(row["dependency_violations_json"] or "[]")
     # Recompute from stored offsets as a cross-check that the stored verdict still holds.
-    recomputed = check_dependencies(calls)
+    # Anchored the same way the timeline below is (tool_base_offset_s) so a recomputed
+    # detail string reads in the same frame as everything else in this report -- see
+    # dependencies.py's check_dependencies() docstring (6-Sep-26 fix).
+    recomputed = check_dependencies(calls, base_offset_s=row["tool_base_offset_s"] or 0.0)
+    # See execute_topology.py's identical check (6-Sep-26 fix): an empty violations list
+    # is ambiguous between "genuinely respected" and "nothing ran to violate anything".
     if viol or recomputed:
         print(f"  dependency order   : {len(viol)} VIOLATION(S)")
         for v in (viol or recomputed):
             print(f"    ! {v['detail']}")
+    elif not row["tool_call_count_actual"]:
+        print("  dependency order   : N/A — no tool calls were made (see tools expected/ran above)")
     else:
         print("  dependency order   : respected — every capability waited for its inputs")
     if len(viol) != len(recomputed):

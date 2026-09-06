@@ -1,0 +1,112 @@
+==================================================================
+ topology : planner_executor
+ run_n    : 3
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 19:07:23
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4  query_id=Q2
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 5 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[19:07:24] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > Which of today's orders are predicted to be delayed?
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+  >> tool_start predict_delivery_delays_tool (input=290 chars)
+     - predict_delivery_delays_tool agent: 30,968 prompt / 5,162 completion tokens over 3 message(s)
+  << tool_end   predict_delivery_delays_tool done in 43.47s (output=20,162 chars, valid_json=True)
+
+============================================================
+[19:08:11] TURN 1 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[19:08:11] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+
+============================================================
+[19:08:14] TURN 2 — master response
+============================================================
+{
+  "chat_response": "Today's predicted delayed orders have been generated and are available in the results. The prediction output includes the delayed order list with severity classification for each affected order.",
+  "simulate_summary": "",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[19:08:14] SUMMARY — tools, tokens & cost  [model=gpt-5.4, tool calls=1]
+============================================================
+                        tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+predict_delivery_delays_tool     43.47s         290       20,162       True     30,968          5,162    36,130  $0.1548
+          — Sub-agents TOTAL     43.47s                                None     30,968          5,162    36,130  $0.1548
+          — Master (2 turns)      6.93s                                None     27,357            169    27,526  $0.0709
+               — GRAND TOTAL     50.40s                                None     58,325          5,331    63,656  $0.2258
+
+Persisted run_id: e4467631-75e3-40e3-8c4c-e9a65c250074
+
+============================================================
+[19:08:14] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring e4467631  topology=planner_executor  model=gpt-5.4
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  predict_summary                  rel=5.0 faith=5.0 safe=5.0
+  predict_row_insights_sample      rel=5.0 faith=5.0 safe=5.0
+  coordinator_narrative            rel=4.0 faith=4.0 safe=5.0
+
+  capability blend:
+    predict              rel=5.00 faith=5.00 safe=5.00   (50% predict_summary / 50% predict_row_insights_sample)
+    coordinator_narrative rel=4.00 faith=4.00 safe=5.00   (100% coordinator_narrative)
+
+  SCOPE-ADJUSTED MEAN 4.55/5   (every implied capability was attempted -- same as judge mean)
+
+  JUDGE WEIGHTED MEAN 4.55/5   (relevance 4.50 x.45, faithfulness 4.50 x.45, safety 5.00 x.10)
+  scored 3 artifact(s) -> 2 capability score(s) -> quality_scores
+
+============================================================
+[19:08:19] RUN VALIDITY
+============================================================
+  topology           : planner_executor
+  coordinator prompt : planner_executor/master = 60e3e21d
+  plan presented     : NO
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 1 / 1
+  missing tools      : []
+  empty results      : none
+  dependency order   : respected — every capability waited for its inputs
+  scheduling         : 100% of achievable overlap  (0 pair(s) left unoverlapped)
+  coordinator idle   : 0.0s spent deciding between waves (not a scheduling fault)
+  span               : 43.47s vs critical path 43.47s
+
+  execution timeline:
+    turn 1 start    0.00
+    ..... 2.00s model reasoning (no tool running) .....
+    predict         2.00 ->   45.47
+    ..... 1.50s model composing answer .....
+    turn 1 end     46.97
+    turn 2 start   46.97
+    turn 2 end     50.40   (no tools this turn)
+    run end        50.40
+  turn-1 plan text   : (none stored — no plan was produced)
+
+  ATTENTION:
+    - no plan was presented on turn 1 — the 2-turn plan/confirm flow did not engage; plan_presented is a measured comparison field.
+
+finished : 2026-09-06 19:08:20

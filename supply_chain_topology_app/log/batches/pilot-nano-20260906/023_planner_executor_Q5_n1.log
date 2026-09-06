@@ -1,0 +1,120 @@
+==================================================================
+ topology : planner_executor
+ run_n    : 1
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 02:59:41
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4-nano  query_id=Q5
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 4 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[02:59:42] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > Find out which customer orders will be late and what are the reasons for the delay
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+  >> tool_start predict_delivery_delays_tool (input=267 chars)
+     - predict_delivery_delays_tool agent: 30,958 prompt / 6,487 completion tokens over 3 message(s)
+  << tool_end   predict_delivery_delays_tool done in 41.77s (output=23,254 chars, valid_json=True)
+
+============================================================
+[03:00:28] TURN 1 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[03:00:28] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+  >> tool_start diagnose_delay_patterns_tool (input=317 chars)
+     - diagnose_delay_patterns_tool agent: 18,950 prompt / 4,517 completion tokens over 3 message(s)
+  << tool_end   diagnose_delay_patterns_tool done in 29.49s (output=15,457 chars, valid_json=True)
+
+============================================================
+[03:01:01] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "Overall, the optimization should focus on reducing the compounding risk stack that\u2019s driving today\u2019s delays\u2014especially **express** shipments under **f... [488 characters]",
+  "email_alert_summary": ""
+}
+
+============================================================
+[03:01:02] SUMMARY — tools, tokens & cost  [model=gpt-5.4-nano, tool calls=2]
+============================================================
+                        tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+predict_delivery_delays_tool     41.77s         267       23,254       True     30,958          6,487    37,445  $0.0143
+diagnose_delay_patterns_tool     29.49s         317       15,457       True     18,950          4,517    23,467  $0.0094
+          — Sub-agents TOTAL     71.26s                                None     49,908         11,004    60,912  $0.0237
+          — Master (2 turns)      4.61s                                None     46,897            352    47,249  $0.0098
+               — GRAND TOTAL     79.78s                                None     96,805         11,356   108,161  $0.0336
+
+Persisted run_id: 3f45d35f-8345-4e04-8255-9df600397686
+
+============================================================
+[03:01:02] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring 3f45d35f  topology=planner_executor  model=gpt-5.4-nano
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  predict_summary                  rel=5.0 faith=5.0 safe=5.0
+  predict_row_insights_sample      rel=5.0 faith=5.0 safe=5.0
+  diagnose_delay_patterns_tool     rel=5.0 faith=5.0 safe=5.0
+  recommendation_summary           rel=5.0 faith=5.0 safe=5.0
+
+  capability blend:
+    predict              rel=5.00 faith=5.00 safe=5.00   (50% predict_summary / 50% predict_row_insights_sample)
+    diagnose             rel=4.00 faith=4.00 safe=4.00   (80% diagnose_delay_patterns_tool / 20% diagnose_delay_patterns_tool_raw)
+    recommendation       rel=0.50 faith=0.50 safe=0.50   (10% recommendation_summary / 70% recommendation_tool / 20% recommendation_tool_raw)
+
+  SCOPE-ADJUSTED MEAN 3.17/5   (every implied capability was attempted -- same as judge mean)
+
+  JUDGE WEIGHTED MEAN 3.17/5   (relevance 3.17 x.45, faithfulness 3.17 x.45, safety 3.17 x.10)
+  scored 4 artifact(s) -> 3 capability score(s) -> quality_scores
+
+============================================================
+[03:01:10] RUN VALIDITY
+============================================================
+  topology           : planner_executor
+  coordinator prompt : planner_executor/master = 60e3e21d
+  plan presented     : NO
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 2 / 2
+  missing tools      : []
+  empty results      : none
+  dependency order   : respected — every capability waited for its inputs
+  scheduling         : 100% of achievable overlap  (0 pair(s) left unoverlapped)
+  coordinator idle   : 3.9s spent deciding between waves (not a scheduling fault)
+  span               : 75.17s vs critical path 71.27s
+
+  execution timeline:
+    turn 1 start    0.00
+    ..... 2.52s model reasoning (no tool running) .....
+    predict         2.52 ->   44.29
+    ..... 1.61s model composing answer .....
+    turn 1 end     45.90
+    turn 2 start   45.90
+    ....... 2.30s idle .......
+    diagnose       48.20 ->   77.70
+    ..... 2.08s model composing answer .....
+    turn 2 end     79.78
+    run end        79.78
+  turn-1 plan text   : (none stored — no plan was produced)
+
+  ATTENTION:
+    - no plan was presented on turn 1 — the 2-turn plan/confirm flow did not engage; plan_presented is a measured comparison field.
+
+finished : 2026-09-06 03:01:10

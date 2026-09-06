@@ -1,0 +1,29 @@
+{
+  "batch_id": "smoke-gpt54-20260906",
+  "log_dir": "/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/supply_chain_topology_app/log/batches/smoke-gpt54-20260906",
+  "planned": 3,
+  "succeeded": [
+    {
+      "topology": "swarm",
+      "query_id": "Q11",
+      "run_n": 3,
+      "log": "001_swarm_Q11_n3.log"
+    },
+    {
+      "topology": "swarm",
+      "query_id": "Q6",
+      "run_n": 3,
+      "log": "002_swarm_Q6_n3.log"
+    },
+    {
+      "topology": "swarm",
+      "query_id": "Q1",
+      "run_n": 3,
+      "log": "003_swarm_Q1_n3.log"
+    }
+  ],
+  "failed": [],
+  "timed_out": [],
+  "remaining": 0,
+  "finished_at": "2026-09-06T08:47:36.133016+00:00"
+}

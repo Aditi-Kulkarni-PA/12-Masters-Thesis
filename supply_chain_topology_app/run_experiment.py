@@ -42,6 +42,7 @@ import json
 import os
 import random
 import re
+import signal
 import sqlite3
 import subprocess
 import sys
@@ -56,6 +57,10 @@ _EXECUTE_SCRIPT = _REPO_ROOT / "scripts" / "execute_topology.sh"
 
 from topologies.registry import REGISTRY
 from measurement.run_store_schema import DB_PATH
+# Same MODEL every execute_topology.sh subprocess will actually run under (core.clients
+# loads .env itself) -- resume must dedup against THIS value, not re-parse .env here and
+# risk drifting from what the subprocess sees.
+from core.clients import MODEL
 
 _LOG_DIR = _APP_DIR / "log"
 
@@ -116,33 +121,40 @@ def resolve_reps(raw: str, total_reps: int) -> list[int]:
 
 
 # ---------------------------------------------------------------------------
-# Resume: (topology, query_id, run_n) triples that already have a usable run, so a
-# re-invocation after a stop/crash does not create a duplicate run_n for the same
+# Resume: (topology, query_id, run_n, model) quadruples that already have a usable run,
+# so a re-invocation after a stop/crash does not create a duplicate run_n for the same
 # combo (the store has no uniqueness constraint on the triple -- this check is what
 # keeps it unique in practice).
+#
+# model is part of the key -- not just the triple -- because a model switch between
+# batches (e.g. gpt-5.4 -> gpt-5.4-nano) must re-run every combo, not silently reuse an
+# old model's row. Found 6-Sep-26 (R-tiktoken-adjacent): the pilot's first nano dry-run
+# planned 74 of 99 slots because 25 combos already had a success/partial row from
+# gpt-5.4 runs collected 29/30-Aug-26 -- the un-keyed version would have produced a
+# batch silently mixing two models under one batch_id.
 # ---------------------------------------------------------------------------
-def already_done(db_path: str) -> set[tuple[str, str, int]]:
+def already_done(db_path: str) -> set[tuple[str, str, int, str]]:
     if not Path(db_path).exists():
         return set()
     conn = sqlite3.connect(db_path)
     try:
         rows = conn.execute(
-            "SELECT topology, query_id, run_n FROM run WHERE run_status IN ('success','partial')"
+            "SELECT topology, query_id, run_n, model FROM run WHERE run_status IN ('success','partial')"
         ).fetchall()
     finally:
         conn.close()
-    return {(t, q, n) for t, q, n in rows}
+    return {(t, q, n, m) for t, q, n, m in rows}
 
 
 def build_plan(topologies: list[str], queries: list[str], reps: list[int],
-              resume: bool, shuffle: bool, db_path: str) -> list[dict]:
-    """Cross-product of topologies x queries x reps, minus already-done combos when
-    *resume* is set, in randomized execution order unless *shuffle* is False."""
+              resume: bool, shuffle: bool, db_path: str, model: str) -> list[dict]:
+    """Cross-product of topologies x queries x reps, minus already-done combos on THIS
+    model when *resume* is set, in randomized execution order unless *shuffle* is False."""
     done = already_done(db_path) if resume else set()
     plan = [
         {"topology": t, "query_id": q, "run_n": n}
         for t in topologies for q in queries for n in reps
-        if (t, q, n) not in done
+        if (t, q, n, model) not in done
     ]
     if shuffle:
         random.shuffle(plan)
@@ -162,12 +174,34 @@ def _run_log_path(log_dir: Path, item: dict) -> Path:
     )
 
 
-def run_one(item: dict, batch_id: str, run_phase: str, log_dir: Path) -> tuple[bool, Path]:
+# Hard ceiling on a single run's wall time. Observed real query_complexity medians top
+# out at 181.8s (Q11, five capabilities); this leaves roughly 2.6x headroom above the
+# heaviest legitimate query while still bounding how long an unattended batch can be
+# blocked by any one hung call -- confirmed necessary 6-Sep-26, when recommendation_tool
+# froze mid-batch (near-zero CPU, `sleeping` state, no progress) for 15+ minutes with no
+# exception ever surfacing, well past every comparable tool call's 30-50s. Overridable
+# with --run-timeout for a batch expected to run heavier queries than any seen so far.
+DEFAULT_RUN_TIMEOUT_S = 480
+
+
+def run_one(item: dict, batch_id: str, run_phase: str, log_dir: Path,
+           timeout_s: int = DEFAULT_RUN_TIMEOUT_S) -> tuple[bool, Path, bool]:
     """Invoke execute_topology.sh for one planned run, capturing its full stdout/stderr
     to a per-run log file (see _run_log_path) rather than letting it flood this
     process's own console. run_n MUST be the script's second positional argument, not
     an env var -- the script itself computes and exports SC_RUN_N from that argument,
-    overriding anything set in the parent environment (see scripts/execute_topology.sh)."""
+    overriding anything set in the parent environment (see scripts/execute_topology.sh).
+
+    A run that exceeds timeout_s is killed rather than left to block the batch
+    indefinitely -- start_new_session=True puts the whole bash -> uv -> python3 chain in
+    its own process group, so a timeout kills every descendant, not just the immediate
+    bash child a plain subprocess.run(timeout=...) would reach (uv and the real worker
+    underneath would otherwise be orphaned and keep running, still burning API cost).
+
+    Returns (ok, log_path, timed_out) -- timed_out is surfaced separately from ok so a
+    caller can tell "killed for exceeding timeout_s" apart from an ordinary non-zero
+    exit, which matters here because the two point at different follow-up actions
+    (raise the timeout vs. investigate the actual failure)."""
     env = os.environ.copy()
     env.update({
         "SC_QUERY_ID": item["query_id"],
@@ -180,18 +214,64 @@ def run_one(item: dict, batch_id: str, run_phase: str, log_dir: Path) -> tuple[b
     })
     log_path = _run_log_path(log_dir, item)
     with open(log_path, "w", encoding="utf-8") as logf:
-        result = subprocess.run(
+        proc = subprocess.Popen(
             ["bash", str(_EXECUTE_SCRIPT), item["topology"], str(item["run_n"])],
             cwd=str(_REPO_ROOT), env=env, stdout=logf, stderr=subprocess.STDOUT,
+            start_new_session=True,
         )
-    return result.returncode == 0, log_path
+        try:
+            returncode = proc.wait(timeout=timeout_s)
+        except subprocess.TimeoutExpired:
+            logf.write(f"\n\n[run_experiment.py] TIMEOUT after {timeout_s}s -- "
+                      f"killing process group {proc.pid} (bash + uv + python3)\n")
+            logf.flush()
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass  # already gone between the timeout firing and the kill
+            proc.wait()  # reap so it does not linger as a zombie
+            return False, log_path, True
+    return returncode == 0, log_path, False
+
+
+def _record_non_completion(item: dict, batch_id: str, run_phase: str,
+                           log_path: Path, timed_out: bool) -> None:
+    """Store a row for a run that did not complete, so the attempt stays countable.
+
+    Timeouts and ordinary failures are distinguished in failure_category, because the
+    two point at different follow-up actions: raise the timeout, or investigate the
+    error in the run's own log.
+
+    A failure to write this row must not stop the batch. The run has already ended, and
+    losing one bookkeeping row is a smaller problem than abandoning the remaining runs,
+    so the error is reported and the batch continues.
+    """
+    from measurement.run_store_writer import write_failed_run
+
+    category = "no_completion:timeout" if timed_out else "no_completion:error"
+    try:
+        write_failed_run(
+            query_id=item["query_id"], topology=item["topology"], run_n=item["run_n"],
+            model=MODEL, failure_category=category, log_path=str(log_path),
+            run_phase=run_phase, batch_id=batch_id,
+            execution_order=item.get("execution_order"),
+        )
+    except Exception as exc:
+        print(f"    (could not record the non-completion in the run store: {exc})",
+              flush=True)
 
 
 def _write_batch_summary(batch_id: str, batch_log_dir: Path, plan: list[dict],
-                          succeeded: list[dict], failed: list[dict]) -> Path:
+                          succeeded: list[dict], failed: list[dict],
+                          timed_out: list[dict]) -> Path:
     """One JSON file per batch, inside that batch's own log subfolder alongside its
     per-run logs, so a stopped/interrupted run can be inspected without querying the
-    database directly."""
+    database directly.
+
+    timed_out is reported as its own list rather than folded into failed -- a run killed
+    for exceeding --run-timeout needs a different follow-up (raise the ceiling, or
+    investigate why that specific combo hangs) than a run that exited with a genuine
+    error, and collapsing the two would hide which one happened at a glance."""
     def _entry(i: dict) -> dict:
         return {"topology": i["topology"], "query_id": i["query_id"], "run_n": i["run_n"],
                 "log": _run_log_path(batch_log_dir, i).name}
@@ -203,7 +283,8 @@ def _write_batch_summary(batch_id: str, batch_log_dir: Path, plan: list[dict],
         "planned": len(plan),
         "succeeded": [_entry(i) for i in succeeded],
         "failed": [_entry(i) for i in failed],
-        "remaining": len(plan) - len(succeeded) - len(failed),
+        "timed_out": [_entry(i) for i in timed_out],
+        "remaining": len(plan) - len(succeeded) - len(failed) - len(timed_out),
         "finished_at": datetime.now(timezone.utc).isoformat(),
     }, indent=2))
     return path
@@ -228,6 +309,10 @@ def main() -> int:
                     help="do not skip combos that already have a success/partial run")
     ap.add_argument("--no-shuffle", action="store_true",
                     help="execute in plan order instead of a randomized order")
+    ap.add_argument("--run-timeout", type=int, default=DEFAULT_RUN_TIMEOUT_S,
+                    help=f"kill and fail a single run after this many seconds "
+                         f"(default: {DEFAULT_RUN_TIMEOUT_S}, ~2.6x the heaviest "
+                         f"observed query median)")
     ap.add_argument("--dry-run", action="store_true", help="print the plan and exit; no API calls")
     ap.add_argument("--list", action="store_true", help="list built topologies and frozen queries, exit")
     args = ap.parse_args()
@@ -249,11 +334,11 @@ def main() -> int:
     resume = not args.no_resume
 
     plan = build_plan(topologies, queries, reps, resume=resume,
-                      shuffle=not args.no_shuffle, db_path=DB_PATH)
+                      shuffle=not args.no_shuffle, db_path=DB_PATH, model=MODEL)
 
     print(f"Batch {batch_id}: {len(plan)} run(s) planned "
           f"({len(topologies)} topolog(ies) x {len(queries)} quer(ies) x {len(reps)} rep(s), "
-          f"resume={'on' if resume else 'off'})")
+          f"resume={'on' if resume else 'off'}, model={MODEL})")
     if not plan:
         print("Nothing to do -- every requested combination already has a run. "
               "Pass --no-resume to force a re-run.")
@@ -273,28 +358,49 @@ def main() -> int:
     batch_log_dir.mkdir(parents=True, exist_ok=True)
     print(f"Detailed per-run output -> {batch_log_dir}/")
 
-    succeeded, failed = [], []
+    succeeded, failed, timed_out = [], [], []
     try:
         for item in plan:
             print(f"[{item['execution_order']}/{len(plan)}] {item['topology']}  "
                   f"{item['query_id']}  run_n={item['run_n']}  ...", end=" ", flush=True)
-            ok, log_path = run_one(item, batch_id, args.run_phase, batch_log_dir)
-            (succeeded if ok else failed).append(item)
-            print(f"{'OK' if ok else 'FAILED'}  ({log_path.name})", flush=True)
+            ok, log_path, hit_timeout = run_one(item, batch_id, args.run_phase, batch_log_dir,
+                                                timeout_s=args.run_timeout)
+            if hit_timeout:
+                timed_out.append(item)
+            else:
+                (succeeded if ok else failed).append(item)
+            status = "TIMEOUT" if hit_timeout else ("OK" if ok else "FAILED")
+            print(f"{status}  ({log_path.name})", flush=True)
+
+            # A run that did not complete never reached write_run(), so without this it
+            # would leave no row and every rate computed from the store would use a
+            # denominator that quietly excluded it. Recording it keeps the attempt
+            # visible and lets completion rate see the failure it exists to measure.
+            if not ok:
+                _record_non_completion(item, batch_id, args.run_phase, log_path,
+                                       timed_out=hit_timeout)
     except KeyboardInterrupt:
-        print(f"\nInterrupted after {len(succeeded)} succeeded, {len(failed)} failed. "
-              f"Re-run the same command (resume is on by default) to continue.")
+        print(f"\nInterrupted after {len(succeeded)} succeeded, {len(failed)} failed, "
+              f"{len(timed_out)} timed out. Re-run the same command (resume is on by "
+              f"default) to continue.")
         return 130
     finally:
-        summary_path = _write_batch_summary(batch_id, batch_log_dir, plan, succeeded, failed)
-        print(f"\nBatch {batch_id} finished: {len(succeeded)} succeeded, {len(failed)} failed. "
-              f"Summary: {summary_path}")
+        summary_path = _write_batch_summary(batch_id, batch_log_dir, plan, succeeded,
+                                            failed, timed_out)
+        print(f"\nBatch {batch_id} finished: {len(succeeded)} succeeded, {len(failed)} failed, "
+              f"{len(timed_out)} timed out. Summary: {summary_path}")
         if failed:
             print("Failed (see their log files above for detail):")
             for item in failed:
                 print(f"  {item['topology']}  {item['query_id']}  run_n={item['run_n']}")
+        if timed_out:
+            print(f"Timed out (exceeded --run-timeout={args.run_timeout}s -- re-run these "
+                  f"individually, or raise --run-timeout if this is a legitimately heavy "
+                  f"combo, not a hang):")
+            for item in timed_out:
+                print(f"  {item['topology']}  {item['query_id']}  run_n={item['run_n']}")
 
-    return 1 if failed else 0
+    return 1 if (failed or timed_out) else 0
 
 
 if __name__ == "__main__":

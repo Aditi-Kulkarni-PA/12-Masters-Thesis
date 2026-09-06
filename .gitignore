@@ -84,3 +84,6 @@ tmp/
 temp/
 scratch/
 *.tmp
+
+# tiktoken BPE encoder cache (pinned via TIKTOKEN_CACHE_DIR; see .env)
+.tiktoken_cache/

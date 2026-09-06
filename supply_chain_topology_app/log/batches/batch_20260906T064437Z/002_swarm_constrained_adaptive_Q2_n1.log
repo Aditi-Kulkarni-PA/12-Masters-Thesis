@@ -1,0 +1,112 @@
+==================================================================
+ topology : swarm_constrained_adaptive
+ run_n    : 1
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 12:18:32
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4-nano  query_id=Q2
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 5 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[12:18:33] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > Which of today's orders are predicted to be delayed?
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+     - swarm_constrained_adaptive_seed_planning agent: 4,479 prompt / 149 completion tokens over 1 message(s)
+  -- swarm_ca: wave 1 running ['predict'] concurrently (prerequisites met); still waiting on nothing
+  >> tool_start predict_delivery_delays_tool (input=242 chars)
+     - predict_delivery_delays_tool agent: 65,295 prompt / 12,177 completion tokens over 5 message(s)
+  << tool_end   predict_delivery_delays_tool done in 295.67s (output=22,038 chars, valid_json=True)
+  swarm_ca: 1 wave(s) run; capabilities that posted a result: ['predict']
+
+============================================================
+[12:23:31] TURN 1 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[12:23:31] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+
+============================================================
+[12:23:31] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[12:23:31] SUMMARY — tools, tokens & cost  [model=gpt-5.4-nano, tool calls=1]
+============================================================
+                        tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+predict_delivery_delays_tool    295.67s         242       22,038       True     65,295         12,177    77,472  $0.0283
+          — Sub-agents TOTAL    295.67s                                None     65,295         12,177    77,472  $0.0283
+       — Orchestration turns                                           None      4,479            149     4,628  $0.0011
+          — Master (2 turns)      2.66s                                None      8,958            298     9,256  $0.0022
+               — GRAND TOTAL    298.33s                                None     78,732         12,624    91,356  $0.0315
+
+Persisted run_id: 1c573baa-199e-4ae3-b321-6f1aabd5e39b
+
+============================================================
+[12:23:31] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring 1c573baa  topology=swarm_constrained_adaptive  model=gpt-5.4-nano
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  predict_summary                  rel=5.0 faith=5.0 safe=5.0
+  predict_row_insights_sample      rel=5.0 faith=5.0 safe=5.0
+
+  capability blend:
+    predict              rel=5.00 faith=5.00 safe=5.00   (50% predict_summary / 50% predict_row_insights_sample)
+
+  SCOPE-ADJUSTED MEAN 5.00/5   (every implied capability was attempted -- same as judge mean)
+
+  JUDGE WEIGHTED MEAN 5.00/5   (relevance 5.00 x.45, faithfulness 5.00 x.45, safety 5.00 x.10)
+  scored 2 artifact(s) -> 1 capability score(s) -> quality_scores
+
+============================================================
+[12:23:35] RUN VALIDITY
+============================================================
+  topology           : swarm_constrained_adaptive
+  coordinator prompt : swarm_constrained_adaptive/master = ac79b46d
+  plan presented     : NO
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 1 / 1
+  missing tools      : []
+  empty results      : none
+  dependency order   : respected — every capability waited for its inputs
+  scheduling         : 100% of achievable overlap  (0 pair(s) left unoverlapped)
+  coordinator idle   : 0.0s spent deciding between waves (not a scheduling fault)
+  span               : 295.67s vs critical path 295.67s
+
+  execution timeline:
+    turn 1 start    0.00
+    ..... 2.66s model reasoning (no tool running) .....
+    predict         2.66 ->  298.33
+    turn 1 end    298.33
+    turn 2 start  298.33
+    turn 2 end    298.33   (no tools this turn)
+    run end       298.33
+  turn-1 plan text   : (none stored — no plan was produced)
+
+  ATTENTION:
+    - no plan was presented on turn 1 — the 2-turn plan/confirm flow did not engage; plan_presented is a measured comparison field.
+
+finished : 2026-09-06 12:23:35

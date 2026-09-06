@@ -1,0 +1,124 @@
+==================================================================
+ topology : swarm
+ run_n    : 2
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 21:06:16
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4-mini  query_id=Q5
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 5 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[21:06:18] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > Find out which customer orders will be late and what are the reasons for the delay
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+     - swarm_seed_planning agent: 4,504 prompt / 271 completion tokens over 1 message(s)
+  -- swarm: wave 1 running ['diagnose', 'predict'] concurrently (agent-requested; no readiness check)
+  >> tool_start predict_delivery_delays_tool (input=273 chars)
+  >> tool_start diagnose_delay_patterns_tool (input=273 chars)
+  -- swarm: diagnose read_blackboard(predict) -> miss (nothing posted yet)
+  -- swarm: diagnose read_blackboard(diagnose) -> miss (nothing posted yet)
+     - predict_delivery_delays_tool agent: 64,578 prompt / 7,289 completion tokens over 5 message(s)
+  << tool_end   predict_delivery_delays_tool done in 35.20s (output=19,630 chars, valid_json=True)
+     - diagnose_delay_patterns_tool agent: 150,043 prompt / 9,941 completion tokens over 11 message(s)
+  << tool_end   diagnose_delay_patterns_tool done in 47.40s (output=17,131 chars, valid_json=True)
+  swarm: 1 wave(s) run; capabilities that posted a result: ['diagnose', 'predict']
+
+============================================================
+[21:07:09] TURN 1 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[21:07:09] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+
+============================================================
+[21:07:09] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[21:07:09] SUMMARY — tools, tokens & cost  [model=gpt-5.4-mini, tool calls=2]
+============================================================
+                        tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+predict_delivery_delays_tool     35.20s         273       19,630       True     64,578          7,289    71,867  $0.0812
+diagnose_delay_patterns_tool     47.40s         273       17,131       True    150,043          9,941   159,984  $0.1573
+          — Sub-agents TOTAL     82.60s                                None    214,621         17,230   231,851  $0.2385
+       — Orchestration turns                                           None      4,504            271     4,775  $0.0046
+          — Master (2 turns)      3.91s                                None      9,008            542     9,550  $0.0092
+               — GRAND TOTAL     51.31s                                None    228,133         18,043   246,176  $0.2523
+
+Persisted run_id: 6a6cfea6-cdd4-4045-aa1d-5149fa2ea01c
+
+============================================================
+[21:07:09] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring 6a6cfea6  topology=swarm  model=gpt-5.4-mini
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  predict_summary                  rel=5.0 faith=5.0 safe=5.0
+  predict_row_insights_sample      rel=5.0 faith=5.0 safe=5.0
+  diagnose_delay_patterns_tool     rel=5.0 faith=5.0 safe=5.0
+
+  capability blend:
+    predict              rel=5.00 faith=5.00 safe=5.00   (50% predict_summary / 50% predict_row_insights_sample)
+    diagnose             rel=4.00 faith=4.00 safe=4.00   (80% diagnose_delay_patterns_tool / 20% diagnose_delay_patterns_tool_raw)
+
+  SCOPE-ADJUSTED MEAN 4.50/5   (every implied capability was attempted -- same as judge mean)
+
+  JUDGE WEIGHTED MEAN 4.50/5   (relevance 4.50 x.45, faithfulness 4.50 x.45, safety 4.50 x.10)
+  scored 3 artifact(s) -> 2 capability score(s) -> quality_scores
+
+============================================================
+[21:07:14] RUN VALIDITY
+============================================================
+  topology           : swarm
+  coordinator prompt : swarm/master = 4b404fc6
+  plan presented     : NO
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 2 / 2
+  missing tools      : []
+  empty results      : none
+  dependency order   : 1 VIOLATION(S)
+    ! diagnose_delay_patterns_tool started at 3.91s, before predict_delivery_delays_tool finished at 39.11s
+  scheduling         : n/a -- busy time (47.40s) came in UNDER the dependency-respecting floor (82.60s),
+                       which is only possible by running a dependent pair concurrently. See the violation(s) above.
+  coordinator idle   : 0.0s spent deciding between waves (not a scheduling fault)
+  span               : 47.4s vs critical path 82.6s
+
+  execution timeline:
+    turn 1 start    0.00
+    ..... 3.91s model reasoning (no tool running) .....
+    predict         3.91 ->   39.11 +
+    diagnose        3.91 ->   51.31 +-- 2 at once
+    turn 1 end     51.31
+    turn 2 start   51.31
+    turn 2 end     51.31   (no tools this turn)
+    run end        51.31
+  turn-1 plan text   : (none stored — no plan was produced)
+
+  ATTENTION:
+    - no plan was presented on turn 1 — the 2-turn plan/confirm flow did not engage; plan_presented is a measured comparison field.
+    - dependency order violated (1): a capability acted before the work it consumes had finished. Recoverable via upstream_missing, but it is the orchestration quality being measured — see run.dependency_violations_json.
+
+finished : 2026-09-06 21:07:15

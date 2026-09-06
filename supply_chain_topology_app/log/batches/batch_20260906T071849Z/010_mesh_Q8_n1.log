@@ -1,0 +1,174 @@
+==================================================================
+ topology : mesh
+ run_n    : 1
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 13:03:12
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4-nano  query_id=Q8
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 4 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[13:03:14] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > What are the typical delay patterns and how can we optimize last-mile delivery?
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+  -- mesh: entry -> predict (run 1, hops 0/10)
+  >> tool_start predict_delivery_delays_tool (input=269 chars)
+     - predict_delivery_delays_tool agent: 35,912 prompt / 6,873 completion tokens over 3 message(s)
+  << tool_end   predict_delivery_delays_tool done in 44.71s (output=25,209 chars, valid_json=True)
+     - mesh_peer_routing agent: 8,389 prompt / 21 completion tokens over 1 message(s)
+  -- mesh: predict -> diagnose (run 1, hops 1/10)
+  >> tool_start diagnose_delay_patterns_tool (input=269 chars)
+  -- mesh: predict -> email (run 1, hops 1/10)
+  >> tool_start email_alert_tool (input=269 chars)
+  -- mesh: predict -> recommend (run 1, hops 1/10)
+  >> tool_start recommendation_tool (input=337 chars)
+  -- mesh: predict -> simulate (run 1, hops 1/10)
+  >> tool_start delay_simulations_tool (input=269 chars)
+     - delay_simulations_tool agent: 26,070 prompt / 81 completion tokens over 3 message(s)
+  << tool_end   delay_simulations_tool done in 3.37s (output=18 chars, valid_json=True)
+  >> tool_start simulate_summary_tool (input=18 chars)
+     - simulate_summary_tool agent: 770 prompt / 26 completion tokens over 1 message(s)
+  << tool_end   simulate_summary_tool done in 1.46s (output=86 chars, valid_json=True)
+     - mesh_peer_routing agent: 1,615 prompt / 18 completion tokens over 1 message(s)
+  -- mesh: simulate router named ['diagnose', 'recommend'] again while still in flight (addressed, not yet finished) -- dropped, not sent (R63)
+     - email_alert_tool agent: 3,515 prompt / 578 completion tokens over 3 message(s)
+  << tool_end   email_alert_tool done in 6.84s (output=2,446 chars, valid_json=True)
+  >> tool_start email_summary_tool (input=2,446 chars)
+     - email_summary_tool agent: 1,336 prompt / 76 completion tokens over 1 message(s)
+  << tool_end   email_summary_tool done in 1.65s (output=258 chars, valid_json=True)
+     - mesh_peer_routing agent: 2,184 prompt / 17 completion tokens over 1 message(s)
+  -- mesh: email router named ['diagnose', 'recommend'] again while still in flight (addressed, not yet finished) -- dropped, not sent (R63)
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+     - diagnose_delay_patterns_tool agent: 18,942 prompt / 4,673 completion tokens over 3 message(s)
+  << tool_end   diagnose_delay_patterns_tool done in 27.86s (output=16,465 chars, valid_json=True)
+     - mesh_peer_routing agent: 6,257 prompt / 15 completion tokens over 1 message(s)
+  -- mesh: diagnose router named ['recommend'] again while still in flight (addressed, not yet finished) -- dropped, not sent (R63)
+  .. still writing (25s since the last tool call)
+     - recommendation_tool agent: 8,213 prompt / 2,931 completion tokens over 3 message(s)
+  << tool_end   recommendation_tool done in 34.41s (output=11,227 chars, valid_json=True)
+  >> tool_start recommend_summary_tool (input=11,227 chars)
+     - recommend_summary_tool agent: 3,637 prompt / 135 completion tokens over 1 message(s)
+  << tool_end   recommend_summary_tool done in 1.66s (output=640 chars, valid_json=True)
+     - mesh_peer_routing agent: 4,508 prompt / 12 completion tokens over 1 message(s)
+  mesh: 5/10 peer hops used; ran ['diagnose', 'email', 'predict', 'recommend', 'simulate']
+
+============================================================
+[13:04:37] TURN 1 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "No simulation results were provided (no delay simulations to summarize).",
+  "recommendation_summary": "The optimization focuses on reducing today\u2019s elevated delay risk by targeting the dominant failure modes: **express** shipments in **stormy/rainy/fogg... [626 characters]",
+  "email_alert_summary": "Emails generated for **10** delayed orders (**Long 3 / Medium 1 / Short 6**); **3** rendered samples returned. Mix of **Short** and **Long** delays, w... [244 characters]"
+}
+
+============================================================
+[13:04:37] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+
+============================================================
+[13:04:37] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "No simulation results were provided (no delay simulations to summarize).",
+  "recommendation_summary": "The optimization focuses on reducing today\u2019s elevated delay risk by targeting the dominant failure modes: **express** shipments in **stormy/rainy/fogg... [626 characters]",
+  "email_alert_summary": "Emails generated for **10** delayed orders (**Long 3 / Medium 1 / Short 6**); **3** rendered samples returned. Mix of **Short** and **Long** delays, w... [244 characters]"
+}
+
+============================================================
+[13:04:37] SUMMARY — tools, tokens & cost  [model=gpt-5.4-nano, tool calls=8]
+============================================================
+                        tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+predict_delivery_delays_tool     44.71s         269       25,209       True     35,912          6,873    42,785  $0.0158
+diagnose_delay_patterns_tool     27.86s         269       16,465       True     18,942          4,673    23,615  $0.0096
+            email_alert_tool      6.84s         269        2,446       True      3,515            578     4,093  $0.0014
+         recommendation_tool     34.41s         337       11,227       True      8,213          2,931    11,144  $0.0053
+      delay_simulations_tool      3.37s         269           18       True     26,070             81    26,151  $0.0053
+       simulate_summary_tool      1.46s          18           86       True        770             26       796  $0.0002
+          email_summary_tool      1.65s       2,446          258       True      1,336             76     1,412  $0.0004
+      recommend_summary_tool      1.66s      11,227          640       True      3,637            135     3,772  $0.0009
+          — Sub-agents TOTAL    121.96s                                None     98,395         15,373   113,768  $0.0389
+       — Orchestration turns                                           None     22,953             83    23,036  $0.0047
+          — Master (2 turns)      0.98s                                None     71,824         13,746    85,570  $0.0315
+               — GRAND TOTAL     83.12s                                None    193,172         29,202   222,374  $0.0751
+
+Persisted run_id: 247eacce-27ff-4c58-94ba-97141d4f2252
+
+============================================================
+[13:04:37] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring 247eacce  topology=mesh  model=gpt-5.4-nano
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  predict_summary                  rel=5.0 faith=5.0 safe=5.0
+  predict_row_insights_sample      rel=5.0 faith=5.0 safe=5.0
+  diagnose_delay_patterns_tool     rel=5.0 faith=5.0 safe=5.0
+  recommendation_tool              rel=5.0 faith=5.0 safe=5.0
+  recommendation_summary           rel=5.0 faith=5.0 safe=5.0
+  email_alert_tool                 rel=5.0 faith=5.0 safe=5.0
+  email_alert_summary              rel=4.0 faith=4.0 safe=5.0
+  simulate_narrative               rel=1.0 faith=5.0 safe=5.0
+
+  capability blend:
+    predict              rel=5.00 faith=5.00 safe=5.00   (50% predict_summary / 50% predict_row_insights_sample)
+    diagnose             rel=4.00 faith=4.00 safe=4.00   (80% diagnose_delay_patterns_tool / 20% diagnose_delay_patterns_tool_raw)
+    simulate             rel=0.20 faith=1.00 safe=1.00   (20% simulate_narrative / 80% simulate_row_reasons_sample)
+    recommendation       rel=4.00 faith=4.00 safe=4.00   (10% recommendation_summary / 70% recommendation_tool / 20% recommendation_tool_raw)
+    email                rel=3.90 faith=3.90 safe=4.00   (10% email_alert_summary / 70% email_alert_tool / 20% email_alert_tool_raw)
+
+  SCOPE-ADJUSTED MEAN 3.51/5   (every implied capability was attempted -- same as judge mean)
+
+  JUDGE WEIGHTED MEAN 3.51/5   (relevance 3.42 x.45, faithfulness 3.58 x.45, safety 3.60 x.10)
+  scored 8 artifact(s) -> 5 capability score(s) -> quality_scores
+
+============================================================
+[13:04:49] RUN VALIDITY
+============================================================
+  topology           : mesh
+  coordinator prompt : mesh/entry_point = dbc1cf9a
+  plan presented     : NO
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 3 / 8
+  missing tools      : []
+  empty results      : ['delay_simulations_tool']
+  dependency order   : 1 VIOLATION(S)
+    ! recommendation_tool started at 46.08s, before diagnose_delay_patterns_tool finished at 73.92s
+  scheduling         : 133% of achievable overlap  (0 pair(s) left unoverlapped)
+  coordinator idle   : 0.0s spent deciding between waves (not a scheduling fault)
+  span               : 80.48s vs critical path 106.98s
+
+  execution timeline:
+    turn 1 start              0.00
+    predict                   0.01 ->   44.71
+    ....... 1.35s idle .......
+    diagnose                 46.06 ->   73.92 +
+    email                    46.07 ->   52.91 |
+    recommend                46.08 ->   80.48 |
+    simulate                 46.08 ->   49.45 |-- 6 at once
+    simulate_summary_tool    49.45 ->   50.91 |
+    email_summary_tool       52.91 ->   54.56 +
+    recommend_summary_tool   80.48 ->   82.14
+    ..... 0.98s model composing answer .....
+    turn 1 end               83.12
+    turn 2 start             83.12
+    turn 2 end               83.12   (no tools this turn)
+    run end                  83.12
+  turn-1 plan text   : (none stored — no plan was produced)
+  (not a problem: delay_simulations_tool returned empty, but the query never implied it — expected on a topology that runs every capability regardless of query)
+
+  ATTENTION:
+    - no plan was presented on turn 1 — the 2-turn plan/confirm flow did not engage; plan_presented is a measured comparison field.
+    - dependency order violated (1): a capability acted before the work it consumes had finished. Recoverable via upstream_missing, but it is the orchestration quality being measured — see run.dependency_violations_json.
+
+finished : 2026-09-06 13:04:50

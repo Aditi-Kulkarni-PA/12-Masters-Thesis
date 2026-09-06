@@ -36,13 +36,22 @@ from core.clients import chat_client, chat_client_mini
 # ---------------------------------------------------------------------------
 
 # Predictive agent: forces tool-backed output into a strict schema.
-def build_predict_agent(client, *, middleware=None, instructions_prefix: str | None = None) -> Agent:
+def build_predict_agent(client, *, middleware=None, instructions_prefix: str | None = None,
+                         tool_choice: str = "required") -> Agent:
     """`instructions_prefix` exists for Mesh (T40), the only condition with no coordinator:
     its fixed entry agent is predict, so the security/scope framing every other condition
     receives in a turn-1 coordinator call has to ride on predict's own system prompt
     instead. Prepended rather than substituted, so the shared domain prompt underneath
     stays byte-identical to the version every other condition uses -- the deviation is
-    additive and visible, not a rewrite. Default None; every other caller is unaffected."""
+    additive and visible, not a rewrite. Default None; every other caller is unaffected.
+
+    `tool_choice` defaults to "required" -- correct for predict's normal role as a
+    downstream specialist, where it is only ever called once its capability is actually
+    wanted. Mesh is the one caller that also uses predict as its scope gate (R58): with
+    tool_choice hard-forced, entry_point.md's "say so without running your tool" decline
+    instruction is unsatisfiable regardless of what the model decides, since the framework
+    will not let a forced turn end without a function call. Mesh passes "auto" so predict
+    can actually take the text-only decline branch its own prompt already tells it to."""
     instructions = get_instruction("predict_delivery_delays")
     if instructions_prefix:
         instructions = f"{instructions_prefix}\n\n---\n\n{instructions}"
@@ -59,7 +68,7 @@ def build_predict_agent(client, *, middleware=None, instructions_prefix: str | N
         tools=[pipeline_mcp],
         middleware=middleware,
         # Keep outputs deterministic and structured for downstream orchestration.
-        default_options={"temperature": 0, "tool_choice": "required",
+        default_options={"temperature": 0, "tool_choice": tool_choice,
                           "response_format": DeliveryDelayPredictionResult},
     )
 

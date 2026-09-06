@@ -1,0 +1,169 @@
+==================================================================
+ topology : swarm
+ run_n    : 1
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 04:35:24
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4-nano  query_id=Q9
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 4 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[04:35:25] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > What patterns are driving today's delays, what should we do about it, and let affected customers know
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+     - swarm_seed_planning agent: 4,507 prompt / 563 completion tokens over 1 message(s)
+  -- swarm: wave 1 running ['diagnose', 'email', 'predict', 'recommend'] concurrently (agent-requested; no readiness check)
+  >> tool_start predict_delivery_delays_tool (input=290 chars)
+  >> tool_start diagnose_delay_patterns_tool (input=290 chars)
+  >> tool_start recommendation_tool (input=290 chars)
+  >> tool_start email_alert_tool (input=290 chars)
+     - email_alert_tool agent: 5,611 prompt / 42 completion tokens over 3 message(s)
+  << tool_end   email_alert_tool done in 2.33s (output=63 chars, valid_json=True)
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+     - recommendation_tool agent: 32,671 prompt / 533 completion tokens over 15 message(s)
+  << tool_end   recommendation_tool done in 12.39s (output=26 chars, valid_json=True)
+  .. still writing (25s since the last tool call)
+  .. still writing (45s since the last tool call)
+     - predict_delivery_delays_tool agent: 62,540 prompt / 6,368 completion tokens over 5 message(s)
+  << tool_end   predict_delivery_delays_tool done in 53.58s (output=22,621 chars, valid_json=True)
+     - diagnose_delay_patterns_tool agent: 44,684 prompt / 9,722 completion tokens over 5 message(s)
+  << tool_end   diagnose_delay_patterns_tool done in 57.02s (output=16,754 chars, valid_json=True)
+  !! swarm: recommend did not post to the blackboard in wave 1 despite the write mandate -- write-compliance miss
+  !! swarm: email did not post to the blackboard in wave 1 despite the write mandate -- write-compliance miss
+  -- swarm: wave 2 running ['diagnose', 'email', 'predict', 'recommend'] concurrently (agent-requested; no readiness check)
+  >> tool_start predict_delivery_delays_tool (input=355 chars)
+  >> tool_start diagnose_delay_patterns_tool (input=243 chars)
+  >> tool_start email_alert_tool (input=243 chars)
+  >> tool_start recommendation_tool (input=397 chars)
+     - email_alert_tool agent: 10,905 prompt / 1,163 completion tokens over 5 message(s)
+  << tool_end   email_alert_tool done in 10.16s (output=2,446 chars, valid_json=True)
+     - recommendation_tool agent: 47,429 prompt / 6,916 completion tokens over 7 message(s)
+  << tool_end   recommendation_tool done in 54.86s (output=10,460 chars, valid_json=True)
+     - diagnose_delay_patterns_tool agent: 44,506 prompt / 9,746 completion tokens over 5 message(s)
+  << tool_end   diagnose_delay_patterns_tool done in 57.04s (output=16,758 chars, valid_json=True)
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+  .. still writing (24s since the last tool call)
+     - predict_delivery_delays_tool agent: 68,549 prompt / 12,338 completion tokens over 5 message(s)
+  << tool_end   predict_delivery_delays_tool done in 79.83s (output=21,958 chars, valid_json=True)
+  swarm: 2 wave(s) run; capabilities that posted a result: ['diagnose', 'email', 'predict', 'recommend']
+
+============================================================
+[04:37:46] TURN 1 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "Posted data-driven delivery optimization recommendations (quick-win, short-term, long-term) grounded in today's diagnosis/predicted delay patterns and SLA clauses from retrieved SLA context.",
+  "email_alert_summary": "Posting generated severity-based customer email alert samples and counts for delayed orders."
+}
+
+============================================================
+[04:37:46] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+
+============================================================
+[04:37:46] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "Posted data-driven delivery optimization recommendations (quick-win, short-term, long-term) grounded in today's diagnosis/predicted delay patterns and SLA clauses from retrieved SLA context.",
+  "email_alert_summary": "Posting generated severity-based customer email alert samples and counts for delayed orders."
+}
+
+============================================================
+[04:37:46] SUMMARY — tools, tokens & cost  [model=gpt-5.4-nano, tool calls=8]
+============================================================
+                        tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+predict_delivery_delays_tool     53.58s         290       22,621       True     62,540          6,368    68,908  $0.0205
+diagnose_delay_patterns_tool     57.02s         290       16,754       True     44,684          9,722    54,406  $0.0211
+         recommendation_tool     12.39s         290           26       True     32,671            533    33,204  $0.0072
+            email_alert_tool      2.33s         290           63       True      5,611             42     5,653  $0.0012
+predict_delivery_delays_tool     79.83s         355       21,958       True     68,549         12,338    80,887  $0.0291
+diagnose_delay_patterns_tool     57.04s         243       16,758       True     44,506          9,746    54,252  $0.0211
+            email_alert_tool     10.16s         243        2,446       True     10,905          1,163    12,068  $0.0036
+         recommendation_tool     54.86s         397       10,460       True     47,429          6,916    54,345  $0.0181
+          — Sub-agents TOTAL    327.21s                                None    316,895         46,828   363,723  $0.1219
+       — Orchestration turns                                           None      4,507            563     5,070  $0.0016
+          — Master (2 turns)      4.16s                                None      9,014          1,126    10,140  $0.0032
+               — GRAND TOTAL    141.03s                                None    330,416         48,517   378,933  $0.1267
+
+Persisted run_id: d7cd0ef9-6bf7-4dfd-ac5d-aef372647729
+
+============================================================
+[04:37:46] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring d7cd0ef9  topology=swarm  model=gpt-5.4-nano
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  predict_summary                  rel=5.0 faith=5.0 safe=5.0
+  predict_row_insights_sample      rel=5.0 faith=5.0 safe=5.0
+  diagnose_delay_patterns_tool     rel=5.0 faith=5.0 safe=5.0
+  recommendation_tool              rel=5.0 faith=5.0 safe=5.0
+  recommendation_summary           rel=2.0 faith=4.0 safe=5.0
+  email_alert_tool                 rel=5.0 faith=5.0 safe=5.0
+  email_alert_summary              rel=2.0 faith=2.0 safe=5.0
+
+  capability blend:
+    predict              rel=5.00 faith=5.00 safe=5.00   (50% predict_summary / 50% predict_row_insights_sample)
+    diagnose             rel=4.00 faith=4.00 safe=4.00   (80% diagnose_delay_patterns_tool / 20% diagnose_delay_patterns_tool_raw)
+    recommendation       rel=3.70 faith=3.90 safe=4.00   (10% recommendation_summary / 70% recommendation_tool / 20% recommendation_tool_raw)
+    email                rel=3.70 faith=3.70 safe=4.00   (10% email_alert_summary / 70% email_alert_tool / 20% email_alert_tool_raw)
+
+  SCOPE-ADJUSTED MEAN 4.14/5   (every implied capability was attempted -- same as judge mean)
+
+  JUDGE WEIGHTED MEAN 4.14/5   (relevance 4.10 x.45, faithfulness 4.15 x.45, safety 4.25 x.10)
+  scored 7 artifact(s) -> 4 capability score(s) -> quality_scores
+
+============================================================
+[04:37:58] RUN VALIDITY
+============================================================
+  topology           : swarm
+  coordinator prompt : swarm/master = 4b404fc6
+  plan presented     : NO
+  input path source  : DERIVED from query (good)
+  run status         : partial
+  tools expected/ran : 4 / 8
+  missing tools      : []
+  empty results      : ['recommendation_tool', 'email_alert_tool']
+  dependency order   : 4 VIOLATION(S)
+    ! diagnose_delay_patterns_tool started at 0.00s, before predict_delivery_delays_tool finished at 53.58s
+    ! recommendation_tool started at 0.01s, before predict_delivery_delays_tool finished at 53.58s
+    ! recommendation_tool started at 0.01s, before diagnose_delay_patterns_tool finished at 57.02s
+    ! email_alert_tool started at 0.01s, before predict_delivery_delays_tool finished at 53.58s
+  scheduling         : 90% of achievable overlap  (0 pair(s) left unoverlapped)
+  coordinator idle   : 0.02s spent deciding between waves (not a scheduling fault)
+  span               : 136.87s vs critical path 122.99s
+
+  execution timeline:
+    turn 1 start    0.00
+    ..... 4.16s model reasoning (no tool running) .....
+    predict         4.16 ->   57.74 +
+    diagnose        4.17 ->   61.19 |
+    recommend       4.17 ->   16.56 |-- 4 at once
+    email           4.17 ->    6.50 +
+    predict        61.20 ->  141.03 +
+    diagnose       61.20 ->  118.25 |
+    email          61.21 ->   71.37 |-- 4 at once
+    recommend      61.21 ->  116.08 +
+    turn 1 end    141.03
+    turn 2 start  141.03
+    turn 2 end    141.03   (no tools this turn)
+    run end       141.03
+  turn-1 plan text   : (none stored — no plan was produced)
+
+  ATTENTION:
+    - no plan was presented on turn 1 — the 2-turn plan/confirm flow did not engage; plan_presented is a measured comparison field.
+    - produced no data: recommendation_tool, email_alert_tool — returned valid JSON with an empty result list. Check whether a dependency was missing at call time.
+    - dependency order violated (4): a capability acted before the work it consumes had finished. Recoverable via upstream_missing, but it is the orchestration quality being measured — see run.dependency_violations_json.
+
+finished : 2026-09-06 04:37:59
