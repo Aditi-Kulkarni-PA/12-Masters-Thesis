@@ -469,11 +469,23 @@ Key behavior:
   tables. Running the script twice in a row produces identical output, so it cannot
   double-count or drift. Restricting to one tier with `--model` replaces only that
   tier's rows and leaves the others intact (Risk Log R66).
-- The printed summary shows cost and quality as the median across the 10 workload
-  queries; capability coverage, capability precision and scheduling deviation show the
-  mean instead, plus the share of queries sitting exactly at the optimum — the median
+- **The printed summary carries every measure in the proposal's Section 7.3 table**,
+  split across two blocks so each line stays readable: operational measures (cost,
+  total and generated tokens, latency, critical path, orchestration and specialist
+  token shares) and reliability/quality measures (scope-adjusted quality, coverage,
+  precision, scheduling efficiency and deviation, infeasible overlap, violation rate,
+  completion rate, and the out-of-scope decline rate). Both blocks list the topologies
+  in the same order so the rows line up between them.
+- Cost, tokens, latency and quality are medians across the 10 workload queries;
+  capability coverage, capability precision and scheduling deviation show the mean
+  instead, plus the share of queries sitting exactly at the optimum — the median
   reports the optimum value for every topology on these three measures and separates
   none of them (see the `BOUNDED_OPTIMUM` comment in `analysis/aggregate.py`).
+- **`qrys` is the denominator and should be read first.** A topology that failed some
+  queries carries a smaller one, and its cost, token and latency figures exclude those
+  runs entirely, because a failed run stores no cost or timing. A topology that fails
+  its most demanding queries therefore looks cheaper and faster than one that completed
+  them.
 
 ## Keeping a long batch running: `caffeinate`
 

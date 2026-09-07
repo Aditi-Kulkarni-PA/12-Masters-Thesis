@@ -51,6 +51,37 @@ if str(_APP_DIR) not in sys.path:
 from analysis import measures, summarise
 from measurement.run_store_schema import DB_PATH
 
+# Reporting order for topologies, used by every printed table and by the tracker
+# worksheets built from this output. It is deliberately not the registry order: the
+# registry lists topologies in the order they were built, while this runs from the
+# simplest coordination design to the most decentralised, which is the order the
+# thesis discusses them in. Keeping one constant here means the print and the
+# spreadsheets cannot drift apart.
+#
+# A topology absent from this tuple is not dropped. It sorts to the end, so adding one
+# to the registry without updating this list degrades the ordering rather than hiding
+# the condition from every report.
+TOPOLOGY_ORDER = (
+    "monolith",
+    "sequential",
+    "planner_executor",
+    "static_graph_dag",
+    "static_graph_routed",
+    "dynamic_graph",
+    "mesh",
+    "swarm",
+    "swarm_constrained_adaptive",
+)
+
+
+def topology_sort_key(topology: str) -> tuple:
+    """Position in TOPOLOGY_ORDER, or the end of the list for an unlisted topology."""
+    try:
+        return (0, TOPOLOGY_ORDER.index(topology))
+    except ValueError:
+        return (1, topology)
+
+
 # Measures summarised by median with spread. Grouped to match the proposal's own
 # measure groups, so a row here is traceable to a named measure in Section 7.2.
 CONTINUOUS = (
@@ -425,51 +456,93 @@ def write_tables(conn: sqlite3.Connection, query_aggs: list[dict],
 
 
 def print_summary(conn: sqlite3.Connection, model: str | None) -> None:
-    """Print the topology-level workload figures as a readable table."""
+    """Print every proposal measure per topology, in two aligned blocks.
+
+    All fifteen measures from the proposal's Section 7.3 table are printed. They are
+    split across two blocks purely so each line stays readable: one for the operational
+    measures (cost, tokens, latency) and one for reliability and quality. Both blocks
+    list the topologies in the same order, so the rows line up between them.
+    """
     where = "AND model = ?" if model else ""
     params = (model,) if model else ()
     rows = conn.execute(f"""
         SELECT model, topology,
                MAX(CASE WHEN measure='cost_usd' THEN n END) AS queries,
                MAX(CASE WHEN measure='cost_usd' THEN median END) AS cost,
+               MAX(CASE WHEN measure='total_tokens' THEN median END) AS total_tok,
+               MAX(CASE WHEN measure='generated_tokens' THEN median END) AS gen_tok,
+               MAX(CASE WHEN measure='wall_time_s' THEN median END) AS latency,
+               MAX(CASE WHEN measure='critical_path_s' THEN median END) AS critpath,
+               MAX(CASE WHEN measure='orchestration_token_share' THEN median END) AS orch_share,
+               MAX(CASE WHEN measure='specialist_token_share' THEN median END) AS spec_share,
                MAX(CASE WHEN measure='judge_mean_scope_adj' THEN median END) AS quality,
                MAX(CASE WHEN measure='capability_coverage' THEN mean END) AS coverage,
                MAX(CASE WHEN measure='capability_coverage_at_optimum' THEN rate END) AS cover_opt,
                MAX(CASE WHEN measure='capability_precision' THEN mean END) AS precision,
                MAX(CASE WHEN measure='capability_precision_at_optimum' THEN rate END) AS prec_opt,
+               MAX(CASE WHEN measure='scheduling_efficiency' THEN median END) AS sched_eff,
                MAX(CASE WHEN measure='scheduling_deviation' THEN mean END) AS deviation,
+               MAX(CASE WHEN measure='infeasible_overlap' THEN rate END) AS infeasible,
                MAX(CASE WHEN measure='has_violation' THEN rate END) AS violation_rate,
                MAX(CASE WHEN measure='completed' THEN rate END) AS completion_rate
         FROM agg_topology WHERE scope='workload' {where}
-        GROUP BY model, topology ORDER BY model, deviation
+        GROUP BY model, topology
     """, params).fetchall()
+
+    # Sorted here rather than in SQL: the reporting order is a fixed list, not a
+    # value the query can sort on.
+    rows = sorted(rows, key=lambda r: (r[0], topology_sort_key(r[1])))
 
     if not rows:
         print("No aggregated rows to show. Check that the store holds runs for this model.")
         return
 
-    # Coverage, precision and scheduling deviation print their mean across queries.
-    # Their medians tie every topology at the optimum, so a median column would show
-    # nine identical values. The 'at opt' columns give the share of queries sitting
-    # exactly at the optimum.
-    print("cost and quality are medians across queries. coverage, precision and "
-          "scheduling deviation are means, with the share of queries at the optimum "
-          "beside each.")
+    # The out-of-scope decline rate lives in its own scope, so it is fetched separately
+    # and joined in memory rather than forced into the workload query above.
+    decline = {(r[0], r[1]): r[2] for r in conn.execute(f"""
+        SELECT model, topology, rate FROM agg_topology
+        WHERE scope='out_of_scope' AND measure='declined' {where}
+    """, params)}
+
+    def fmt(v, spec=".2f"):
+        return format(v, spec) if v is not None else "n/a"
+
+    def tok(v):
+        return f"{v:,.0f}" if v is not None else "n/a"
+
+    print("Cost, tokens, latency and quality are medians across the 10 workload queries.")
+    print("Coverage, precision and scheduling deviation are means, with the share of "
+          "queries at the optimum beside each.")
+    print("Rates pool the underlying runs. 'qrys' is the denominator: a topology that "
+          "failed some queries carries a smaller one, and its cost excludes those runs.")
     print()
-    # The query count is printed first, because every figure on the row is computed
-    # over it. A topology that produced no result for some queries carries a smaller
-    # denominator than the rest, and its figures are not directly comparable without it.
-    header = (f"{'model':14} {'topology':28} {'qrys':>4} {'cost':>7} {'qual':>6} "
-              f"{'cover':>6} {'@opt':>5} {'prec':>6} {'@opt':>5} {'schdev':>7} "
-              f"{'viol':>5} {'compl':>6}")
-    print(header)
-    print("-" * len(header))
+    print("=" * 118)
+    print("OPERATIONAL MEASURES  (proposal 7.2.1)")
+    print("=" * 118)
+    h1 = (f"{'model':14} {'topology':28} {'qrys':>4} {'cost':>8} {'tokens':>9} "
+          f"{'gen tok':>8} {'latency':>8} {'critpath':>8} {'orch sh':>8} {'spec sh':>8}")
+    print(h1)
+    print("-" * len(h1))
     for r in rows:
-        def fmt(v, spec=".2f"):
-            return format(v, spec) if v is not None else "n/a"
-        print(f"{r[0]:14} {r[1]:28} {r[2]:>4} {fmt(r[3], '.4f'):>7} {fmt(r[4]):>6} "
-              f"{fmt(r[5], '.3f'):>6} {fmt(r[6]):>5} {fmt(r[7], '.3f'):>6} "
-              f"{fmt(r[8]):>5} {fmt(r[9], '.3f'):>7} {fmt(r[10]):>5} {fmt(r[11]):>6}")
+        print(f"{r[0]:14} {r[1]:28} {r[2]:>4} {fmt(r[3], '.4f'):>8} {tok(r[4]):>9} "
+              f"{tok(r[5]):>8} {fmt(r[6], '.1f'):>8} {fmt(r[7], '.1f'):>8} "
+              f"{fmt(r[8], '.3f'):>8} {fmt(r[9], '.3f'):>8}")
+
+    print()
+    print("=" * 118)
+    print("RELIABILITY AND QUALITY MEASURES  (proposal 7.2.2, 7.2.3)")
+    print("=" * 118)
+    h2 = (f"{'model':14} {'topology':28} {'qual':>6} {'cover':>6} {'@opt':>5} "
+          f"{'prec':>6} {'@opt':>5} {'schEff':>7} {'schDev':>7} {'infeas':>7} "
+          f"{'viol':>5} {'compl':>6} {'declQ1':>7}")
+    print(h2)
+    print("-" * len(h2))
+    for r in rows:
+        d = decline.get((r[0], r[1]))
+        print(f"{r[0]:14} {r[1]:28} {fmt(r[10]):>6} {fmt(r[11], '.3f'):>6} "
+              f"{fmt(r[12]):>5} {fmt(r[13], '.3f'):>6} {fmt(r[14]):>5} "
+              f"{fmt(r[15], '.3f'):>7} {fmt(r[16], '.3f'):>7} {fmt(r[17]):>7} "
+              f"{fmt(r[18]):>5} {fmt(r[19]):>6} {fmt(d):>7}")
 
 
 def print_bins(conn: sqlite3.Connection, model: str | None) -> None:
@@ -511,7 +584,8 @@ def print_bins(conn: sqlite3.Connection, model: str | None) -> None:
     # Bins print in workload order rather than alphabetically, so the progression from
     # least to most demanding reads down the column.
     bin_order = {"bin:low": 0, "bin:medium": 1, "bin:high": 2, "bin:very_high": 3}
-    for r in sorted(rows, key=lambda x: (x[0], x[1], bin_order.get(x[2], 99))):
+    for r in sorted(rows, key=lambda x: (x[0], topology_sort_key(x[1]),
+                                         bin_order.get(x[2], 99))):
         def fmt(v, spec=".2f"):
             return format(v, spec) if v is not None else "n/a"
         print(f"{r[0]:14} {r[1]:28} {r[2].replace('bin:', ''):>10} {r[4]:>4} {r[3]:>4} "
