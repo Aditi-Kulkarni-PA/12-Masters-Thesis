@@ -634,6 +634,46 @@ _MIGRATIONS: tuple[tuple[str, str, str], ...] = (
     # NULL means the run is included. A non-NULL value is the reason string and removes
     # the run from every aggregate while leaving the row and its children intact.
     ("run", "excluded_reason", "TEXT"),
+
+    # What a run did when it produced output but executed no capability the query
+    # required (7-Sep-26). Kept separate from run_status because the two are different
+    # dimensions: run_status records whether execution happened, this records what
+    # happened instead, and the two co-occur -- one pilot run both answered from general
+    # knowledge and offered to analyse. NULL for any run that executed normally.
+    #
+    #   wrongful_decline          refused a query that was in scope
+    #   clarification_request     asked what to do rather than acting
+    #   empty_output              produced no text at all
+    #   answer_without_execution  answered from general knowledge, no capability ran
+    #
+    # "answer_without_execution" rather than "fabrication": the observable fact is that
+    # no capability produced the content, which is what the name states. Whether the
+    # content is false is a separate question this field does not claim to answer.
+    ("run", "behaviour_class", "TEXT"),
+
+    # The reply the harness sends as turn 2 for this query (7-Sep-26). Frozen with the
+    # query set rather than held in the harness, so the workload and the response to a
+    # clarification are versioned together and a run can be reproduced from metadata
+    # alone.
+    #
+    # Every topology executing a given query receives the identical turn-2 message,
+    # whether or not it asked for anything, so the reply is not itself a variable. Only
+    # a query whose wording is deliberately ambiguous needs its own text; the rest keep
+    # the generic confirmation, which is what NULL means here.
+    ("query_metadata", "clarification_response", "TEXT"),
+
+    # Companion fields to behaviour_class, written by the same judgement (7-Sep-26).
+    #
+    #   clarification_appropriate  1 when a question the run asked was reasonable given
+    #                              the query's wording, 0 when the query was clear
+    #                              enough to act on. NULL for every other class. A poor
+    #                              question stays a clarification_request rather than
+    #                              being reclassified, so answer_without_execution keeps
+    #                              meaning one thing.
+    #   behaviour_rationale        the judge's one-line reason, stored so a published
+    #                              rate can be traced to the reasoning behind each label.
+    ("run", "clarification_appropriate", "INTEGER"),
+    ("run", "behaviour_rationale", "TEXT"),
 )
 
 # Every table carrying lock_rows. `run` is the unit a human locks; the rest are

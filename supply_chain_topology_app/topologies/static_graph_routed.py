@@ -315,10 +315,34 @@ class StaticGraphRoutedCoordinator:
     async def run(self, message: str, *, session=None, middleware=None) -> AgentResponse:
         if not self._triaged:
             return await self._route_turn(message)
+        # Turn 2 used to replay the stored response whenever turn 1 declined, so a
+        # coordinator that asked a question never received the answer: the harness sent
+        # one and this early return discarded it. Turn 1's decision was final by
+        # construction, which made "cannot act on a clarification" and "was never given
+        # one" indistinguishable in the data (7-Sep-26).
+        #
+        # A declined turn 1 now re-enters the coordinator once, with the original query
+        # and the harness's turn-2 message together, so the decision is retaken with the
+        # information a conversation would have supplied. Retry is capped at one: the
+        # harness sends two turns, and a topology that declines twice has answered.
+        # A turn 1 that proceeded is untouched -- the stored response is still replayed.
         if not self._proceed:
-            # Turn 1 already refused or answered informationally -- the harness's
-            # "Yes, proceed." has nothing to confirm.
-            return self._final
+            if not getattr(self, "_retried", False):
+                # Re-decide in place and fall through to execution. Recursing into run()
+                # instead returns the routing response, because routing is turn-1
+                # behaviour and execution belongs to the turn after it -- there is no
+                # turn after this one. Observed 8-Sep-26: the retry re-routed correctly,
+                # reported proceed=true and a three-capability plan, then returned it and
+                # ran nothing.
+                self._retried = True
+                self._triaged = False
+                combined = f"{self._query}\n\n{message}" if self._query else message
+                await self._route_turn(combined)
+                if not self._proceed:
+                    return self._final
+            else:
+                # Declined twice: the second decision stands.
+                return self._final
 
         run = _RunContext(self._query, middleware, self._selected)
         result = await _build_workflow(run).run(self._query)

@@ -1,0 +1,41 @@
+{
+  "batch_id": "fix-q8-gpt54",
+  "log_dir": "/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/supply_chain_topology_app/log/batches/fix-q8-gpt54",
+  "planned": 5,
+  "succeeded": [
+    {
+      "topology": "static_graph_dag",
+      "query_id": "Q8",
+      "run_n": 3,
+      "log": "001_static_graph_dag_Q8_n3.log"
+    },
+    {
+      "topology": "planner_executor",
+      "query_id": "Q8",
+      "run_n": 3,
+      "log": "002_planner_executor_Q8_n3.log"
+    },
+    {
+      "topology": "monolith",
+      "query_id": "Q8",
+      "run_n": 3,
+      "log": "003_monolith_Q8_n3.log"
+    },
+    {
+      "topology": "sequential",
+      "query_id": "Q8",
+      "run_n": 3,
+      "log": "004_sequential_Q8_n3.log"
+    },
+    {
+      "topology": "mesh",
+      "query_id": "Q8",
+      "run_n": 3,
+      "log": "005_mesh_Q8_n3.log"
+    }
+  ],
+  "failed": [],
+  "timed_out": [],
+  "remaining": 0,
+  "finished_at": "2026-09-08T11:17:16.999388+00:00"
+}

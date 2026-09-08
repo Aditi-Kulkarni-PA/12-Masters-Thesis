@@ -1,0 +1,134 @@
+==================================================================
+ topology : static_graph_routed
+ run_n    : 3
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-08 16:11:29
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4  query_id=Q8
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 5 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[16:11:30] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > What are the typical delay patterns and how can we optimize last-mile delivery?
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+
+============================================================
+[16:11:33] TURN 1 — master response
+============================================================
+{
+  "proceed": false,
+  "chat_response": "I can help with two specific analyses here: diagnosing delay patterns and generating optimization recommendations. Since you provided an orders file, ... [352 characters]",
+  "capabilities": "<0 item(s)>"
+}
+
+============================================================
+[16:11:33] 
+TURN 2 — clarification response — tools will run now
+============================================================
+  > Please address both parts of the request: the typical delay patterns, and how last-mile delivery can be optimised. Use today's orders file for both.
+
+  >> router selected: predict -> diagnose -> recommend
+  >> tool_start predict_delivery_delays_tool (input=419 chars)
+     - predict_delivery_delays_tool agent: 31,024 prompt / 5,078 completion tokens over 3 message(s)
+  << tool_end   predict_delivery_delays_tool done in 51.38s (output=20,536 chars, valid_json=True)
+  >> tool_start diagnose_delay_patterns_tool (input=419 chars)
+     - diagnose_delay_patterns_tool agent: 19,004 prompt / 5,397 completion tokens over 3 message(s)
+  << tool_end   diagnose_delay_patterns_tool done in 30.74s (output=19,231 chars, valid_json=True)
+  >> tool_start recommendation_tool (input=6,100 chars)
+     - recommendation_tool agent: 14,568 prompt / 5,470 completion tokens over 3 message(s)
+  << tool_end   recommendation_tool done in 56.02s (output=16,281 chars, valid_json=True)
+
+============================================================
+[16:13:58] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "The optimization results point to a prevention-first strategy: reduce unrealistic urgent promises before dispatch, especially where **express** demand... [428 characters]",
+  "email_alert_summary": ""
+}
+
+============================================================
+[16:13:59] SUMMARY — tools, tokens & cost  [model=gpt-5.4, tool calls=3]
+============================================================
+                        tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+predict_delivery_delays_tool     51.38s         419       20,536       True     31,024          5,078    36,102  $0.1537
+diagnose_delay_patterns_tool     30.74s         419       19,231       True     19,004          5,397    24,401  $0.1285
+         recommendation_tool     56.02s       6,100       16,281       True     14,568          5,470    20,038  $0.1185
+          — Sub-agents TOTAL    138.14s                                None     64,596         15,945    80,541  $0.4007
+          — Master (2 turns)     10.05s                                None     19,171            189    19,360  $0.0508
+               — GRAND TOTAL    148.24s                                None     83,767         16,134    99,901  $0.4514
+
+Persisted run_id: e8ff7dd4-21df-4082-ba3b-b65999ed6322
+
+============================================================
+[16:13:59] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring e8ff7dd4  topology=static_graph_routed  model=gpt-5.4
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  predict_summary                  rel=5.0 faith=5.0 safe=5.0
+  predict_row_insights_sample      rel=5.0 faith=5.0 safe=5.0
+  diagnose_delay_patterns_tool     rel=5.0 faith=5.0 safe=5.0
+  recommendation_tool              rel=5.0 faith=5.0 safe=5.0
+  recommendation_summary           rel=4.0 faith=5.0 safe=5.0
+  coordinator_narrative            rel=4.0 faith=5.0 safe=5.0
+
+  capability blend:
+    predict              rel=5.00 faith=5.00 safe=5.00   (50% predict_summary / 50% predict_row_insights_sample)
+    diagnose             rel=4.00 faith=4.00 safe=4.00   (80% diagnose_delay_patterns_tool / 20% diagnose_delay_patterns_tool_raw)
+    recommendation       rel=3.90 faith=4.00 safe=4.00   (10% recommendation_summary / 70% recommendation_tool / 20% recommendation_tool_raw)
+    coordinator_narrative rel=4.00 faith=5.00 safe=5.00   (100% coordinator_narrative)
+
+  SCOPE-ADJUSTED MEAN 4.38/5   (every implied capability was attempted -- same as judge mean)
+
+  JUDGE WEIGHTED MEAN 4.38/5   (relevance 4.22 x.45, faithfulness 4.50 x.45, safety 4.50 x.10)
+  scored 6 artifact(s) -> 4 capability score(s) -> quality_scores
+
+============================================================
+[16:14:11] RUN VALIDITY
+============================================================
+  topology           : static_graph_routed
+  coordinator prompt : static_graph_routed/coordinator = 41f848fc
+  plan presented     : yes
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 3 / 3
+  missing tools      : []
+  empty results      : none
+  dependency order   : respected — every capability waited for its inputs
+  scheduling         : 100% of achievable overlap  (0 pair(s) left unoverlapped)
+  coordinator idle   : 0.06s spent deciding between waves (not a scheduling fault)
+  span               : 138.19s vs critical path 138.13s
+
+  execution timeline:
+    turn 1 start    0.00
+    turn 1 end      2.85   (plan / no tools yet)
+    turn 2 start    2.85
+    ..... 6.75s model reasoning (no tool running) .....
+    predict         6.75 ->   58.12
+    diagnose       58.13 ->   88.87
+    ....... 0.05s idle .......
+    recommend      88.92 ->  144.94
+    ..... 3.30s model composing answer .....
+    turn 2 end    148.24
+    run end       148.24
+
+  turn-1 plan text (stored verbatim, T94):
+    | I can help with two specific analyses here: diagnosing delay patterns and generating optimization recommendations. Since you provided an orders file, I can run those analyses for today, but I need you to confirm the action.
+    | 
+    | Here's my plan:
+    | 1. Predict delivery delays
+    | 2. Diagnose delay patterns
+    | 3. Generate optimization recommendations
+    | Shall I proceed?
+
+  All run-validity checks clean.
+
+finished : 2026-09-08 16:14:12

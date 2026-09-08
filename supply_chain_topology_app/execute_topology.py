@@ -167,7 +167,7 @@ def _final_answer_text(r) -> str:
         return r.value.model_dump_json()
     return r.text or ""
 
-def _resolve_query(query_id: str) -> tuple[str, str, bool]:
+def _resolve_query(query_id: str) -> tuple[str, str, bool, str | None]:
     """Return (query_id, query_text, implies_capability) for this run.
 
     The frozen eval set (query_metadata, built by T16) is the source of query text, so
@@ -188,11 +188,12 @@ def _resolve_query(query_id: str) -> tuple[str, str, bool]:
 
     override = os.getenv("SC_QUERY", "").strip()
     if override:
-        return "Q_ADHOC", override, True
+        return "Q_ADHOC", override, True, None
     try:
         conn = sqlite3.connect(DB_PATH)
         row = conn.execute(
-            "SELECT query_text, implied_tools_json FROM query_metadata WHERE query_id = ?",
+            "SELECT query_text, implied_tools_json, clarification_response "
+            "FROM query_metadata WHERE query_id = ?",
             (query_id,),
         ).fetchone()
         conn.close()
@@ -209,7 +210,7 @@ def _resolve_query(query_id: str) -> tuple[str, str, bool]:
     implies_capability = True
     if row[1] is not None:
         implies_capability = bool(json.loads(row[1]))
-    return query_id, row[0], implies_capability
+    return query_id, row[0], implies_capability, row[2]
 
 
 def _turn1_plan_text(responses: list) -> str | None:
@@ -321,7 +322,7 @@ async def main():
     # order -- see query_set_v1.xlsx's Q1 note for the full old-ID -> new-ID mapping).
     # SC_QUERY still overrides the text for an ad-hoc run; see _resolve_query for what
     # that costs.
-    query_id, query, _implies_capability = _resolve_query(
+    query_id, query, _implies_capability, _clarification = _resolve_query(
         os.getenv("SC_QUERY_ID", "").strip() or "Q11")
     query += f"\n\nThe input orders data is in the file at path: {_ORDERS}"
 
@@ -378,10 +379,20 @@ async def main():
     # future out-of-scope probe is covered without touching this code, and on metadata
     # rather than on parsing the coordinator's text, so nothing here depends on matching
     # a refusal string across nine differently-worded conditions.
+    # Turn 2 is the query's own clarification response where one is defined, and the
+    # generic confirmation otherwise. Frozen in query_metadata rather than chosen here,
+    # and sent to every topology executing this query whether or not it asked for
+    # anything, so the reply is identical across conditions and is not itself a variable.
+    #
+    # Only a deliberately ambiguous query needs its own text. Sending it unconditionally
+    # avoids having to detect a clarification request mid-run, which would put a
+    # classification step on the critical path of a measured run.
     turns = [("TURN 1 — sending query (expecting plan)", query)]
     if _implies_capability:
-        turns.append(
-            ("TURN 2 — confirming ('Yes, proceed.') — tools will run now", "Yes, proceed."))
+        turn2 = _clarification or "Yes, proceed."
+        label = ("TURN 2 — clarification response — tools will run now" if _clarification
+                 else "TURN 2 — confirming ('Yes, proceed.') — tools will run now")
+        turns.append((label, turn2))
     else:
         print(f"  turn-2 gate        : SKIPPED — {query_id} implies no capability "
               f"(out-of-scope probe); turn-1 restraint is the measured outcome")

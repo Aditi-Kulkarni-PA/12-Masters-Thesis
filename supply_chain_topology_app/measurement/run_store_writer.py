@@ -324,7 +324,36 @@ def write_run(
 
         tool_calls = recorder.summary()
         any_error = any(tc["error"] for tc in tool_calls)
-        run_status = "failed" if any_error and len(tool_calls) <= 1 else ("partial" if any_error else "success")
+
+        # A run that produced output but executed none of the capabilities the query
+        # required is not a success, and was recorded as one until 7-Sep-26 because the
+        # expression below only tested for tool errors: with no tool calls there are no
+        # errors, so it fell through to "success". Twelve pilot runs were counted as
+        # completed on that path, inflating completion rate by up to 6.7 points.
+        #
+        # Judged on capability calls rather than on the raw tool_call count: a narrative
+        # continuation is not execution of a required capability. A query that requires
+        # nothing (the out-of-scope probe) cannot reach this state, so a correct decline
+        # is untouched.
+        _required = _get_implied_tools(conn, query_id)
+        _ran_capability = bool({canonical(t["tool_name"]) for t in tool_calls}
+                               & {canonical(t) for t in _required})
+        no_execution = bool(_required) and not _ran_capability
+
+        if no_execution:
+            run_status = "no_execution"
+        elif any_error and len(tool_calls) <= 1:
+            run_status = "failed"
+        elif any_error:
+            run_status = "partial"
+        else:
+            run_status = "success"
+
+        # behaviour_class is deliberately not set here. Classifying what a run did
+        # instead of executing is an LLM judgement, made in the scoring pipeline where
+        # the quality rubric already runs, so the write path stays free of a model call
+        # and a run cannot fail on a classifier error. The column stays NULL until
+        # scoring fills it.
         failure_category = next((tc["error"] for tc in tool_calls if tc["error"]), None)
         plan_presented_flag = None if plan_presented is None else int(plan_presented)
         path_fallback_used_flag = int(path_fallback_used)
@@ -391,8 +420,8 @@ def write_run(
                 tool_base_offset_s, all_turns_json,
                 orchestration_prompt_tokens, orchestration_completion_tokens,
                 orchestration_total_tokens, orchestration_cost_usd,
-                capture_version, run_phase, batch_id, execution_order
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                capture_version, run_phase, batch_id, execution_order, behaviour_class
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """,
             (
                 run_id, query_id, topology, None, run_n, model, config_hash,
@@ -422,6 +451,7 @@ def write_run(
                 run_phase,
                 batch_id,
                 execution_order,
+                None,   # behaviour_class -- set by the scoring pipeline
             ),
         )
 

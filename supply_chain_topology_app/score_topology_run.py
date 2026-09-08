@@ -254,6 +254,31 @@ _COORDINATOR_NARRATIVE_FIELDS = ("chat_response",)
 # "missing part of an attempted capability = 0" rule as predict/simulate) — it is
 # never both directions at once, so this is not a renormalization trick, just the
 # existing rule applied to a second axis of the same capability.
+# Artifacts a topology cannot produce by construction, per topology. These are dropped
+# before judging and their weight is removed from the blend's denominator -- a DIFFERENT
+# rule from _blend()'s "attempted but missing scores zero", and the two must not be
+# conflated. Zero is the right answer when a coordinator was told to write something and
+# did not; it is the wrong answer when no coordinator exists to write it at all.
+#
+# Swarm and Swarm-CA have no master coordinator turn (R17): their MasterOutput is
+# assembled in code from the blackboard, and no agent in either topology is ever asked
+# for the 2-3 sentence synthesis narrative_field_guidance.md specifies. Until 8-Sep-26
+# _assemble() filled these three fields with each specialist's write_blackboard `note` --
+# process commentary ("Posting recommendations to the blackboard because...") judged
+# against a criterion asking for "a genuine synthesis consistent with the actions
+# actually produced". Systematic, 27/27 non-empty cases across the pilot, and in 4 nano
+# runs the judged text was the wave loop's own auto-capture string. Build defect, not a
+# finding: the difference was in assembly code, not orchestration behaviour.
+#
+# Scoring these as zero instead would be the same error in the other direction, so the
+# capability keeps only the artifacts the topology can actually produce. The cost is
+# reduced measure coverage for two of nine conditions, which the methodology must state.
+_STRUCTURALLY_ABSENT: dict[str, frozenset[str]] = {
+    "swarm": frozenset({"simulate_narrative", "recommendation_summary", "email_alert_summary"}),
+    "swarm_constrained_adaptive": frozenset({"simulate_narrative", "recommendation_summary",
+                                             "email_alert_summary"}),
+}
+
 _CAPABILITY_BLEND: dict[str, tuple[tuple[str, float], ...]] = {
     "predict":               (("predict_summary", 0.5), ("predict_row_insights_sample", 0.5)),
     "diagnose":               (("diagnose_delay_patterns_tool", 0.8), ("diagnose_delay_patterns_tool_raw", 0.2)),
@@ -531,7 +556,8 @@ def _merge_all_turns(all_turns_json: str | None) -> dict[str, str | list]:
     return merged
 
 
-def _blend(results: dict, parts: tuple[tuple[str, float], ...]) -> dict | None:
+def _blend(results: dict, parts: tuple[tuple[str, float], ...],
+           not_applicable: frozenset[str] = frozenset()) -> dict | None:
     """Combine one or more judged artifacts into one capability-level {relevance,
     faithfulness, safety} score, using the stated weights.
 
@@ -549,13 +575,21 @@ def _blend(results: dict, parts: tuple[tuple[str, float], ...]) -> dict | None:
     for simulate, or Mesh/Sequential/DAG which don't produce these artifacts at all),
     which must stay uncounted rather than punished; see "condition that skips work
     does not gain a quality advantage" below for the companion rule on the other side.
+
+    *not_applicable* names artifacts this TOPOLOGY cannot produce by construction
+    (_STRUCTURALLY_ABSENT). Those are removed from the denominator, not scored zero --
+    the third case, sitting between the two above: the capability was attempted and the
+    artifact is genuinely absent, but no agent was ever asked to write it, so there is
+    no failure to price. Applied per artifact rather than per capability, which is what
+    distinguishes it from the None return above.
     """
-    present = [(k, w) for k, w in parts if k in results]
+    scored = tuple((k, w) for k, w in parts if k not in not_applicable)
+    present = [(k, w) for k, w in scored if k in results]
     if not present:
         return None
     dims = ("relevance", "faithfulness", "safety")
-    total_w = sum(w for _, w in parts)   # every part's weight, present or not
-    return {d: sum((results[k][d] if k in results else 0.0) * w for k, w in parts) / total_w
+    total_w = sum(w for _, w in scored)   # every applicable part, present or not
+    return {d: sum((results[k][d] if k in results else 0.0) * w for k, w in scored) / total_w
            for d in dims}
 
 
@@ -643,6 +677,16 @@ def score_run(run_id: str, dry_run: bool = False, force: bool = False) -> int:
     if coord_fields:
         best["coordinator_narrative"] = {"payload": json.dumps(coord_fields, indent=2)}
 
+    # Drop artifacts this topology cannot produce by construction, BEFORE judging, so a
+    # historical run whose stored payload still carries one is scored the same way a
+    # post-fix run is. Suppressing here rather than only in _blend() also means the
+    # judge is never called on text no agent was asked to write.
+    not_applicable = _STRUCTURALLY_ABSENT.get(row["topology"], frozenset())
+    for key in sorted(not_applicable & best.keys()):
+        print(f"  {key:32} not applicable for {row['topology']} — excluded from the "
+              f"blend, not scored zero")
+        del best[key]
+
     if not best:
         print("  no scorable output on this run — nothing written.")
         return 1
@@ -671,7 +715,7 @@ def score_run(run_id: str, dry_run: bool = False, force: bool = False) -> int:
     # judged pieces -- the blend step is what keeps capabilities comparable.
     capability_scores: dict[str, dict] = {}
     for cap, parts in _CAPABILITY_BLEND.items():
-        blended = _blend(results, parts)
+        blended = _blend(results, parts, not_applicable)
         if blended is not None:
             capability_scores[cap] = blended
 
@@ -680,7 +724,12 @@ def score_run(run_id: str, dry_run: bool = False, force: bool = False) -> int:
         for cap, parts in _CAPABILITY_BLEND.items():
             if cap not in capability_scores:
                 continue
-            weights = " / ".join(f"{w:.0%} {k}" for k, w in parts)
+            # Weights are reported renormalised, so the printed shares always sum to
+            # 100% and match the arithmetic actually used -- a printed 10/70/20 beside a
+            # score computed over 80% is how a blend defect stays invisible in a log.
+            applicable = [(k, w) for k, w in parts if k not in not_applicable]
+            total_w = sum(w for _, w in applicable)
+            weights = " / ".join(f"{w / total_w:.0%} {k}" for k, w in applicable)
             s = capability_scores[cap]
             print(f"    {cap:20} rel={s['relevance']:.2f} faith={s['faithfulness']:.2f} "
                   f"safe={s['safety']:.2f}   ({weights})")

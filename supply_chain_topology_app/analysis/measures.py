@@ -153,7 +153,11 @@ def derive(run_row: dict, tool_names: list[str], implied_tools_json: str | None,
 
     violations = json.loads(run_row.get("dependency_violations_json") or "[]")
     completed = run_row.get("run_status") == "success"
-    did_not_complete = run_row.get("run_status") == "failed"
+    # 'failed' never reached the model; 'no_execution' reached it and executed nothing.
+    # Both are non-completions for every rate, and both take a scope-adjusted score of
+    # zero, but they are distinguished so a crash is never read as a behavioural choice.
+    did_not_complete = run_row.get("run_status") in ("failed", "no_execution")
+    behaviour = run_row.get("behaviour_class")
 
     # Scope-adjusted quality for a run that produced nothing is 0, not absent
     # (proposal Section 7.2.3.3). Leaving it absent would drop the run from the quality
@@ -182,6 +186,14 @@ def derive(run_row: dict, tool_names: list[str], implied_tools_json: str | None,
         "capability_precision": precision(required, executed),
         "has_violation": 1 if violations else 0,
         "completed": 1 if completed else 0,
+        # Answered from general knowledge with no capability behind the content. Kept as
+        # its own rate rather than folded into a weighted quality score: a weight would
+        # need a constant with no empirical basis, and would make this commensurable with
+        # a wrongful decline, which is the opposite failure.
+        "answered_without_execution": 1 if behaviour == "answer_without_execution" else 0,
+        "wrongful_decline": 1 if behaviour == "wrongful_decline" else 0,
+        "clarification_request": 1 if behaviour == "clarification_request" else 0,
+        "empty_output": 1 if behaviour == "empty_output" else 0,
         # Declining requires the run to have finished and chosen to execute nothing. A
         # run that crashed also executed nothing, and counting it as a decline would
         # credit a failure as correct restraint.

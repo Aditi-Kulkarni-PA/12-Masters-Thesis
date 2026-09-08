@@ -123,6 +123,14 @@ RATES = (
     "has_violation",
     "completed",
     "infeasible_overlap",
+    # Behaviour when a run executed none of the capabilities its query required. Four
+    # mutually exclusive classes, reported as separate rates rather than combined into
+    # one score, because they are qualitatively different failures: answering without
+    # evidence is not the same kind of error as declining work that was in scope.
+    "answered_without_execution",
+    "wrongful_decline",
+    "clarification_request",
+    "empty_output",
 )
 
 # Bounded measures whose usual value is the optimum, mapped to that optimum.

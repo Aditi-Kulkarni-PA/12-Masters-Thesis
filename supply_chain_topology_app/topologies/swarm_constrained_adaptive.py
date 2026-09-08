@@ -524,14 +524,36 @@ class ConstrainedAdaptiveSwarmEntryPoint:
 
     def __init__(self):
         self._done = False
+        self._declined = False       # turn 1 gated the request instead of executing it
+        self._retried = False        # a declined turn 1 gets one re-entry, not a loop
+        self._query: str | None = None
         self._final_response: AgentResponse | None = None
 
     def create_session(self, *, session_id: str | None = None):
         return None  # no shared conversation -- waves coordinate via the blackboard, not chat history
 
     async def run(self, message: str, *, session=None, middleware=None) -> AgentResponse:
-        if self._done:
+        # Turn 2 used to replay the stored response whenever turn 1 declined, so a
+        # coordinator that asked a question never received the answer: the harness sent
+        # one and this early return discarded it. Turn 1's decision was final by
+        # construction, which made "cannot act on a clarification" and "was never given
+        # one" indistinguishable in the data (7-Sep-26).
+        #
+        # A declined turn 1 now re-enters the coordinator once, with the original query
+        # and the harness's turn-2 message together, so the decision is retaken with the
+        # information a conversation would have supplied. Retry is capped at one: the
+        # harness sends two turns, and a topology that declines twice has answered.
+        # A turn 1 that proceeded is untouched -- the stored response is still replayed.
+        if self._done and not (self._declined and not self._retried):
             return self._final_response
+
+        if self._done and self._declined and not self._retried:
+            self._retried = True
+            self._done = False
+            self._declined = False
+            message = f"{self._query}\n\n{message}" if self._query else message
+        elif self._query is None:
+            self._query = message
 
         run_uid = str(uuid.uuid4())
         blackboard = Blackboard()
@@ -547,6 +569,7 @@ class ConstrainedAdaptiveSwarmEntryPoint:
             seed_response._value_parsed = True
             self._final_response = seed_response
             self._done = True
+            self._declined = True
             return seed_response
 
         # The full requirement set, decided once by the seed call. WHEN each one
@@ -667,22 +690,31 @@ class ConstrainedAdaptiveSwarmEntryPoint:
         no covering aggregator agent -- the same R17-respecting precedent Mesh's own
         _assemble() follows: nothing here gains a view of every capability's output.
 
-        Each entry's own `note` -- not `result` -- supplies the narrative fields:
-        write_blackboard's note argument is already "a short explanation of what you
-        are posting and why", the same shape these fields need, and it is guaranteed to
-        be a plain string, unlike `result`, which is free-form. The most recent entry
-        for a capability wins, matching Blackboard.read()'s own most-recent
-        convention -- a capability run twice leaves its LATER post authoritative.
-        """
-        def latest_note(capability: str) -> str:
-            matches = [e for e in blackboard.entries if e.capability == capability]
-            return matches[-1].note if matches else ""
+        The three narrative fields are left EMPTY. This topology has no coordinator turn
+        that writes them: no agent here is ever given narrative_field_guidance.md, and
+        the specialists' own structured schemas carry no summary field, so there is
+        nothing that satisfies the contract those fields hold every other condition to.
 
+        Until 8-Sep-26 they were filled from each entry's `note` instead. That was wrong:
+        write_blackboard's note argument asks for "a short explanation of what you are
+        posting and why", which is process commentary, while the field's contract and
+        the judge's own criterion ask for a synthesis of the actions produced. The two
+        answer different questions, so every value was off-contract -- 27/27 non-empty
+        cases across the pilot, and in the write-compliance-miss path the judged text was
+        this module's own auto-capture string. Build defect, not a finding.
+
+        An empty field is not scored zero: score_topology_run._STRUCTURALLY_ABSENT names
+        these three for this topology and drops them from the blend's denominator.
+        Capability output itself is unaffected -- it is captured from the tool-call
+        stream, as in every other condition. The notes remain on the blackboard and in
+        the run log for write-compliance analysis; they simply stop being presented as
+        the coordinator's answer.
+        """
         return MasterOutput(
             chat_response="",
-            simulate_summary=latest_note("simulate"),
-            recommendation_summary=latest_note("recommend"),
-            email_alert_summary=latest_note("email"),
+            simulate_summary="",
+            recommendation_summary="",
+            email_alert_summary="",
         )
 
 
