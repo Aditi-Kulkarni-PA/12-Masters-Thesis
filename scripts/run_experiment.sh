@@ -42,7 +42,22 @@ echo "=================================================================="
 SECONDS=0
 
 set +e
-uv run --env-file .env python supply_chain_topology_app/run_experiment.py "$@"
+# Pre-flight: every condition must use the same generation parameters, or the batch is not
+# a topology comparison. temperature is written as a separate literal at 23 sites across the
+# nine topology files and core/agents.py, and config_hash does not cover generation settings,
+# so drift would reach a batch and leave no trace in the run store. Cheap, reads source only,
+# and refuses to spend on a batch that is already invalid.
+uv run python supply_chain_topology_app/cli/check_model_parity.py
+parity_rc=$?
+if [ $parity_rc -ne 0 ]; then
+  echo "=================================================================="
+  echo " ABORTED: model generation parameters differ across conditions."
+  echo " Fix the mismatch above before running a measurement batch."
+  echo "=================================================================="
+  exit $parity_rc
+fi
+
+uv run --env-file .env python supply_chain_topology_app/cli/run_experiment.py "$@"
 rc=$?
 set -e
 

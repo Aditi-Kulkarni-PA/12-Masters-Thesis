@@ -1,0 +1,242 @@
+delivery_id,delivery_partner,delivery_mode,region,weather_condition,vehicle_type,distance_km,original_severity,simulated_severity,simulate_delay_reason
+3775.0,dhl,express,east,stormy,truck,247.7,Long (6+h),Long (6+h),"Stormy weather in the east keeps this already high-risk long-distance express truck delivery at severe delay levels, so the delay remains Long (6+h)."
+8841.0,ekart,express,east,stormy,van,250.3,Long (6+h),Medium (3-5h),"Stormy east-region conditions still indicate major disruption, but the simulated pattern suggests this long-distance express van order improves slightly from Long (6+h) to Medium (3-5h)."
+23052.0,amazon logistics,same day,east,stormy,scooter,165.4,Short (1-2h),Long (6+h),"Stormy weather sharply worsens this east-region same day scooter delivery, where exposure to weather and urgency push the delay from Short (1-2h) to Long (6+h)."
+23679.0,xpressbees,express,east,stormy,van,275.8,Long (6+h),Medium (3-5h),"Although stormy weather remains disruptive in the east, the simulated historical pattern for this express van route reduces severity from Long (6+h) to Medium (3-5h)."
+7826.0,amazon logistics,express,east,stormy,scooter,175.5,Short (1-2h),Medium (3-5h),Stormy conditions in the east likely slow this express scooter delivery enough to increase delay severity from Short (1-2h) to Medium (3-5h).
+2431.0,blue dart,express,east,stormy,truck,130.3,Short (1-2h),Short (1-2h),"Despite stormy weather in the east, this express truck shipment appears comparatively resilient, so the delay stays at Short (1-2h)."
+12927.0,xpressbees,express,east,stormy,scooter,69.6,Medium (3-5h),Medium (3-5h),"Stormy east-region conditions keep this express scooter order in a moderate-risk band, so the delay remains Medium (3-5h)."
+2517.0,xpressbees,express,east,stormy,ev van,173.0,Short (1-2h),Medium (3-5h),"The shift to stormy weather in the east increases disruption on this express ev van route, raising severity from Short (1-2h) to Medium (3-5h)."
+3589.0,shadowfax,express,east,stormy,scooter,259.5,Short (1-2h),Long (6+h),"A long-distance express scooter delivery in stormy east-region weather becomes much more vulnerable, escalating from Short (1-2h) to Long (6+h)."
+5001.0,blue dart,express,east,stormy,truck,194.7,Short (1-2h),Medium (3-5h),"Stormy weather in the east adds transit friction to this express truck order, increasing the expected delay from Short (1-2h) to Medium (3-5h)."
+18495.0,ecom express,express,east,stormy,scooter,209.8,Medium (3-5h),Medium (3-5h),"This east-region express scooter delivery remains moderately delayed under stormy conditions, with severity staying at Medium (3-5h)."
+7233.0,dhl,express,east,stormy,ev van,206.4,Short (1-2h),Medium (3-5h),"Stormy weather in the east likely causes additional route and handling delays for this express ev van shipment, moving it from Short (1-2h) to Medium (3-5h)."
+9973.0,shadowfax,same day,east,stormy,ev bike,263.2,Short (1-2h),Medium (3-5h),"Same day service combined with long distance and stormy east-region weather increases pressure on this ev bike delivery, worsening it from Short (1-2h) to Medium (3-5h)."
+5788.0,shadowfax,express,east,stormy,ev bike,44.8,Short (1-2h),Medium (3-5h),"Even at a shorter distance, stormy weather in the east raises disruption risk for this express ev bike order, increasing severity from Short (1-2h) to Medium (3-5h)."
+7491.0,blue dart,express,east,stormy,truck,168.1,Short (1-2h),Long (6+h),"Stormy east-region conditions significantly worsen this express truck delivery, pushing the expected delay from Short (1-2h) to Long (6+h)."
+22760.0,ekart,express,east,stormy,ev van,276.6,Medium (3-5h),Medium (3-5h),"This long-distance express ev van order remains in the same moderate delay band under stormy east-region conditions, staying at Medium (3-5h)."
+9301.0,blue dart,express,east,stormy,van,185.2,Short (1-2h),Long (6+h),"Stormy weather in the east strongly impacts this express van route, causing a sharp severity jump from Short (1-2h) to Long (6+h)."
+16502.0,dhl,express,east,stormy,truck,272.1,Medium (3-5h),Long (6+h),The combination of stormy east-region weather and very long express truck distance increases disruption enough to move this order from Medium (3-5h) to Long (6+h).
+9874.0,dhl,express,east,stormy,truck,219.4,Short (1-2h),Medium (3-5h),"Stormy conditions in the east increase travel and operational delays for this express truck shipment, raising severity from Short (1-2h) to Medium (3-5h)."
+2520.0,ecom express,express,east,stormy,truck,226.4,Long (6+h),Medium (3-5h),"While stormy weather remains adverse, the simulated historical pattern for this east-region express truck order suggests a lower severity outcome, improving from Long (6+h) to Medium (3-5h)."
+14434.0,xpressbees,express,east,stormy,ev bike,160.6,Short (1-2h),Medium (3-5h),"Stormy east-region weather makes this express ev bike delivery more delay-prone, increasing severity from Short (1-2h) to Medium (3-5h)."
+9099.0,fedex,express,east,stormy,van,188.0,Short (1-2h),Medium (3-5h),"This express van order faces added disruption under stormy east-region conditions, shifting from Short (1-2h) to Medium (3-5h)."
+11750.0,blue dart,same day,east,stormy,ev bike,149.6,Medium (3-5h),Medium (3-5h),"Stormy weather keeps this east-region same day ev bike delivery under moderate pressure, so the delay remains Medium (3-5h)."
+22414.0,fedex,express,east,stormy,ev bike,70.9,Medium (3-5h),Long (6+h),"Stormy east-region conditions worsen reliability for this express ev bike shipment, increasing severity from Medium (3-5h) to Long (6+h)."
+9730.0,shadowfax,same day,east,stormy,ev van,297.1,Medium (3-5h),Long (6+h),"A very long same day route under stormy east-region weather creates severe timing pressure, pushing this ev van order from Medium (3-5h) to Long (6+h)."
+24028.0,delhivery,express,east,stormy,ev bike,170.4,Medium (3-5h),Medium (3-5h),"Stormy weather in the east keeps this express ev bike delivery in a moderate delay category, so severity remains Medium (3-5h)."
+6364.0,ekart,express,east,stormy,bike,180.1,Medium (3-5h),Medium (3-5h),"This express bike delivery remains moderately delayed under stormy east-region conditions, with no severity change from Medium (3-5h)."
+14805.0,blue dart,express,east,stormy,scooter,219.9,Medium (3-5h),Long (6+h),"Stormy weather in the east significantly worsens this long express scooter route, escalating the delay from Medium (3-5h) to Long (6+h)."
+20557.0,dhl,express,east,stormy,ev van,279.4,Short (1-2h),Medium (3-5h),"The long distance and stormy east-region conditions increase disruption for this express ev van order, moving it from Short (1-2h) to Medium (3-5h)."
+13365.0,fedex,express,east,stormy,bike,260.2,Medium (3-5h),Long (6+h),"A long-distance express bike delivery in stormy east-region weather becomes much more delay-prone, worsening from Medium (3-5h) to Long (6+h)."
+13160.0,ecom express,express,east,stormy,bike,291.1,Medium (3-5h),Short (1-2h),"Despite stormy east-region conditions, the simulated historical pattern for this express bike route indicates a lighter outcome, improving from Medium (3-5h) to Short (1-2h)."
+19073.0,fedex,same day,east,stormy,bike,220.2,Short (1-2h),Medium (3-5h),"Stormy weather in the east adds pressure to this long same day bike delivery, increasing severity from Short (1-2h) to Medium (3-5h)."
+23679.0,xpressbees,express,east,stormy,van,275.8,Long (6+h),Medium (3-5h),"Although stormy weather remains disruptive in the east, the simulated historical pattern for this express van route reduces severity from Long (6+h) to Medium (3-5h)."
+19515.0,delhivery,express,east,stormy,van,4.7,Short (1-2h),Medium (3-5h),"Even on a short route, stormy east-region weather can create pickup, traffic, and handling delays, raising this express van order from Short (1-2h) to Medium (3-5h)."
+6895.0,xpressbees,express,east,stormy,ev bike,221.5,Short (1-2h),Long (6+h),"Stormy weather combined with long-distance express ev bike movement sharply increases disruption, pushing this order from Short (1-2h) to Long (6+h)."
+1949.0,delhivery,express,east,stormy,ev bike,31.3,Short (1-2h),Long (6+h),"Stormy east-region conditions can heavily affect lightweight two-wheeler operations, causing this express ev bike delivery to worsen from Short (1-2h) to Long (6+h)."
+5420.0,shadowfax,express,east,stormy,ev bike,235.5,Long (6+h),Long (6+h),"This long-distance express ev bike order was already severely delayed, and stormy east-region weather keeps it at Long (6+h)."
+3810.0,shadowfax,express,east,stormy,bike,42.1,Long (6+h),Medium (3-5h),"Stormy weather still affects this east-region express bike delivery, but the simulated pattern suggests a somewhat lower severity, improving from Long (6+h) to Medium (3-5h)."
+15695.0,ecom express,express,east,stormy,truck,197.1,Short (1-2h),Medium (3-5h),Stormy east-region conditions add enough operational slowdown to move this express truck order from Short (1-2h) to Medium (3-5h).
+24678.0,xpressbees,express,east,stormy,truck,196.2,Short (1-2h),Long (6+h),"Stormy weather in the east substantially worsens this express truck delivery, escalating the expected delay from Short (1-2h) to Long (6+h)."
+20842.0,blue dart,express,east,stormy,ev bike,264.6,Short (1-2h),Long (6+h),
+11312.0,blue dart,express,east,stormy,ev van,75.7,Long (6+h),Medium (3-5h),
+9789.0,xpressbees,express,east,stormy,scooter,244.9,Medium (3-5h),Medium (3-5h),
+12422.0,delhivery,express,east,stormy,ev van,144.2,Short (1-2h),Long (6+h),
+19362.0,shadowfax,express,east,stormy,bike,213.9,Short (1-2h),Long (6+h),
+24028.0,delhivery,express,east,stormy,ev bike,170.4,Medium (3-5h),Medium (3-5h),"Stormy weather in the east keeps this express ev bike delivery in a moderate delay category, so severity remains Medium (3-5h)."
+1898.0,amazon logistics,express,east,stormy,bike,226.3,Long (6+h),Medium (3-5h),
+19095.0,ecom express,express,east,stormy,bike,16.0,Medium (3-5h),Medium (3-5h),
+3465.0,dhl,express,east,stormy,bike,210.7,Medium (3-5h),Medium (3-5h),
+12871.0,shadowfax,same day,east,stormy,truck,237.3,Medium (3-5h),Long (6+h),
+4605.0,blue dart,same day,east,stormy,truck,297.1,Short (1-2h),Long (6+h),
+1005.0,blue dart,express,east,stormy,scooter,290.7,Short (1-2h),Medium (3-5h),
+24750.01,delhivery,same day,east,stormy,bike,259.1,Short (1-2h),Medium (3-5h),
+18620.0,shadowfax,express,east,stormy,bike,286.2,Medium (3-5h),Medium (3-5h),
+9796.0,fedex,same day,east,stormy,ev bike,150.1,Short (1-2h),Short (1-2h),
+19228.0,ekart,express,east,stormy,scooter,238.0,Short (1-2h),Medium (3-5h),
+23198.0,xpressbees,express,east,stormy,van,73.5,Short (1-2h),Long (6+h),
+20738.0,fedex,express,east,stormy,van,138.8,Short (1-2h),Long (6+h),
+13484.0,dhl,same day,east,stormy,ev van,113.7,Short (1-2h),Long (6+h),
+8524.0,amazon logistics,express,east,stormy,ev bike,223.2,Short (1-2h),Medium (3-5h),
+6321.0,xpressbees,express,east,stormy,bike,107.8,Medium (3-5h),Medium (3-5h),
+10147.0,ecom express,express,east,stormy,scooter,184.6,Medium (3-5h),Medium (3-5h),
+8303.0,fedex,same day,east,stormy,van,144.9,Short (1-2h),Medium (3-5h),
+4911.0,ecom express,express,east,stormy,van,82.1,Medium (3-5h),Long (6+h),
+17102.0,shadowfax,express,east,stormy,truck,213.9,Short (1-2h),Medium (3-5h),
+11187.0,shadowfax,same day,east,stormy,ev bike,161.8,Medium (3-5h),Short (1-2h),
+12388.0,fedex,express,east,stormy,ev van,241.7,Short (1-2h),Medium (3-5h),
+2228.0,ecom express,express,east,stormy,ev bike,58.6,Medium (3-5h),Medium (3-5h),
+21135.0,xpressbees,express,east,stormy,bike,133.4,Medium (3-5h),Medium (3-5h),
+15950.0,amazon logistics,express,east,stormy,scooter,82.1,Medium (3-5h),Long (6+h),
+23838.0,ecom express,same day,east,stormy,ev bike,225.8,Short (1-2h),Short (1-2h),
+10021.0,blue dart,express,east,stormy,truck,69.4,Medium (3-5h),Medium (3-5h),
+9293.0,xpressbees,express,east,stormy,van,49.0,Short (1-2h),Medium (3-5h),
+3144.0,shadowfax,express,east,stormy,bike,270.9,Medium (3-5h),Medium (3-5h),
+1156.0,shadowfax,express,east,stormy,truck,12.8,Medium (3-5h),Medium (3-5h),
+15695.0,ecom express,express,east,stormy,truck,197.1,Short (1-2h),Long (6+h),Stormy east-region conditions add enough operational slowdown to move this express truck order from Short (1-2h) to Medium (3-5h).
+22983.0,xpressbees,express,east,stormy,ev bike,140.1,Medium (3-5h),Long (6+h),
+16920.0,fedex,same day,east,stormy,ev van,215.9,Medium (3-5h),Medium (3-5h),
+587.0,xpressbees,express,east,stormy,ev bike,190.9,Medium (3-5h),Long (6+h),
+22151.0,dhl,same day,east,stormy,bike,185.2,Short (1-2h),Medium (3-5h),
+10593.0,ekart,express,east,stormy,ev van,221.8,Short (1-2h),Medium (3-5h),
+9977.0,blue dart,express,east,stormy,van,71.1,Medium (3-5h),Medium (3-5h),
+24240.0,dhl,express,east,stormy,ev bike,297.1,Medium (3-5h),Medium (3-5h),
+5014.0,ecom express,express,east,stormy,ev bike,257.9,Short (1-2h),Medium (3-5h),
+7445.0,xpressbees,express,east,stormy,ev van,193.6,Short (1-2h),Short (1-2h),
+20854.0,blue dart,same day,east,stormy,truck,284.6,Medium (3-5h),Medium (3-5h),
+20641.0,ecom express,express,east,stormy,ev bike,162.1,Medium (3-5h),Medium (3-5h),
+22029.0,xpressbees,express,east,stormy,scooter,244.2,Medium (3-5h),Medium (3-5h),
+250.99,ecom express,express,east,stormy,bike,226.0,Short (1-2h),Long (6+h),
+5988.0,fedex,same day,east,stormy,ev van,175.4,Medium (3-5h),Medium (3-5h),
+250.99,xpressbees,express,east,stormy,bike,19.0,Medium (3-5h),Long (6+h),
+21969.0,dhl,same day,east,stormy,ev bike,269.5,Medium (3-5h),Medium (3-5h),
+18294.0,ekart,express,east,stormy,ev bike,115.2,Medium (3-5h),Medium (3-5h),
+4047.0,fedex,express,east,stormy,van,155.8,Short (1-2h),Medium (3-5h),
+13688.0,dhl,express,east,stormy,ev bike,21.7,Short (1-2h),Long (6+h),
+17516.0,blue dart,same day,east,stormy,truck,212.3,Short (1-2h),Medium (3-5h),
+21521.0,shadowfax,same day,east,stormy,ev bike,205.0,Medium (3-5h),Medium (3-5h),
+11086.0,shadowfax,same day,east,stormy,ev bike,231.3,Short (1-2h),Long (6+h),
+5629.0,dhl,express,east,stormy,ev bike,240.7,Short (1-2h),Medium (3-5h),
+23123.0,amazon logistics,same day,east,stormy,ev bike,170.5,Short (1-2h),Short (1-2h),
+2583.0,ekart,express,east,stormy,bike,209.0,Short (1-2h),Long (6+h),
+21938.0,shadowfax,same day,east,stormy,van,226.4,Short (1-2h),Medium (3-5h),
+18652.0,fedex,same day,east,stormy,ev van,147.9,Short (1-2h),Medium (3-5h),
+14927.0,shadowfax,express,east,stormy,bike,270.8,Short (1-2h),Short (1-2h),
+1637.0,blue dart,express,east,stormy,ev van,249.9,Short (1-2h),Medium (3-5h),
+15926.0,xpressbees,express,east,stormy,van,285.0,Short (1-2h),Medium (3-5h),
+23079.0,shadowfax,express,east,stormy,ev bike,283.8,Long (6+h),Medium (3-5h),
+15994.0,blue dart,same day,east,stormy,van,225.4,Short (1-2h),Medium (3-5h),
+9137.0,shadowfax,express,east,stormy,ev van,182.5,Medium (3-5h),Medium (3-5h),
+5724.0,fedex,express,east,stormy,scooter,141.6,Medium (3-5h),Medium (3-5h),
+8930.0,blue dart,same day,east,stormy,truck,221.7,Short (1-2h),Medium (3-5h),
+3190.0,amazon logistics,express,east,stormy,van,162.3,Medium (3-5h),Medium (3-5h),
+3642.0,ecom express,express,east,stormy,scooter,239.4,Medium (3-5h),Medium (3-5h),
+17461.0,delhivery,express,east,stormy,truck,274.7,Short (1-2h),Medium (3-5h),
+15759.0,fedex,same day,east,stormy,ev van,241.0,Short (1-2h),Long (6+h),
+20265.0,fedex,express,east,stormy,ev bike,261.1,Medium (3-5h),Long (6+h),
+9479.0,ekart,express,east,stormy,scooter,180.5,Medium (3-5h),Short (1-2h),
+14214.0,shadowfax,same day,east,stormy,scooter,223.6,Short (1-2h),Long (6+h),
+2905.0,shadowfax,express,east,stormy,scooter,156.4,Short (1-2h),Medium (3-5h),
+8511.0,xpressbees,express,east,stormy,ev van,226.4,Short (1-2h),Medium (3-5h),
+17054.0,amazon logistics,express,east,stormy,scooter,177.4,Short (1-2h),Medium (3-5h),
+11674.0,amazon logistics,express,east,stormy,truck,166.3,Short (1-2h),Medium (3-5h),
+17242.0,ecom express,express,east,stormy,bike,270.0,Short (1-2h),Short (1-2h),
+16201.0,amazon logistics,express,east,stormy,truck,173.8,Medium (3-5h),Medium (3-5h),
+8450.0,blue dart,express,east,stormy,truck,232.1,Short (1-2h),Medium (3-5h),
+10507.0,delhivery,express,east,stormy,van,107.8,Short (1-2h),Medium (3-5h),
+16922.0,ecom express,express,east,stormy,ev van,124.5,Medium (3-5h),Long (6+h),
+18831.0,amazon logistics,express,east,stormy,truck,254.3,Short (1-2h),Medium (3-5h),
+21953.0,xpressbees,same day,east,stormy,van,126.3,Medium (3-5h),Medium (3-5h),
+7636.0,ekart,express,east,stormy,ev bike,222.7,Short (1-2h),Long (6+h),
+16258.0,shadowfax,express,east,stormy,bike,287.8,Short (1-2h),Long (6+h),
+1693.0,shadowfax,express,east,stormy,scooter,278.3,Short (1-2h),Medium (3-5h),
+2479.0,delhivery,same day,east,stormy,scooter,143.4,Short (1-2h),Long (6+h),
+18294.0,ekart,express,east,stormy,ev bike,115.2,Medium (3-5h),Medium (3-5h),
+18898.0,ekart,express,east,stormy,truck,278.0,Medium (3-5h),Long (6+h),
+16082.0,blue dart,express,east,stormy,van,273.7,Medium (3-5h),Medium (3-5h),
+23599.0,fedex,express,east,stormy,bike,169.4,Short (1-2h),Long (6+h),
+480.0,delhivery,same day,east,stormy,ev van,297.1,Medium (3-5h),Medium (3-5h),
+17899.0,dhl,express,east,stormy,ev bike,41.8,Short (1-2h),Medium (3-5h),
+8419.0,xpressbees,express,east,stormy,truck,215.0,Long (6+h),Medium (3-5h),
+11187.0,shadowfax,same day,east,stormy,ev bike,161.8,Medium (3-5h),Medium (3-5h),
+24248.0,ecom express,same day,east,stormy,ev bike,195.1,Short (1-2h),Medium (3-5h),
+2593.0,fedex,express,east,stormy,bike,92.7,Long (6+h),Medium (3-5h),
+12196.0,fedex,same day,east,stormy,ev van,199.4,Short (1-2h),Short (1-2h),
+18871.0,blue dart,same day,east,stormy,ev van,218.1,Short (1-2h),Medium (3-5h),
+8313.0,dhl,same day,east,stormy,van,287.6,Medium (3-5h),Medium (3-5h),
+24750.01,xpressbees,same day,east,stormy,bike,285.9,Short (1-2h),Long (6+h),
+9154.0,amazon logistics,express,east,stormy,ev van,239.0,Long (6+h),Medium (3-5h),
+2599.0,ecom express,express,east,stormy,scooter,178.4,Medium (3-5h),Medium (3-5h),
+939.0,fedex,same day,east,stormy,bike,292.0,Short (1-2h),Medium (3-5h),
+3794.0,shadowfax,same day,east,stormy,ev bike,249.6,Short (1-2h),Medium (3-5h),
+814.0,ekart,express,east,stormy,ev bike,280.2,Medium (3-5h),Medium (3-5h),
+8524.0,amazon logistics,express,east,stormy,ev bike,223.2,Short (1-2h),Long (6+h),
+19384.0,blue dart,express,east,stormy,ev van,96.6,Short (1-2h),Medium (3-5h),
+1156.0,shadowfax,express,east,stormy,truck,12.8,Medium (3-5h),Long (6+h),
+19808.0,fedex,same day,east,stormy,van,272.2,Medium (3-5h),Medium (3-5h),
+22391.0,blue dart,express,east,stormy,scooter,164.8,Short (1-2h),Medium (3-5h),
+5559.0,fedex,express,east,stormy,ev van,240.5,Long (6+h),Long (6+h),
+9650.0,dhl,express,east,stormy,truck,163.4,Medium (3-5h),Long (6+h),
+2058.0,xpressbees,express,east,stormy,scooter,66.9,Short (1-2h),Medium (3-5h),
+1802.0,fedex,express,east,stormy,truck,214.3,Medium (3-5h),Medium (3-5h),
+10552.0,xpressbees,express,east,stormy,truck,274.0,Medium (3-5h),Long (6+h),
+4911.0,ecom express,express,east,stormy,van,82.1,Medium (3-5h),Medium (3-5h),
+17242.0,ecom express,express,east,stormy,bike,270.0,Short (1-2h),Medium (3-5h),
+1227.0,delhivery,express,east,stormy,van,7.8,Medium (3-5h),Medium (3-5h),
+9650.0,dhl,express,east,stormy,truck,163.4,Medium (3-5h),Short (1-2h),
+20908.0,blue dart,express,east,stormy,ev van,77.9,Medium (3-5h),Medium (3-5h),
+3476.0,blue dart,express,east,stormy,ev bike,121.5,Short (1-2h),Long (6+h),
+250.99,fedex,same day,east,stormy,bike,187.7,Medium (3-5h),Medium (3-5h),
+12672.0,dhl,same day,east,stormy,van,145.6,Short (1-2h),Medium (3-5h),
+4141.0,xpressbees,express,east,stormy,bike,51.3,Medium (3-5h),Short (1-2h),
+7186.0,amazon logistics,express,east,stormy,ev bike,152.1,Short (1-2h),Medium (3-5h),
+21890.0,ecom express,same day,east,stormy,ev van,129.1,Short (1-2h),Medium (3-5h),
+14398.0,xpressbees,same day,east,stormy,van,232.9,Medium (3-5h),Short (1-2h),
+23274.0,xpressbees,express,east,stormy,ev bike,259.8,Medium (3-5h),Medium (3-5h),
+19942.0,xpressbees,express,east,stormy,ev van,217.2,Short (1-2h),Long (6+h),
+12927.0,xpressbees,express,east,stormy,scooter,69.6,Medium (3-5h),Medium (3-5h),"Stormy east-region conditions keep this express scooter order in a moderate-risk band, so the delay remains Medium (3-5h)."
+22195.0,xpressbees,express,east,stormy,bike,132.5,Short (1-2h),Medium (3-5h),
+7951.0,shadowfax,express,east,stormy,bike,88.3,Short (1-2h),Long (6+h),
+17384.0,ekart,same day,east,stormy,van,223.0,Medium (3-5h),Medium (3-5h),
+19723.0,shadowfax,same day,east,stormy,van,111.8,Short (1-2h),Medium (3-5h),
+3255.0,ekart,express,east,stormy,van,90.2,Short (1-2h),Long (6+h),
+16000.0,ecom express,express,east,stormy,ev van,255.2,Medium (3-5h),Medium (3-5h),
+5899.0,shadowfax,express,east,stormy,ev bike,203.6,Short (1-2h),Long (6+h),
+3465.0,dhl,express,east,stormy,bike,210.7,Medium (3-5h),Medium (3-5h),
+2312.0,delhivery,express,east,stormy,truck,162.3,Medium (3-5h),Long (6+h),
+20557.0,dhl,express,east,stormy,ev van,279.4,Short (1-2h),Short (1-2h),"The long distance and stormy east-region conditions increase disruption for this express ev van order, moving it from Short (1-2h) to Medium (3-5h)."
+9084.0,delhivery,express,east,stormy,scooter,290.2,Long (6+h),Medium (3-5h),
+23974.0,delhivery,same day,east,stormy,van,96.8,Medium (3-5h),Medium (3-5h),
+22436.0,dhl,same day,east,stormy,truck,119.1,Medium (3-5h),Long (6+h),
+15092.0,ekart,express,east,stormy,ev bike,178.2,Medium (3-5h),Medium (3-5h),
+20170.0,shadowfax,express,east,stormy,bike,236.6,Long (6+h),Medium (3-5h),
+7033.0,ecom express,same day,east,stormy,van,152.3,Medium (3-5h),Medium (3-5h),
+21973.0,ekart,express,east,stormy,ev van,291.4,Long (6+h),Long (6+h),
+13161.0,dhl,same day,east,stormy,ev van,127.3,Short (1-2h),Medium (3-5h),
+20598.0,shadowfax,express,east,stormy,ev van,93.3,Medium (3-5h),Medium (3-5h),
+10764.0,xpressbees,express,east,stormy,ev van,225.8,Short (1-2h),Long (6+h),
+14988.0,delhivery,same day,east,stormy,bike,199.3,Short (1-2h),Short (1-2h),
+11201.0,ecom express,same day,east,stormy,scooter,222.3,Medium (3-5h),Long (6+h),
+11898.0,dhl,express,east,stormy,ev van,254.3,Short (1-2h),Medium (3-5h),
+16691.0,blue dart,same day,east,stormy,bike,205.4,Medium (3-5h),Medium (3-5h),
+7637.0,blue dart,express,east,stormy,ev bike,134.2,Short (1-2h),Medium (3-5h),
+18886.0,xpressbees,express,east,stormy,bike,173.8,Short (1-2h),Long (6+h),
+15569.0,ekart,express,east,stormy,truck,285.1,Medium (3-5h),Medium (3-5h),
+14191.0,delhivery,same day,east,stormy,van,156.9,Short (1-2h),Long (6+h),
+2517.0,xpressbees,express,east,stormy,ev van,173.0,Short (1-2h),Short (1-2h),"The shift to stormy weather in the east increases disruption on this express ev van route, raising severity from Short (1-2h) to Medium (3-5h)."
+13533.0,delhivery,same day,east,stormy,truck,293.7,Long (6+h),Medium (3-5h),
+654.0,amazon logistics,same day,east,stormy,scooter,187.3,Short (1-2h),Long (6+h),
+17642.0,dhl,express,east,stormy,truck,212.3,Long (6+h),Long (6+h),
+8424.0,dhl,same day,east,stormy,ev bike,215.9,Short (1-2h),Long (6+h),
+3350.0,amazon logistics,express,east,stormy,ev bike,249.7,Short (1-2h),Medium (3-5h),
+14414.0,fedex,express,east,stormy,scooter,142.3,Short (1-2h),Medium (3-5h),
+23376.0,ekart,same day,east,stormy,truck,269.6,Medium (3-5h),Medium (3-5h),
+250.99,amazon logistics,express,east,stormy,bike,256.4,Medium (3-5h),Long (6+h),
+21271.0,dhl,same day,east,stormy,ev van,192.0,Short (1-2h),Medium (3-5h),
+19324.0,xpressbees,same day,east,stormy,truck,285.4,Medium (3-5h),Medium (3-5h),
+3818.0,amazon logistics,express,east,stormy,ev van,117.3,Medium (3-5h),Long (6+h),
+20834.0,fedex,same day,east,stormy,bike,245.7,Short (1-2h),Medium (3-5h),
+17888.0,xpressbees,express,east,stormy,truck,231.7,Short (1-2h),Short (1-2h),
+8742.0,ekart,express,east,stormy,truck,272.0,Short (1-2h),Medium (3-5h),
+11143.0,amazon logistics,same day,east,stormy,scooter,235.5,Medium (3-5h),Long (6+h),
+3994.0,ekart,express,east,stormy,truck,131.8,Short (1-2h),Medium (3-5h),
+3463.0,amazon logistics,express,east,stormy,bike,262.5,Long (6+h),Long (6+h),
+12391.0,delhivery,express,east,stormy,van,180.2,Long (6+h),Medium (3-5h),
+18028.0,ekart,express,east,stormy,bike,83.9,Short (1-2h),Medium (3-5h),
+23969.0,dhl,express,east,stormy,ev bike,205.0,Short (1-2h),Medium (3-5h),
+13160.0,ecom express,express,east,stormy,bike,291.1,Medium (3-5h),Medium (3-5h),"Despite stormy east-region conditions, the simulated historical pattern for this express bike route indicates a lighter outcome, improving from Medium (3-5h) to Short (1-2h)."
+20504.0,ecom express,express,east,stormy,truck,36.1,Medium (3-5h),Medium (3-5h),
+22383.0,shadowfax,express,east,stormy,scooter,74.5,Medium (3-5h),Medium (3-5h),
+23818.0,dhl,express,east,stormy,scooter,284.7,Short (1-2h),Medium (3-5h),
+5519.0,shadowfax,express,east,stormy,truck,79.3,Medium (3-5h),Medium (3-5h),
+17102.0,shadowfax,express,east,stormy,truck,213.9,Short (1-2h),Medium (3-5h),
+4682.0,blue dart,same day,east,stormy,ev bike,157.1,Short (1-2h),Long (6+h),
+9242.0,blue dart,express,east,stormy,scooter,284.7,Long (6+h),Short (1-2h),
+14964.0,ecom express,express,east,stormy,ev bike,200.1,Short (1-2h),Medium (3-5h),
+21260.0,shadowfax,same day,east,stormy,ev van,279.8,Medium (3-5h),Long (6+h),
+20219.0,ekart,express,east,stormy,ev van,16.5,Medium (3-5h),Medium (3-5h),
+16799.0,amazon logistics,express,east,stormy,scooter,173.0,Short (1-2h),Medium (3-5h),
+17164.0,dhl,express,east,stormy,scooter,131.0,Medium (3-5h),Long (6+h),
+17087.0,ecom express,same day,east,stormy,ev van,233.4,Short (1-2h),Long (6+h),
+16758.0,dhl,same day,east,stormy,bike,251.0,Medium (3-5h),Medium (3-5h),

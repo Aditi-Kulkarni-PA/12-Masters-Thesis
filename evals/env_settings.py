@@ -13,7 +13,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 # stack name -> app directory (relative to PROJECT_ROOT)
 STACK_APP_DIRS = {
-    "baseline": "archive/supply_chain_delivery_app_openai_sdk",  # OpenAI Agents SDK — frozen reference, never edited again
+    # The OpenAI Agents SDK app was removed from this repository on 9-Sep-26; it lives in the
+    # capstone project. The parity comparison it supported (evals/compare_parity.py) is a
+    # completed exercise, and nothing on the topology-experiment path reads it -- that path uses
+    # evals/judge.py only. The key is kept so --stack baseline reports what happened rather than
+    # failing on a missing directory; run_evals.py checks the path before launching.
+    "baseline": "archive/supply_chain_delivery_app_openai_sdk",  # removed 9-Sep-26, see note above
     "maf":      "supply_chain_topology_app",     # Microsoft Agent Framework — actual baseline going forward
 }
 

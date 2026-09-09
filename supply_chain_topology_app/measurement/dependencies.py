@@ -470,3 +470,50 @@ def render_timeline(calls: list[dict], indent: str = "    ",
 
     lines.append(f"{indent}{'run end':<{width}} {prev_end:7.2f}")
     return lines
+
+
+# A ratio marginally above 1.0 is timing noise, not a dependency breach. Offsets are
+# stored to two decimal places and short capability calls run in a few seconds, so a
+# perfectly scheduled run can compute to 1.002 or 1.011. The observed pilot values
+# separate cleanly: everything from 1.046 upward carries a recorded dependency
+# violation, while the values below that do not. The tolerance is set between the two
+# groups.
+INFEASIBLE_TOLERANCE = 0.02
+
+
+def scheduling_values(calls: list[dict]) -> dict | None:
+    """The seven scheduling and concurrency values for one run, or None when undefined.
+
+    *calls* are that run's tool_call records, each carrying tool_name, started_offset_s
+    and ended_offset_s. None is returned when the run made no capability calls, so there
+    is no schedule to measure -- a real state, not a failure.
+
+    This is the single implementation. run_store_writer.write_run() calls it so a new run
+    stores these values at write time, and backfill_scheduling.py calls it to repair runs
+    written before that, or any run whose write-time computation did not complete. Holding
+    the arithmetic in one place is the point: the two paths cannot produce different
+    numbers for the same run.
+    """
+    if not calls:
+        return None
+    conc = concurrency_report(calls)
+    if not conc or conc.get("exploited") is None:
+        return None
+    # busy is elapsed time with coordinator deliberation removed, so the ratio measures
+    # how the tool calls were scheduled rather than how long the model paused to think.
+    busy = conc["actual_span_s"] - conc.get("coordinator_idle_s", 0.0)
+    if not busy:
+        return None
+    ratio = conc["critical_path_s"] / busy
+    return {
+        "scheduling_ratio": round(ratio, 4),
+        "scheduling_deviation": round(abs(1.0 - ratio), 4),
+        "infeasible_overlap": 1 if ratio > 1.0 + INFEASIBLE_TOLERANCE else 0,
+        # The timing figures the ratio is built from, stored so critical-path latency and
+        # the concurrency measures can be aggregated in their own right rather than
+        # surviving only inside the ratio (proposal Sections 7.2.1 and 7.2.2).
+        "critical_path_s": conc["critical_path_s"],
+        "actual_span_s": conc["actual_span_s"],
+        "fully_serial_s": conc["fully_serial_s"],
+        "coordinator_idle_s": conc.get("coordinator_idle_s"),
+    }

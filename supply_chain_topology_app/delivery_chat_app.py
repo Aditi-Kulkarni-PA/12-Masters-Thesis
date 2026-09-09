@@ -86,6 +86,25 @@ _NO_CACHE = os.getenv("SC_NO_CACHE", "").strip().lower() in ("1", "true", "yes")
 if _NO_CACHE:
     _APP_LOGGER.info("app.no_cache_mode enabled — response cache and freshness reuse disabled")
 
+# ---------------------------------------------------------------------------
+# Orchestration topology
+# The app runs planner-executor, and only planner-executor. It is the one condition whose
+# shape matches a conversational UI: a plain MAF Agent, so a single message returns a
+# finished MasterOutput and run(stream=True) fills the tabs as each specialist lands.
+#
+# The other eight are not interchangeable here, for structural reasons rather than tuning:
+#   - sequential, static_graph_dag, static_graph_routed, dynamic_graph plan or triage on
+#     turn 1 and only execute on turn 2. A one-message UI would show a plan and no
+#     analysis. Their second turn is a harness measurement contract, not a UI one.
+#   - mesh, swarm, swarm_constrained_adaptive do finish in one call, but are custom
+#     coordinators whose run() has no stream parameter, so progress could not be shown.
+#   - monolith streams, but attaches raw MCP tools instead of the five capability
+#     wrappers, so _apply_payload() would match nothing and every tab would stay empty.
+#
+# Comparing topologies is the harness's job: cli/execute_topology.py drives all nine and
+# records them. This app demonstrates the substrate those conditions hold constant.
+# ---------------------------------------------------------------------------
+
 
 def _response_cache_key(message: str, orders_path, predict_sidecar: Path, diag_sidecar: Path) -> str:
     """
@@ -623,7 +642,7 @@ async def chat_handler(message: str, history: list, orders_path, pending_query: 
     )
 
     # --- Run the agent in a try/except to catch errors and log them ---
-    # execute the agent, stream progress updates to the UI, 
+    # execute the agent, stream progress updates to the UI,
     # post-processing the final outputs, update the tabs, cache the results, and handle errors.
     try:
         async with pipeline_mcp:

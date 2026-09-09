@@ -99,6 +99,7 @@ from core.tool_descriptions import CAPABILITY_DESCRIPTIONS, TOOL_NAME_BY_CAPABIL
 from tools import recommend_actions, fetch_delayed_orders_for_email
 from measurement.dependencies import TRUE_DEPENDENCIES
 from measurement.instrumentation import run_agent_as_tool_call, run_sub_agent
+from helpers.logging_utils import run_slug, run_batch
 
 TOPOLOGY = "swarm"
 
@@ -306,10 +307,15 @@ def _write_agent_instruction_file(run_uid: str, wave_num: int, agent_name: str,
     requesting simulate) was not diagnosable from disk, only from live console output.
     task is the same string passed to run_agent_as_tool_call() as that specialist's
     user turn."""
-    run_dir = _RUN_ARTIFACTS_DIR / run_uid
+    # Group by batch and name by run, matching the run's console log and trace, so an
+    # instruction file can be tied to its run from the path alone. run_uid is an internal
+    # identifier generated before write_run() assigns a run_id, so it appears in no table
+    # and cannot be joined to anything -- it stays only as the fallback for an ad-hoc
+    # invocation that sets none of the harness environment variables.
+    run_dir = _RUN_ARTIFACTS_DIR / run_batch() / run_slug(fallback=run_uid)
     safe_name = agent_name.replace(" ", "_").replace("/", "-")
     header = (f"# {agent_name}\n\n- capability: `{capability}`\n- wave: {wave_num}\n"
-              f"- run: `{run_uid}`\n\n## Task (user turn)\n\n{task}\n\n---\n\n"
+              f"- run: `{run_slug(fallback=run_uid)}`\n- batch: `{run_batch()}`\n- run_uid: `{run_uid}`\n\n## Task (user turn)\n\n{task}\n\n---\n\n"
               f"## Instructions (system prompt)\n\n")
     try:
         run_dir.mkdir(parents=True, exist_ok=True)

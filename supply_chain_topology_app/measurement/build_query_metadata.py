@@ -68,7 +68,7 @@ _HEADERS = ("query_id", "query_text", "capabilities", "complexity_tier",
 
 # Query complexity score (Aditi, 30-Aug-26, replacing a bare capability count as the
 # progression axis used by the workload-scaling figures -- design spec's "The
-# progression axis, corrected" section, docs/Analysis_Report_Design_Spec.md).
+# progression axis, corrected" section, docs/thesis-topology-tradeoffs/reporting/analysis-report-design-spec.md).
 #
 # A query's score is the SUM of its implied capabilities' weights, not a count of how
 # many it needs -- two queries needing the same NUMBER of capabilities can carry very

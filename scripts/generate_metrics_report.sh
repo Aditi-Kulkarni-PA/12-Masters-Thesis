@@ -80,7 +80,7 @@ if [[ "$RUN_TIMING" == "1" ]]; then
   echo "=================================================================="
   echo " step 1/2  execution-timing measures"
   echo "=================================================================="
-  uv run --env-file .env python supply_chain_topology_app/backfill_scheduling.py \
+  uv run --env-file .env python supply_chain_topology_app/cli/backfill_scheduling.py \
     ${DB_ARGS[@]+"${DB_ARGS[@]}"}
   echo
 fi

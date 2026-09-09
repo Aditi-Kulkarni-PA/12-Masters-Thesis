@@ -264,7 +264,7 @@ class MonolithOutput(MasterOutput, EmailCounts):
     Reuses the EXACT SAME result models Planner-Executor's specialists already produce
     (RowEnrichment, DiagnosisHighRisk, DiagnosisComparison, SimulateDelays,
     RecommendedAction, EmailAlert) so the identical judged artifacts exist for both --
-    see supply_chain_topology_app/score_topology_run.py, which reads whichever of
+    see supply_chain_topology_app/cli/score_topology_run.py, which reads whichever of
     (tool payload, this schema) actually has the data.
     """
     predict_summary: str = Field(

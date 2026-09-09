@@ -22,7 +22,7 @@ from datetime import datetime, timezone, timedelta
 from measurement.instrumentation import extract_usage, sum_usage, CAPTURE_VERSION
 from measurement.pricing import estimate_cost, total_sub_agent_cost
 from measurement.run_store_schema import DB_PATH, migrate_schema
-from measurement.dependencies import check_dependencies, canonical
+from measurement.dependencies import check_dependencies, canonical, scheduling_values
 from core.paths import PIPELINE_DIR
 
 _FALLBACK_MARKER = PIPELINE_DIR / "data" / ".dev_path_fallback_fired.json"
@@ -213,11 +213,18 @@ def write_failed_run(
             "AND model = ? AND run_status = 'failed'",
             (topology, query_id, run_n, model),
         )
+        # started_at is left NULL, not stamped with the current time. This row records a
+        # run that did not complete, and for one that never reached the model there is no
+        # start to record. Writing the write time into started_at made eight such rows
+        # share a timestamp to the millisecond across two models and two batches, which
+        # read as a single harness abort and caused a genuine finding to be misdiagnosed
+        # and excluded (Risk Log R71, R72). The write time goes to recorded_at instead, so
+        # the audit trail is kept without inventing a start time.
         conn.execute(
             "INSERT INTO run (run_id, query_id, topology, run_n, model, config_hash, "
-            "started_at, run_status, failure_category, log_path, run_phase, batch_id, "
-            "execution_order, capture_version, path_fallback_used) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, 'failed', ?, ?, ?, ?, ?, ?, 0)",
+            "started_at, recorded_at, run_status, failure_category, log_path, run_phase, "
+            "batch_id, execution_order, capture_version, path_fallback_used) "
+            "VALUES (?, ?, ?, ?, ?, ?, NULL, ?, 'failed', ?, ?, ?, ?, ?, ?, 0)",
             (run_id, query_id, topology, run_n, model,
              "unavailable:run_did_not_complete",
              datetime.now(timezone.utc).isoformat(),
@@ -385,6 +392,19 @@ def write_run(
         # START against its prerequisite's END, so concurrent dispatch is judged
         # correctly rather than passing on start-order alone.
         dep_violations = check_dependencies(tool_calls, base_offset_s=_tool_base_offset_s or 0.0)
+        # Scheduling and concurrency, computed here rather than left to a later backfill.
+        # tool_calls already carries started_offset_s and ended_offset_s, and
+        # scheduling_values() is the same function backfill_scheduling.py calls, so a run
+        # written today and a run repaired later cannot produce different numbers.
+        # Wrapped: these are derived measures, and failing to compute them must never cost
+        # a run its record. On any error the columns stay NULL and the backfill repairs
+        # them, which is exactly the state every run was in before this was wired up.
+        try:
+            _sched = scheduling_values(tool_calls) or {}
+        except Exception as e:                      # noqa: BLE001 - derived measure only
+            print(f"[run_store] scheduling measures not computed for this run ({e}); "
+                  f"run backfill_scheduling.py to fill them in")
+            _sched = {}
         # A tool the query never implied returning nothing is not evidence of a defect --
         # it is the expected, correct behaviour on a topology that runs every capability
         # regardless of query (Static-Graph DAG's documented design: e.g. a "predict,
@@ -420,8 +440,10 @@ def write_run(
                 tool_base_offset_s, all_turns_json,
                 orchestration_prompt_tokens, orchestration_completion_tokens,
                 orchestration_total_tokens, orchestration_cost_usd,
-                capture_version, run_phase, batch_id, execution_order, behaviour_class
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                capture_version, run_phase, batch_id, execution_order, behaviour_class,
+                scheduling_ratio, scheduling_deviation, infeasible_overlap,
+                critical_path_s, actual_span_s, fully_serial_s, coordinator_idle_s
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """,
             (
                 run_id, query_id, topology, None, run_n, model, config_hash,
@@ -452,6 +474,13 @@ def write_run(
                 batch_id,
                 execution_order,
                 None,   # behaviour_class -- set by the scoring pipeline
+                _sched.get("scheduling_ratio"),
+                _sched.get("scheduling_deviation"),
+                _sched.get("infeasible_overlap"),
+                _sched.get("critical_path_s"),
+                _sched.get("actual_span_s"),
+                _sched.get("fully_serial_s"),
+                _sched.get("coordinator_idle_s"),
             ),
         )
 

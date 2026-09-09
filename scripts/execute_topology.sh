@@ -128,7 +128,7 @@ SC_EXPECT_NO_CACHE="$NO_CACHE" \
 SC_TOPOLOGY="$TOPOLOGY" \
 SC_RUN_N="$RUN_N" \
 SC_QUERY_ID="${SC_QUERY_ID:-}" \
-uv run --env-file .env python supply_chain_topology_app/execute_topology.py
+uv run --env-file .env python supply_chain_topology_app/cli/execute_topology.py
 
 echo
 echo "finished : $(date '+%Y-%m-%d %H:%M:%S')"

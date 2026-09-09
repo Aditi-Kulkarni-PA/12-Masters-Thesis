@@ -22,7 +22,7 @@ EVALS_DIR  = Path(__file__).resolve().parent
 REPORTS_DIR = EVALS_DIR / "reports"
 
 # --stack choice -> app directory the evals import delivery_agents from
-from env_settings import STACK_APP_DIRS as _STACKS
+from env_settings import STACK_APP_DIRS as _STACKS, PROJECT_ROOT
 
 _AGENT_FILES = {
     "predict":   "test_eval_predict.py",
@@ -57,6 +57,14 @@ def _build_pytest_args(agent: str | None, extra: list[str]) -> list[str]:
 
 def _run(args: list[str], stack: str) -> dict:
     app_dir = _STACKS[stack]
+    # Fail with an explanation rather than a confusing import error deep inside pytest.
+    # The baseline app was removed from this repo on 9-Sep-26 and lives in the capstone project.
+    if not (PROJECT_ROOT / app_dir).exists():
+        raise SystemExit(
+            f"Cannot run --stack {stack}: the app directory '{app_dir}' is not in this repository.\n"
+            f"The OpenAI Agents SDK baseline was removed on 9-Sep-26 and now lives in the capstone "
+            f"project. Copy it back under '{app_dir}', or run --stack maf, which is the stack the "
+            f"topology experiment uses.")
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     report_path = REPORTS_DIR / f"{datetime.now().strftime('%Y%m%dT%H%M%S')}_{stack}.json"
 

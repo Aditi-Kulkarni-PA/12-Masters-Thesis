@@ -545,7 +545,7 @@ _MIGRATIONS: tuple[tuple[str, str, str], ...] = (
     # version 1.
     ("run", "capture_version", "INTEGER"),
     # Persisted query complexity score (30-Aug-26, Aditi's request following the
-    # progression-axis correction, docs/Analysis_Report_Design_Spec.md). Computed once
+    # progression-axis correction, docs/thesis-topology-tradeoffs/reporting/analysis-report-design-spec.md). Computed once
     # by measurement/build_query_metadata.py::query_complexity_score() -- weight table
     # and rationale live there, not duplicated here. NULL for a query needing no
     # capabilities (Q9): it is not the lightest point on this axis, it is a different
@@ -674,6 +674,16 @@ _MIGRATIONS: tuple[tuple[str, str, str], ...] = (
     #                              rate can be traced to the reasoning behind each label.
     ("run", "clarification_appropriate", "INTEGER"),
     ("run", "behaviour_rationale", "TEXT"),
+    # When the row was WRITTEN, as distinct from when the run started. The two coincide
+    # for a completed run and diverge for one that never reached the model: write_failed_run()
+    # has no start time to record, and until 8-Sep-26 it stamped the write time into
+    # started_at instead. That produced eight rows sharing a timestamp to the millisecond
+    # across two models and two batches, which was read as a single harness abort and led
+    # to a real finding -- Dynamic Graph exhausting the context window -- being
+    # misdiagnosed and excluded from every aggregate (Risk Log R71, R72). started_at is
+    # now left NULL when no start was observed, and the write time is kept here instead,
+    # so the audit trail survives without a fabricated start.
+    ("run", "recorded_at", "TEXT"),
 )
 
 # Every table carrying lock_rows. `run` is the unit a human locks; the rest are

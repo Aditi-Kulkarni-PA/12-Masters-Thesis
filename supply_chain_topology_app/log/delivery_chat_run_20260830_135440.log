@@ -1,4 +1,0 @@
-2026-08-30 13:54:40 | INFO | supply_chain_delivery_app | logger.initialized path=/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/supply_chain_topology_app/log/delivery_chat_run_20260830_135440.log
-2026-08-30 13:55:27 | INFO | supply_chain_delivery_app | tool.fetch_delayed_orders_for_email.started
-2026-08-30 13:55:27 | INFO | supply_chain_delivery_app | tool.fetch_delayed_orders_for_email.generated count=10
-2026-08-30 13:55:27 | INFO | supply_chain_delivery_app | tool.fetch_delayed_orders_for_email.completed status=ok duration_ms=9 csv_path=/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/processed/daily_delivery_delay_prediction.csv

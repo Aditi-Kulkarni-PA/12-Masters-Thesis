@@ -1,0 +1,45 @@
+2026-09-09 23:30:00 | INFO | supply_chain_delivery_app | logger.initialized path=/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/supply_chain_topology_app/log/delivery_chat_run_20260909_233000.log
+2026-09-09 23:30:00 | INFO | supply_chain_delivery_app | app.startup log_path=/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/supply_chain_topology_app/log/delivery_chat_run_20260909_233000.log
+2026-09-09 23:31:05 | INFO | supply_chain_delivery_app | request.received request_id=dd2315480201 pending=False has_orders_file=True message_len=237
+2026-09-09 23:31:05 | INFO | supply_chain_delivery_app | request.confirmation request_id=dd2315480201 action=run_confirmed is_quick_action=True
+2026-09-09 23:31:05 | INFO | supply_chain_delivery_app | run.started request_id=dd2315480201 query_len=883 has_orders_file=True
+2026-09-09 23:32:01 | INFO | supply_chain_delivery_app | tool.call.started request_id=dd2315480201 tool=predict_delivery_delays_tool args={'request': '1. Predict Orders Getting Delayed\n2. Provide Delay Patterns & Root Cause Diagnosis\n3. Simulate Delays ...
+2026-09-09 23:32:01 | INFO | supply_chain_delivery_app | tool.call.completed request_id=dd2315480201 tool=predict_delivery_delays_tool duration_ms=51736
+2026-09-09 23:32:01 | INFO | supply_chain_delivery_app | predict.rows request_id=dd2315480201 source=tool_stream count=50
+2026-09-09 23:32:07 | INFO | supply_chain_delivery_app | tool.fetch_delayed_orders_for_email.started
+2026-09-09 23:32:07 | INFO | supply_chain_delivery_app | tool.fetch_delayed_orders_for_email.generated count=10
+2026-09-09 23:32:07 | INFO | supply_chain_delivery_app | tool.fetch_delayed_orders_for_email.completed status=ok duration_ms=12 csv_path=/Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/processed/daily_delivery_delay_prediction.csv
+2026-09-09 23:32:37 | INFO | supply_chain_delivery_app | tool.call.started request_id=dd2315480201 tool=diagnose_delay_patterns_tool args={'request': "Provide Delay Patterns & Root Cause Diagnosis for today's predicted delayed orders generated from the in...
+2026-09-09 23:32:37 | INFO | supply_chain_delivery_app | tool.call.started request_id=dd2315480201 tool=delay_simulations_tool args={'request': "Simulate Delays for Stormy Weather in East Region using today's predicted delayed orders.\n\nScenario co...
+2026-09-09 23:32:37 | INFO | supply_chain_delivery_app | tool.call.started request_id=dd2315480201 tool=email_alert_tool args={'request': "Generate Customer Email Alerts for Delayed Orders using today's predicted delayed orders generated from ...
+2026-09-09 23:32:37 | INFO | supply_chain_delivery_app | tool.call.completed request_id=dd2315480201 tool=email_alert_tool duration_ms=5564
+2026-09-09 23:32:37 | INFO | supply_chain_delivery_app | tool.call.completed request_id=dd2315480201 tool=diagnose_delay_patterns_tool duration_ms=29967
+2026-09-09 23:32:37 | INFO | supply_chain_delivery_app | tool.call.completed request_id=dd2315480201 tool=delay_simulations_tool duration_ms=31933
+2026-09-09 23:32:58 | INFO | supply_chain_delivery_app | tool.recommend_actions.started
+2026-09-09 23:32:58 | INFO | supply_chain_delivery_app | tool.recommend_actions.data diagnosis_chars=4180 dims_compared=6 hist_high_risk=10 daily_high_risk=10 severity_hotspots=5 hist_top_dims=6 daily_top_dims=6 output_chars=7914
+2026-09-09 23:33:02 | INFO | supply_chain_delivery_app | rag.retrieve.started input_len=7914 rerank_top_n=8
+2026-09-09 23:33:05 | INFO | supply_chain_delivery_app | rag.collection.load.started
+2026-09-09 23:33:05 | INFO | supply_chain_delivery_app | rag.collection.load.completed duration_ms=99 count=73
+2026-09-09 23:33:05 | INFO | supply_chain_delivery_app | rag.retrieve.hybrid_prefilter candidates=12
+2026-09-09 23:33:05 | INFO | supply_chain_delivery_app | rag.cross_encoder.load model=cross-encoder/ms-marco-MiniLM-L-6-v2
+2026-09-09 23:33:14 | INFO | supply_chain_delivery_app | rag.cross_encoder.ready
+2026-09-09 23:33:14 | INFO | supply_chain_delivery_app | rag.retrieve.cross_encoder_rerank returned=8
+2026-09-09 23:33:14 | INFO | supply_chain_delivery_app | rag.retrieve.completed duration_ms=12471 retrieved=15 returned=8
+2026-09-09 23:33:14 | INFO | supply_chain_delivery_app | tool.recommend_actions.completed status=ok duration_ms=16353
+2026-09-09 23:33:41 | INFO | supply_chain_delivery_app | tool.call.started request_id=dd2315480201 tool=recommendation_tool args={'request': "Recommend Ways to Optimize Delivery Timelines using today's predicted delayed orders and today's diagnos...
+2026-09-09 23:33:41 | INFO | supply_chain_delivery_app | tool.call.completed request_id=dd2315480201 tool=recommendation_tool duration_ms=50929
+2026-09-09 23:33:45 | INFO | supply_chain_delivery_app | run.outputs request_id=dd2315480201 predict=True diagnosis=True simulate=True recommend=True email=True
+2026-09-09 23:33:45 | INFO | supply_chain_delivery_app | debug.agent_text request_id=dd2315480201 agent=predict is_real=True preview='### Cross-Dimensional Delay Insights\n\nThe enriched delayed orders show that delays are rarely caused by one factor alone; the biggest risks come from tight promised windows layered on top of bad weath'
+2026-09-09 23:33:45 | INFO | supply_chain_delivery_app | debug.agent_text request_id=dd2315480201 agent=simulate is_real=True preview='### Delivery Delay Simulation Results\n\nAnalyzed **241** simulated orders (weather: stormy; region: east; vehicle: truck, van, scooter, ev van, ev bike, bike).\n\n**Simulated Severity Distribution:**\n- M'
+2026-09-09 23:33:45 | INFO | supply_chain_delivery_app | debug.agent_text request_id=dd2315480201 agent=diagnosis is_real=True preview='### Delay Pattern Diagnosis: Today vs Historical\n\n**Overall**\n- Today processed **5,000** deliveries with **1,346** delayed -- a delay rate of **26.9%**.\n- Historical baseline shows **20,000** deliver'
+2026-09-09 23:33:45 | INFO | supply_chain_delivery_app | debug.agent_text request_id=dd2315480201 agent=recommend is_real=True preview='### Delivery Optimization Recommendations\n\nThe optimization approach centers on reducing exposure to the most failure-prone combinations: **express** commitments during adverse weather, especially on '
+2026-09-09 23:33:45 | INFO | supply_chain_delivery_app | debug.agent_text request_id=dd2315480201 agent=email is_real=True preview='**To:** customer-1@example.com\n\nSubject: Delivery Update -- Minor Delay for Order 16535\n\nDear Valued Customer,\n\nA brief update on your order 16535: we anticipate a slight delay (estimated 1--2 hours) '
+2026-09-09 23:33:45 | INFO | supply_chain_delivery_app | run.completed request_id=dd2315480201 duration_ms=159682
+2026-09-09 23:33:45 | INFO | supply_chain_delivery_app | run.usage.summary request_id=dd2315480201 master_prompt=63894 master_completion=2290 master_total=66184 subagent_prompt=74325 subagent_completion=19451 subagent_total=93776 grand_prompt=138219 grand_completion=21741 grand_total=159960
+2026-09-09 23:33:45 | INFO | supply_chain_delivery_app | run.usage.subagent request_id=dd2315480201 tool=predict_delivery_delays_tool prompt=31139 completion=5124 total=36263
+2026-09-09 23:33:45 | INFO | supply_chain_delivery_app | run.usage.subagent request_id=dd2315480201 tool=email_alert_tool prompt=3595 completion=578 total=4173
+2026-09-09 23:33:45 | INFO | supply_chain_delivery_app | run.usage.subagent request_id=dd2315480201 tool=diagnose_delay_patterns_tool prompt=19020 completion=5115 total=24135
+2026-09-09 23:33:45 | INFO | supply_chain_delivery_app | run.usage.subagent request_id=dd2315480201 tool=delay_simulations_tool prompt=7090 completion=4292 total=11382
+2026-09-09 23:33:45 | INFO | supply_chain_delivery_app | run.usage.subagent request_id=dd2315480201 tool=recommendation_tool prompt=13481 completion=4342 total=17823
+2026-09-09 23:33:45 | INFO | supply_chain_delivery_app | run.timing.summary request_id=dd2315480201 tool_time_s=170.13 master_time_approx_s=-10.45 wall_time_s=159.68
+2026-09-09 23:33:45 | INFO | supply_chain_delivery_app | run.response_cache_stored request_id=dd2315480201 keys=['diag_comp_df', 'diag_hr_df', 'diagnosis_md', 'email_csv', 'email_md', 'predict_csv', 'predict_df', 'predict_md', 'recommend_md', 'simulate_csv', 'simulate_df', 'simulate_md']

@@ -340,7 +340,19 @@ async def run_agent_as_tool_call(agent, tool_name: str, task: str, middleware) -
     async def _call_next():
         ctx.result = serialize_agent_value(await _invoke())
 
-    await middleware[0](ctx, _call_next)
+    # Compose the whole list, innermost last, the way an Agent's own function-calling
+    # loop composes middleware. Only middleware[0] used to run, which is invisible while
+    # the harness passes a single recorder but silently drops one of the two the Gradio
+    # app passes (its UI-event capture alongside recorder.middleware).
+    chain = _call_next
+    for mw in reversed(middleware):
+        def _link(_mw=mw, _next=chain):
+            async def _call():
+                await _mw(ctx, _next)
+            return _call
+        chain = _link()
+
+    await chain()
     return holder["result"]
 
 
