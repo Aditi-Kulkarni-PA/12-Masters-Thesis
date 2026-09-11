@@ -36,7 +36,7 @@ Topology Comparison sheet, rows 11-12, for the full comparison and evidence.
 ## Running it
 
 ```
-SC_QUERY_ID=Q10 ./scripts/execute_topology.sh swarm_constrained_adaptive
+./scripts/execute_topology.sh -t swarm_constrained_adaptive -q Q10
 ```
 
 Per-agent instruction audit files land in

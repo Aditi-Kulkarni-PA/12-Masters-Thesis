@@ -15,8 +15,10 @@ server, database and prompts held constant across all conditions — see
 | If you want to know… | Read |
 |---|---|
 | how a run becomes a number in the thesis | [architecture/execution-flow.md](architecture/execution-flow.md) |
+| how the substrate became pluggable across nine topologies, and why | [architecture/topology-modularization.md](architecture/topology-modularization.md) |
 | what the nine conditions are and how they differ | [topologies/topology-reference.md](topologies/topology-reference.md) |
 | how a condition really behaves, and why a measure reads as it does | [topologies/how-they-actually-work.md](topologies/how-they-actually-work.md) |
+| how the same prompt text reaches all nine conditions, and what's topology-specific | [topologies/prompt-modularization.md](topologies/prompt-modularization.md) |
 | what a measure means and where it is computed | [instrumentation/measure-definitions.md](instrumentation/measure-definitions.md) |
 | what is stored, and what each column means | [instrumentation/run-schema.md](instrumentation/run-schema.md) |
 | how a batch is designed and run | [experiments/experimental-design.md](experiments/experimental-design.md) |
@@ -33,12 +35,14 @@ server, database and prompts held constant across all conditions — see
 | Document | Covers |
 |---|---|
 | [execution-flow.md](architecture/execution-flow.md) | the six-stage chain from planned run to reported figure; what each stage writes; where each value is derived; run identity across logs, traces and the database |
+| [topology-modularization.md](architecture/topology-modularization.md) | what the substrate looked like before nine topologies could exist (one hardcoded master), what replaced it (`core/` factories + `topologies/registry.py`), and why the split landed where it did (decision D23) |
 
 ### Topologies
 | Document | Covers |
 |---|---|
 | [topology-reference.md](topologies/topology-reference.md) | the nine conditions, what is held constant, the five capabilities and their true dependencies, the two controlled contrasts, per-condition limits |
 | [how-they-actually-work.md](topologies/how-they-actually-work.md) | implementation mechanics learned from building and running: what each condition passes a specialist, framework behaviours confirmed from source, turn handling, and what each means for reading the measures |
+| [prompt-modularization.md](topologies/prompt-modularization.md) | the `@include` mechanism, the shared/domain/topology folder layout, the full partial diff across all nine, and the two controlled contrasts confirmed at the prompt level |
 
 ### Instrumentation
 | Document | Covers |
@@ -55,7 +59,7 @@ server, database and prompts held constant across all conditions — see
 ### Decisions
 | Document | Covers |
 |---|---|
-| [decision-log.md](decisions/decision-log.md) | 22 recorded decisions with the alternative rejected, abandoned designs, and questions still open |
+| [decision-log.md](decisions/decision-log.md) | 24 recorded decisions with the alternative rejected, abandoned designs, and questions still open |
 
 ### Validation
 | Document | Covers |
@@ -87,6 +91,6 @@ server, database and prompts held constant across all conditions — see
 | What | Where |
 |---|---|
 | Proposal, pilot outcome report, tier-freeze justification | `thesis-proposal/` |
-| Task tracker, risk log, measure worksheets | `plan/Thesis_Project_Tracker_v5.xlsx` |
+| Task tracker, risk log, measure worksheets | `Thesis_Project_Tracker_v5.xlsx`, in the `plan/` folder alongside the repository root |
 | Substrate design documentation | [`../supply-chain-app/`](../supply-chain-app/) |
 | Run store | `supply_chain_topology_app/data/run_store.db` |

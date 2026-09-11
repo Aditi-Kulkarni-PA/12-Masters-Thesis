@@ -1,0 +1,123 @@
+==================================================================
+ topology : static_graph_routed
+ run_n    : 2
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 14:37:41
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4-mini  query_id=Q4
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 3 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[14:37:43] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > What will be the delivery impact if there is a storm in the east today?
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+  >> router selected: predict -> simulate
+
+============================================================
+[14:37:45] TURN 1 — master response
+============================================================
+{
+  "proceed": true,
+  "chat_response": "Here's my plan:\n1. Predict delivery delays\n2. Simulate what-if scenarios\nShall I proceed?",
+  "capabilities": "<2 item(s)>"
+}
+
+============================================================
+[14:37:45] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+  >> tool_start predict_delivery_delays_tool (input=261 chars)
+     - predict_delivery_delays_tool agent: 30,969 prompt / 5,482 completion tokens over 3 message(s)
+  << tool_end   predict_delivery_delays_tool done in 25.61s (output=20,546 chars, valid_json=True)
+  >> tool_start delay_simulations_tool (input=261 chars)
+     - delay_simulations_tool agent: 6,991 prompt / 4,033 completion tokens over 3 message(s)
+  << tool_end   delay_simulations_tool done in 17.97s (output=16,194 chars, valid_json=True)
+
+============================================================
+[14:38:30] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "In **stormy** conditions in the **east**, the impact is broadly negative: many shipments shift from **Short (1-2h)** into **Medium (3-5h)** or **Long ... [395 characters]",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[14:38:30] SUMMARY — tools, tokens & cost  [model=gpt-5.4-mini, tool calls=2]
+============================================================
+                        tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+predict_delivery_delays_tool     25.61s         261       20,546       True     30,969          5,482    36,451  $0.0479
+      delay_simulations_tool     17.97s         261       16,194       True      6,991          4,033    11,024  $0.0234
+          — Sub-agents TOTAL     43.58s                                None     37,960          9,515    47,475  $0.0713
+          — Master (2 turns)      3.73s                                None     14,271            172    14,443  $0.0115
+               — GRAND TOTAL     47.31s                                None     52,231          9,687    61,918  $0.0828
+
+Persisted run_id: 7de32932-6c5f-4a35-884b-99e7d82b0525
+
+============================================================
+[14:38:30] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring 7de32932  topology=static_graph_routed  model=gpt-5.4-mini
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  predict_summary                  rel=5.0 faith=5.0 safe=5.0
+  predict_row_insights_sample      rel=5.0 faith=5.0 safe=5.0
+  simulate_row_reasons_sample      rel=4.0 faith=5.0 safe=5.0
+  simulate_narrative               rel=5.0 faith=5.0 safe=5.0
+  coordinator_narrative            rel=3.0 faith=5.0 safe=5.0
+
+  capability blend:
+    predict              rel=5.00 faith=5.00 safe=5.00   (50% predict_summary / 50% predict_row_insights_sample)
+    simulate             rel=4.20 faith=5.00 safe=5.00   (20% simulate_narrative / 80% simulate_row_reasons_sample)
+    coordinator_narrative rel=3.00 faith=5.00 safe=5.00   (100% coordinator_narrative)
+
+  SCOPE-ADJUSTED MEAN 4.58/5   (every implied capability was attempted -- same as judge mean)
+
+  JUDGE WEIGHTED MEAN 4.58/5   (relevance 4.07 x.45, faithfulness 5.00 x.45, safety 5.00 x.10)
+  scored 5 artifact(s) -> 3 capability score(s) -> quality_scores
+
+============================================================
+[14:38:40] RUN VALIDITY
+============================================================
+  topology           : static_graph_routed
+  coordinator prompt : static_graph_routed/coordinator = 41f848fc
+  plan presented     : yes
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 2 / 2
+  missing tools      : []
+  empty results      : none
+  dependency order   : respected — every capability waited for its inputs
+  scheduling         : 100% of achievable overlap  (0 pair(s) left unoverlapped)
+  coordinator idle   : 0.0s spent deciding between waves (not a scheduling fault)
+  span               : 43.58s vs critical path 43.58s
+
+  execution timeline:
+    turn 1 start    0.00
+    turn 1 end      2.07   (plan / no tools yet)
+    turn 2 start    2.07
+    ..... 2.07s model reasoning (no tool running) .....
+    predict         2.07 ->   27.69
+    simulate       27.69 ->   45.66
+    ..... 1.65s model composing answer .....
+    turn 2 end     47.31
+    run end        47.31
+
+  turn-1 plan text (stored verbatim, T94):
+    | Here's my plan:
+    | 1. Predict delivery delays
+    | 2. Simulate what-if scenarios
+    | Shall I proceed?
+
+  All run-validity checks clean.
+
+finished : 2026-09-06 14:38:40

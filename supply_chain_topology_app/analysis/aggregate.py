@@ -152,9 +152,16 @@ BOUNDED_OPTIMUM = {
     "scheduling_deviation": 0.0,
 }
 
+# Both tables are keyed by experiment, not by model. An experiment is one run_phase at
+# one model, so keying on the model alone pooled the pilot and the main experiment at the
+# frozen tier into a single row -- two campaigns, different N, silently averaged.
+# run_phase and model are carried alongside so a row is readable, and filterable, without
+# joining back to the experiment table.
 _SCHEMA = """
 DROP TABLE IF EXISTS agg_query;
 CREATE TABLE agg_query (
+    experiment_no   INTEGER NOT NULL,
+    run_phase       TEXT NOT NULL,
     model           TEXT NOT NULL,
     topology        TEXT NOT NULL,
     query_id        TEXT NOT NULL,
@@ -171,11 +178,13 @@ CREATE TABLE agg_query (
     q3              REAL,
     rate            REAL,               -- populated for kind = rate
     count           INTEGER,
-    PRIMARY KEY (model, topology, query_id, measure)
+    PRIMARY KEY (experiment_no, topology, query_id, measure)
 );
 
 DROP TABLE IF EXISTS agg_topology;
 CREATE TABLE agg_topology (
+    experiment_no INTEGER NOT NULL,
+    run_phase TEXT NOT NULL,
     model     TEXT NOT NULL,
     topology  TEXT NOT NULL,
     scope     TEXT NOT NULL,            -- workload | out_of_scope
@@ -190,7 +199,7 @@ CREATE TABLE agg_topology (
     q3        REAL,
     rate      REAL,
     count     INTEGER,
-    PRIMARY KEY (model, topology, scope, measure)
+    PRIMARY KEY (experiment_no, topology, scope, measure)
 );
 """
 
@@ -198,20 +207,35 @@ CREATE TABLE agg_topology (
 # ---------------------------------------------------------------------------
 # Layer 1 — run level
 # ---------------------------------------------------------------------------
-def load_runs(conn: sqlite3.Connection, model: str | None = None) -> list[dict]:
+def load_runs(conn: sqlite3.Connection, model: str | None = None,
+              run_phase: str | None = None, experiment_no: int | None = None) -> list[dict]:
     """Read every run with its quality scores and query metadata, and derive measures.
 
     Tool names are fetched per run so the capability sets can be built. Runs are
     returned with the derived measures already attached.
+
+    Filter by experiment number, or by run phase and model, or by neither. The three
+    arguments combine, so --run-phase alone is a valid way to look at every tier in one
+    phase.
     """
     conn.row_factory = sqlite3.Row
     # Excluded runs are dropped here, once, so no downstream measure has to know about
     # them (proposal Section 7.4). The row stays in the store; only the analysis skips it.
-    where = "WHERE r.excluded_reason IS NULL"
-    params: tuple = ()
+    #
+    # A run with no experiment_no is dropped too. That is an ad-hoc execute_topology.sh
+    # invocation, which belongs to no campaign, so it has no denominator to join and must
+    # not reach a reported figure.
+    where = "WHERE r.excluded_reason IS NULL AND r.experiment_no IS NOT NULL"
+    params: list = []
+    if experiment_no is not None:
+        where += " AND r.experiment_no = ?"
+        params.append(experiment_no)
+    if run_phase:
+        where += " AND r.run_phase = ?"
+        params.append(run_phase)
     if model:
         where += " AND r.model = ?"
-        params = (model,)
+        params.append(model)
 
     rows = conn.execute(f"""
         SELECT r.*, q.judge_mean, q.judge_mean_scope_adj,
@@ -220,8 +244,8 @@ def load_runs(conn: sqlite3.Connection, model: str | None = None) -> list[dict]:
         LEFT JOIN quality_scores q ON q.run_id = r.run_id
         LEFT JOIN query_metadata m ON m.query_id = r.query_id
         {where}
-        ORDER BY r.model, r.topology, r.query_id, r.run_n
-    """, params).fetchall()
+        ORDER BY r.experiment_no, r.topology, r.query_id, r.run_n
+    """, tuple(params)).fetchall()
 
     # One query for all tool names, grouped in memory, rather than one query per run.
     names_by_run: dict[str, list[str]] = defaultdict(list)
@@ -260,15 +284,22 @@ def load_runs(conn: sqlite3.Connection, model: str | None = None) -> list[dict]:
 # Layer 2 — query level
 # ---------------------------------------------------------------------------
 def aggregate_queries(runs: list[dict]) -> list[dict]:
-    """Aggregate repeated runs into one row per (model, topology, query, measure)."""
+    """Aggregate repeated runs into one row per (experiment, topology, query, measure).
+
+    run_n is deliberately absent from the key: pooling a pair's repetitions is what this
+    layer is for. experiment_no bounds that pooling, so the pilot's N=1 at a tier and the
+    main experiment's N=3 at the same tier stay two rows rather than one.
+    """
     grouped: dict[tuple, list[dict]] = defaultdict(list)
     for r in runs:
-        grouped[(r["model"], r["topology"], r["query_id"])].append(r)
+        grouped[(r["experiment_no"], r["topology"], r["query_id"])].append(r)
 
     out = []
-    for (model, topology, query_id), group in grouped.items():
+    for (experiment_no, topology, query_id), group in grouped.items():
         common = {
-            "model": model, "topology": topology, "query_id": query_id,
+            "experiment_no": experiment_no,
+            "run_phase": group[0]["run_phase"], "model": group[0]["model"],
+            "topology": topology, "query_id": query_id,
             "complexity_bin": group[0]["complexity_bin"],
             "is_out_of_scope": group[0]["is_out_of_scope"],
         }
@@ -308,15 +339,18 @@ def aggregate_queries(runs: list[dict]) -> list[dict]:
 # ---------------------------------------------------------------------------
 # Layer 3 — topology level
 # ---------------------------------------------------------------------------
-def _summarise_scope(model: str, topology: str, scope: str, measure: str, kind: str,
+def _summarise_scope(ident: dict, topology: str, scope: str, measure: str, kind: str,
                      rows: list[dict]) -> list[dict]:
     """Collapse one group of query-level rows into the output rows for a single scope.
+
+    *ident* carries experiment_no, run_phase and model — the campaign these rows belong
+    to, passed as one dict so the three stay together and cannot drift apart.
 
     Shared by the workload scope and by each complexity-bin scope, which aggregate
     identically and differ only in which queries they group. Returns a list because a
     bounded measure emits its at-optimum companion row alongside the main row.
     """
-    common = {"model": model, "topology": topology, "scope": scope,
+    common = {**ident, "topology": topology, "scope": scope,
               "measure": measure, "kind": kind}
 
     if kind != "continuous":
@@ -339,7 +373,7 @@ def _summarise_scope(model: str, topology: str, scope: str, measure: str, kind: 
         optimum = BOUNDED_OPTIMUM[measure]
         flags = [1 if abs(v - optimum) < 1e-9 else 0 for v in values if v is not None]
         at_opt = summarise.rate(flags)
-        out.append({"model": model, "topology": topology, "scope": scope,
+        out.append({**ident, "topology": topology, "scope": scope,
                     "measure": f"{measure}_at_optimum", "kind": "rate",
                     "n": at_opt["n"], "median": None, "mean": None,
                     "min": None, "max": None, "q1": None, "q3": None,
@@ -348,7 +382,7 @@ def _summarise_scope(model: str, topology: str, scope: str, measure: str, kind: 
 
 
 def aggregate_topologies(query_aggs: list[dict], runs: list[dict]) -> list[dict]:
-    """Aggregate query-level figures into one row per (model, topology, scope, measure).
+    """Aggregate query-level figures into one row per (experiment, topology, scope, measure).
 
     Continuous measures take the median across the query-level medians, so every query
     contributes equally regardless of how many times it was repeated. Rates are pooled
@@ -369,43 +403,49 @@ def aggregate_topologies(query_aggs: list[dict], runs: list[dict]) -> list[dict]
     """
     out = []
 
+    def _ident(row: dict) -> dict:
+        return {"experiment_no": row["experiment_no"], "run_phase": row["run_phase"],
+                "model": row["model"]}
+
     # --- workload queries: median across query-level medians ---
     grouped: dict[tuple, list[dict]] = defaultdict(list)
     for row in query_aggs:
         if row["is_out_of_scope"]:
             continue
-        grouped[(row["model"], row["topology"], row["measure"], row["kind"])].append(row)
+        grouped[(row["experiment_no"], row["topology"], row["measure"], row["kind"])].append(row)
 
-    for (model, topology, measure, kind), rows in grouped.items():
-        out.extend(_summarise_scope(model, topology, "workload", measure, kind, rows))
+    for (_, topology, measure, kind), rows in grouped.items():
+        out.extend(_summarise_scope(_ident(rows[0]), topology, "workload", measure, kind, rows))
 
     # --- complexity bins: the same queries, split by how much work each demands ---
     binned: dict[tuple, list[dict]] = defaultdict(list)
     for row in query_aggs:
         if row["is_out_of_scope"] or not row["complexity_bin"]:
             continue
-        binned[(row["model"], row["topology"], row["complexity_bin"],
+        binned[(row["experiment_no"], row["topology"], row["complexity_bin"],
                 row["measure"], row["kind"])].append(row)
 
-    for (model, topology, bin_name, measure, kind), rows in binned.items():
-        out.extend(_summarise_scope(model, topology, f"bin:{bin_name}", measure, kind, rows))
+    for (_, topology, bin_name, measure, kind), rows in binned.items():
+        out.extend(_summarise_scope(_ident(rows[0]), topology, f"bin:{bin_name}",
+                                    measure, kind, rows))
 
     # --- out-of-scope probe: reported as a decline rate, kept separate ---
     probe: dict[tuple, list[dict]] = defaultdict(list)
     for r in runs:
         if r["is_out_of_scope"]:
-            probe[(r["model"], r["topology"])].append(r)
+            probe[(r["experiment_no"], r["topology"])].append(r)
 
-    for (model, topology), group in probe.items():
+    for (_, topology), group in probe.items():
+        ident = _ident(group[0])
         stats = summarise.rate([g["declined"] for g in group])
-        out.append({"model": model, "topology": topology, "scope": "out_of_scope",
+        out.append({**ident, "topology": topology, "scope": "out_of_scope",
                     "measure": "declined", "kind": "rate", "n": stats["n"],
                     "median": None, "mean": None, "min": None, "max": None,
                     "q1": None, "q3": None,
                     "rate": stats["rate"], "count": stats["count"]})
 
         cost = summarise.summarise([g["cost_usd"] for g in group])
-        out.append({"model": model, "topology": topology, "scope": "out_of_scope",
+        out.append({**ident, "topology": topology, "scope": "out_of_scope",
                     "measure": "cost_usd", "kind": "continuous", **cost,
                     "rate": None, "count": None})
 
@@ -416,65 +456,88 @@ def aggregate_topologies(query_aggs: list[dict], runs: list[dict]) -> list[dict]
 # Persistence
 # ---------------------------------------------------------------------------
 def write_tables(conn: sqlite3.Connection, query_aggs: list[dict],
-                 topology_aggs: list[dict], scoped_to_model: bool = False) -> None:
+                 topology_aggs: list[dict], scoped: bool = False) -> None:
     """Replace the aggregate tables with a freshly computed set.
 
-    With *scoped_to_model* False the tables are dropped and rebuilt whole. Both are
-    fully derived from the run store, so a rebuild cannot lose measurement data, and it
-    guarantees no row survives from a superseded measure definition.
+    With *scoped* False the tables are dropped and rebuilt whole. Both are fully derived
+    from the run store, so a rebuild cannot lose measurement data, and it guarantees no
+    row survives from a superseded measure definition.
 
-    With *scoped_to_model* True only the rows belonging to the models present in the new
-    data are replaced, and every other model's rows are left alone. Without this, running
-    with --model to look at one tier silently deleted every other tier's rows: the tables
-    were rebuilt from a run set that had been filtered to one model, so the aggregates
-    for the others vanished until a full re-run. Found 6-Sep-26 while pulling
-    complexity-bin figures, after a --model gpt-5.4-nano call emptied the mini and
-    gpt-5.4 aggregates.
+    With *scoped* True only the rows belonging to the experiments present in the new data
+    are replaced, and every other experiment's rows are left alone. Without this, running
+    a filter to look at one campaign silently deleted every other campaign's rows: the
+    tables were rebuilt from a run set that had been filtered, so the aggregates for the
+    others vanished until a full re-run. Found 6-Sep-26 while pulling complexity-bin
+    figures, after a --model gpt-5.4-nano call emptied the mini and gpt-5.4 aggregates.
     """
-    if not scoped_to_model:
+    if not scoped:
         conn.executescript(_SCHEMA)
     else:
-        # Create the tables if this is a first run, then clear only the affected models.
+        # Create the tables if this is a first run, then clear only the affected
+        # experiments.
         conn.executescript(_SCHEMA.replace("DROP TABLE IF EXISTS agg_query;", "")
                                   .replace("DROP TABLE IF EXISTS agg_topology;", "")
                                   .replace("CREATE TABLE agg_query",
                                            "CREATE TABLE IF NOT EXISTS agg_query")
                                   .replace("CREATE TABLE agg_topology",
                                            "CREATE TABLE IF NOT EXISTS agg_topology"))
-        models = {row["model"] for row in query_aggs} | {row["model"] for row in topology_aggs}
-        for model in models:
-            conn.execute("DELETE FROM agg_query WHERE model = ?", (model,))
-            conn.execute("DELETE FROM agg_topology WHERE model = ?", (model,))
+        experiments = ({row["experiment_no"] for row in query_aggs}
+                       | {row["experiment_no"] for row in topology_aggs})
+        for exp in experiments:
+            conn.execute("DELETE FROM agg_query WHERE experiment_no = ?", (exp,))
+            conn.execute("DELETE FROM agg_topology WHERE experiment_no = ?", (exp,))
 
     conn.executemany(
-        "INSERT INTO agg_query (model, topology, query_id, complexity_bin, "
-        "is_out_of_scope, measure, kind, n, median, mean, min, max, q1, q3, rate, count) "
-        "VALUES (:model, :topology, :query_id, :complexity_bin, :is_out_of_scope, "
-        ":measure, :kind, :n, :median, :mean, :min, :max, :q1, :q3, :rate, :count)",
+        "INSERT INTO agg_query (experiment_no, run_phase, model, topology, query_id, "
+        "complexity_bin, is_out_of_scope, measure, kind, n, median, mean, min, max, "
+        "q1, q3, rate, count) "
+        "VALUES (:experiment_no, :run_phase, :model, :topology, :query_id, "
+        ":complexity_bin, :is_out_of_scope, :measure, :kind, :n, :median, :mean, :min, "
+        ":max, :q1, :q3, :rate, :count)",
         query_aggs,
     )
     conn.executemany(
-        "INSERT INTO agg_topology (model, topology, scope, measure, kind, n, "
-        "median, mean, min, max, q1, q3, rate, count) "
-        "VALUES (:model, :topology, :scope, :measure, :kind, :n, "
-        ":median, :mean, :min, :max, :q1, :q3, :rate, :count)",
+        "INSERT INTO agg_topology (experiment_no, run_phase, model, topology, scope, "
+        "measure, kind, n, median, mean, min, max, q1, q3, rate, count) "
+        "VALUES (:experiment_no, :run_phase, :model, :topology, :scope, :measure, :kind, "
+        ":n, :median, :mean, :min, :max, :q1, :q3, :rate, :count)",
         topology_aggs,
     )
     conn.commit()
 
 
-def print_summary(conn: sqlite3.Connection, model: str | None) -> None:
+def _agg_filter(experiment_no: int | None, run_phase: str | None,
+                model: str | None) -> tuple[str, tuple]:
+    """SQL fragment and parameters restricting an agg_* query to one campaign.
+
+    Returns ("", ()) when nothing was asked for, so the caller's WHERE clause is
+    unaffected. The three filters combine, matching load_runs().
+    """
+    clauses, params = [], []
+    if experiment_no is not None:
+        clauses.append("experiment_no = ?")
+        params.append(experiment_no)
+    if run_phase:
+        clauses.append("run_phase = ?")
+        params.append(run_phase)
+    if model:
+        clauses.append("model = ?")
+        params.append(model)
+    return ("".join(f" AND {c}" for c in clauses), tuple(params))
+
+
+def print_summary(conn: sqlite3.Connection, where: str = "", params: tuple = ()) -> None:
     """Print every proposal measure per topology, in two aligned blocks.
 
     All fifteen measures from the proposal's Section 7.3 table are printed. They are
     split across two blocks purely so each line stays readable: one for the operational
     measures (cost, tokens, latency) and one for reliability and quality. Both blocks
     list the topologies in the same order, so the rows line up between them.
+
+    *where* and *params* come from _agg_filter() and restrict the output to one campaign.
     """
-    where = "AND model = ?" if model else ""
-    params = (model,) if model else ()
     rows = conn.execute(f"""
-        SELECT model, topology,
+        SELECT experiment_no, run_phase, model, topology,
                MAX(CASE WHEN measure='cost_usd' THEN n END) AS queries,
                MAX(CASE WHEN measure='cost_usd' THEN median END) AS cost,
                MAX(CASE WHEN measure='total_tokens' THEN median END) AS total_tok,
@@ -494,21 +557,22 @@ def print_summary(conn: sqlite3.Connection, model: str | None) -> None:
                MAX(CASE WHEN measure='has_violation' THEN rate END) AS violation_rate,
                MAX(CASE WHEN measure='completed' THEN rate END) AS completion_rate
         FROM agg_topology WHERE scope='workload' {where}
-        GROUP BY model, topology
+        GROUP BY experiment_no, topology
     """, params).fetchall()
 
     # Sorted here rather than in SQL: the reporting order is a fixed list, not a
     # value the query can sort on.
-    rows = sorted(rows, key=lambda r: (r[0], topology_sort_key(r[1])))
+    rows = sorted(rows, key=lambda r: (r[0], topology_sort_key(r[3])))
 
     if not rows:
-        print("No aggregated rows to show. Check that the store holds runs for this model.")
+        print("No aggregated rows to show. Check that the store holds runs for this "
+              "experiment.")
         return
 
     # The out-of-scope decline rate lives in its own scope, so it is fetched separately
     # and joined in memory rather than forced into the workload query above.
     decline = {(r[0], r[1]): r[2] for r in conn.execute(f"""
-        SELECT model, topology, rate FROM agg_topology
+        SELECT experiment_no, topology, rate FROM agg_topology
         WHERE scope='out_of_scope' AND measure='declined' {where}
     """, params)}
 
@@ -527,38 +591,37 @@ def print_summary(conn: sqlite3.Connection, model: str | None) -> None:
     print("=" * 118)
     print("OPERATIONAL MEASURES  (proposal 7.2.1)")
     print("=" * 118)
-    h1 = (f"{'model':14} {'topology':28} {'qrys':>4} {'cost':>8} {'tokens':>9} "
-          f"{'gen tok':>8} {'latency':>8} {'critpath':>8} {'orch sh':>8} {'spec sh':>8}")
+    h1 = (f"{'exp':>3} {'phase':6} {'model':14} {'topology':28} {'qrys':>4} {'cost':>8} "
+          f"{'tokens':>9} {'gen tok':>8} {'latency':>8} {'critpath':>8} {'orch sh':>8} "
+          f"{'spec sh':>8}")
     print(h1)
     print("-" * len(h1))
     for r in rows:
-        print(f"{r[0]:14} {r[1]:28} {r[2]:>4} {fmt(r[3], '.4f'):>8} {tok(r[4]):>9} "
-              f"{tok(r[5]):>8} {fmt(r[6], '.1f'):>8} {fmt(r[7], '.1f'):>8} "
-              f"{fmt(r[8], '.3f'):>8} {fmt(r[9], '.3f'):>8}")
+        print(f"{r[0]:>3} {r[1]:6} {r[2]:14} {r[3]:28} {r[4]:>4} {fmt(r[5], '.4f'):>8} "
+              f"{tok(r[6]):>9} {tok(r[7]):>8} {fmt(r[8], '.1f'):>8} {fmt(r[9], '.1f'):>8} "
+              f"{fmt(r[10], '.3f'):>8} {fmt(r[11], '.3f'):>8}")
 
     print()
     print("=" * 118)
     print("RELIABILITY AND QUALITY MEASURES  (proposal 7.2.2, 7.2.3)")
     print("=" * 118)
-    h2 = (f"{'model':14} {'topology':28} {'qual':>6} {'cover':>6} {'@opt':>5} "
-          f"{'prec':>6} {'@opt':>5} {'schEff':>7} {'schDev':>7} {'infeas':>7} "
+    h2 = (f"{'exp':>3} {'phase':6} {'model':14} {'topology':28} {'qual':>6} {'cover':>6} "
+          f"{'@opt':>5} {'prec':>6} {'@opt':>5} {'schEff':>7} {'schDev':>7} {'infeas':>7} "
           f"{'viol':>5} {'compl':>6} {'declQ1':>7}")
     print(h2)
     print("-" * len(h2))
     for r in rows:
-        d = decline.get((r[0], r[1]))
-        print(f"{r[0]:14} {r[1]:28} {fmt(r[10]):>6} {fmt(r[11], '.3f'):>6} "
-              f"{fmt(r[12]):>5} {fmt(r[13], '.3f'):>6} {fmt(r[14]):>5} "
-              f"{fmt(r[15], '.3f'):>7} {fmt(r[16], '.3f'):>7} {fmt(r[17]):>7} "
-              f"{fmt(r[18]):>5} {fmt(r[19]):>6} {fmt(d):>7}")
+        d = decline.get((r[0], r[3]))
+        print(f"{r[0]:>3} {r[1]:6} {r[2]:14} {r[3]:28} {fmt(r[12]):>6} "
+              f"{fmt(r[13], '.3f'):>6} {fmt(r[14]):>5} {fmt(r[15], '.3f'):>6} "
+              f"{fmt(r[16]):>5} {fmt(r[17], '.3f'):>7} {fmt(r[18], '.3f'):>7} "
+              f"{fmt(r[19]):>7} {fmt(r[20]):>5} {fmt(r[21]):>6} {fmt(d):>7}")
 
 
-def print_bins(conn: sqlite3.Connection, model: str | None) -> None:
+def print_bins(conn: sqlite3.Connection, where: str = "", params: tuple = ()) -> None:
     """Print the complexity-bin breakdown: how each topology holds up as work grows."""
-    where = "AND model = ?" if model else ""
-    params = (model,) if model else ()
     rows = conn.execute(f"""
-        SELECT model, topology, scope,
+        SELECT experiment_no, run_phase, model, topology, scope,
                MAX(CASE WHEN measure='cost_usd' THEN n END) AS queries,
                MAX(CASE WHEN measure='completed' THEN n END) AS runs,
                MAX(CASE WHEN measure='cost_usd' THEN median END) AS cost,
@@ -568,7 +631,8 @@ def print_bins(conn: sqlite3.Connection, model: str | None) -> None:
                MAX(CASE WHEN measure='has_violation' THEN rate END) AS violation_rate,
                MAX(CASE WHEN measure='completed' THEN rate END) AS completion_rate
         FROM agg_topology WHERE scope LIKE 'bin:%' {where}
-        GROUP BY model, topology, scope ORDER BY model, topology, scope
+        GROUP BY experiment_no, topology, scope
+        ORDER BY experiment_no, topology, scope
     """, params).fetchall()
 
     if not rows:
@@ -584,27 +648,94 @@ def print_bins(conn: sqlite3.Connection, model: str | None) -> None:
           "produced a usable cost figure, so it drops to 0 where every run failed while "
           "the rate columns still carry their run denominators.")
     print()
-    header = (f"{'model':14} {'topology':28} {'bin':>10} {'runs':>4} {'qrys':>4} "
-              f"{'cost':>7} {'qual':>6} {'cover':>6} {'schdev':>7} {'viol':>5} {'compl':>6}")
+    header = (f"{'exp':>3} {'phase':6} {'model':14} {'topology':28} {'bin':>10} "
+              f"{'runs':>4} {'qrys':>4} {'cost':>7} {'qual':>6} {'cover':>6} "
+              f"{'schdev':>7} {'viol':>5} {'compl':>6}")
     print(header)
     print("-" * len(header))
 
     # Bins print in workload order rather than alphabetically, so the progression from
     # least to most demanding reads down the column.
     bin_order = {"bin:low": 0, "bin:medium": 1, "bin:high": 2, "bin:very_high": 3}
-    for r in sorted(rows, key=lambda x: (x[0], topology_sort_key(x[1]),
-                                         bin_order.get(x[2], 99))):
+    for r in sorted(rows, key=lambda x: (x[0], topology_sort_key(x[3]),
+                                         bin_order.get(x[4], 99))):
         def fmt(v, spec=".2f"):
             return format(v, spec) if v is not None else "n/a"
-        print(f"{r[0]:14} {r[1]:28} {r[2].replace('bin:', ''):>10} {r[4]:>4} {r[3]:>4} "
-              f"{fmt(r[5], '.4f'):>7} {fmt(r[6]):>6} {fmt(r[7], '.3f'):>6} "
-              f"{fmt(r[8], '.3f'):>7} {fmt(r[9]):>5} {fmt(r[10]):>6}")
+        print(f"{r[0]:>3} {r[1]:6} {r[2]:14} {r[3]:28} {r[4].replace('bin:', ''):>10} "
+              f"{r[6]:>4} {r[5]:>4} {fmt(r[7], '.4f'):>7} {fmt(r[8]):>6} "
+              f"{fmt(r[9], '.3f'):>6} {fmt(r[10], '.3f'):>7} {fmt(r[11]):>5} "
+              f"{fmt(r[12]):>6}")
+
+
+def _warn_mixed_config(runs: list[dict]) -> None:
+    """Report cells whose pooled runs were produced under different configurations.
+
+    aggregate_queries() pools every run of an (experiment_no, topology, query_id) cell,
+    which is the repetition aggregation the design calls for. It does not check that the
+    pooled runs are comparable: a re-run after a prompt change carries a different
+    config_hash and would be averaged with the runs it was meant to replace, silently.
+
+    config_hash covers model and prompt versions, so a change to either shows up here.
+    The validity rule stays a matter of discipline -- this only makes a breach visible
+    at report time instead of never.
+    """
+    by_cell: dict[tuple, set] = defaultdict(set)
+    for r in runs:
+        ch = r.get("config_hash")
+        if ch and not str(ch).startswith("unavailable"):
+            by_cell[(r["experiment_no"], r["topology"], r["query_id"])].add(ch)
+
+    mixed = {cell: hashes for cell, hashes in by_cell.items() if len(hashes) > 1}
+    if not mixed:
+        return
+    print(f"  WARNING              : {len(mixed)} cell(s) pool runs with differing "
+          f"config_hash (prompt or model version changed mid-experiment)")
+    for (experiment_no, topology, query_id), hashes in sorted(mixed)[:5]:
+        print(f"                         exp {experiment_no} / {topology} / {query_id}: "
+              f"{len(hashes)} configs")
+    if len(mixed) > 5:
+        print(f"                         ... and {len(mixed) - 5} more")
+    print("                         Pre- and post-change runs should not be pooled.")
+
+
+def _check_experiment_consistency(db_path: str) -> int:
+    """Report run rows whose run_phase and model disagree with their experiment_no.
+
+    experiment_no is stored on the run row so a campaign can be selected in one clause,
+    which means it duplicates what run_phase and model already say and can be made to
+    contradict them by a hand-written UPDATE. Everything downstream groups by the number,
+    so a contradicting row would be aggregated under a campaign it does not belong to and
+    nothing else would notice. Returns the number of offending rows; 0 is the expected
+    result.
+    """
+    from measurement.run_store_schema import experiment_mismatches
+
+    bad = experiment_mismatches(db_path)
+    if not bad:
+        return 0
+    print(f"  WARNING              : {len(bad)} run row(s) contradict their experiment "
+          f"definition")
+    for run_id, exp, r_phase, r_model, e_phase, e_model in bad[:5]:
+        print(f"                         {run_id[:8]}: row says {r_phase}/{r_model}, "
+              f"experiment {exp} is {e_phase}/{e_model}")
+    if len(bad) > 5:
+        print(f"                         ... and {len(bad) - 5} more")
+    print("                         Figures for these experiments are not trustworthy "
+          "until this is resolved.")
+    return len(bad)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--db", default=DB_PATH, help=f"run store path (default: {DB_PATH})")
+    # Two ways to name a campaign, both accepted. -e is terse; the pair is readable and
+    # allows partial filters (--run-phase alone spans every tier in that phase).
+    parser.add_argument("-e", "--experiment", type=int, default=None,
+                        help="aggregate one experiment only (see run_store_schema.py "
+                             "--list-experiments)")
+    parser.add_argument("--run-phase", default=None,
+                        help="aggregate one phase only, e.g. pilot or main")
     parser.add_argument("--model", default=None,
                         help="aggregate one model tier only (default: every model in the store)")
     parser.add_argument("--print", dest="show", action="store_true",
@@ -617,34 +748,43 @@ def main() -> int:
         print(f"ERROR: run store not found at {args.db}. Check the path, or run an experiment first.")
         return 1
 
+    filtered = any(v is not None for v in (args.experiment, args.run_phase, args.model))
+
     conn = sqlite3.connect(args.db)
     try:
-        runs = load_runs(conn, args.model)
+        runs = load_runs(conn, model=args.model, run_phase=args.run_phase,
+                         experiment_no=args.experiment)
         if not runs:
-            scope = f" for model {args.model}" if args.model else ""
+            bits = [f"{k} {v}" for k, v in (("experiment", args.experiment),
+                                            ("phase", args.run_phase),
+                                            ("model", args.model)) if v is not None]
+            scope = f" for {', '.join(bits)}" if bits else ""
             print(f"No runs found{scope}. Nothing to aggregate.")
             return 1
 
         query_aggs = aggregate_queries(runs)
         topology_aggs = aggregate_topologies(query_aggs, runs)
         # A filtered run set must not rebuild the whole table -- see write_tables.
-        write_tables(conn, query_aggs, topology_aggs,
-                     scoped_to_model=args.model is not None)
+        write_tables(conn, query_aggs, topology_aggs, scoped=filtered)
 
-        models = sorted({r["model"] for r in runs})
+        experiments = sorted({(r["experiment_no"], r["run_phase"], r["model"]) for r in runs})
         topologies = sorted({r["topology"] for r in runs})
         print(f"  runs aggregated      : {len(runs)}")
-        print(f"  models               : {', '.join(models)}")
+        print(f"  experiments          : "
+              f"{', '.join(f'{e} ({p}/{m})' for e, p, m in experiments)}")
         print(f"  topologies           : {len(topologies)}")
         print(f"  agg_query rows       : {len(query_aggs)}")
         print(f"  agg_topology rows    : {len(topology_aggs)}")
+        _warn_mixed_config(runs)
+        _check_experiment_consistency(args.db)
 
+        where, params = _agg_filter(args.experiment, args.run_phase, args.model)
         if args.show:
             print()
-            print_summary(conn, args.model)
+            print_summary(conn, where, params)
         if args.show_bins:
             print()
-            print_bins(conn, args.model)
+            print_bins(conn, where, params)
     except sqlite3.Error as exc:
         print(f"ERROR: the run store could not be read or written: {exc}")
         return 1

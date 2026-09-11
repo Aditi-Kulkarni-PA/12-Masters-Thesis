@@ -6,10 +6,11 @@ tool call within a run (tool_call), one row per query's fixed metadata
 written later/separately by T42's decoupled RAGAS/LLM-judge pipeline).
 
 Usage:
-    python measurement/run_store_schema.py --migrate        # safe, additive
-    python measurement/run_store_schema.py --list-locked    # what is protected
-    python measurement/run_store_schema.py --lock <run_id>  # protect a run
-    python measurement/run_store_schema.py                  # DESTRUCTIVE recreate
+    python measurement/run_store_schema.py --migrate           # safe, additive
+    python measurement/run_store_schema.py --list-locked       # what is protected
+    python measurement/run_store_schema.py --list-experiments  # defined campaigns
+    python measurement/run_store_schema.py --lock <run_id>     # protect a run
+    python measurement/run_store_schema.py                     # DESTRUCTIVE recreate
 
 DESTRUCTIVE — the bare invocation drops and recreates all tables (SQLite has no
 CREATE OR REPLACE TABLE). That was tolerable while the schema churned and the data
@@ -51,7 +52,8 @@ CREATE TABLE query_metadata (
 );
 
 -- ---------------------------------------------------------------------
--- run: one row per (topology, query_id, run_n) execution.
+-- run: one row per (topology, query_id, run_n) execution, within one
+-- experiment (experiment_no -> one run_phase at one model).
 -- ---------------------------------------------------------------------
 DROP TABLE IF EXISTS run;
 CREATE TABLE run (
@@ -300,6 +302,118 @@ def set_lock(run_ids, locked: bool = True, db_path: str = DB_PATH) -> dict[str, 
     return touched
 
 
+# ---------------------------------------------------------------------------
+# experiment lookup
+# ---------------------------------------------------------------------------
+class UnknownExperimentError(RuntimeError):
+    """Raised when a (run_phase, model) pair or an experiment_no has no definition."""
+
+
+def list_experiments(db_path: str = DB_PATH) -> list[tuple]:
+    """(experiment_no, run_phase, model, created_at, note) for every defined experiment."""
+    if not Path(db_path).exists():
+        return []
+    conn = sqlite3.connect(db_path)
+    try:
+        return list(conn.execute(
+            "SELECT experiment_no, run_phase, model, created_at, note "
+            "FROM experiment ORDER BY experiment_no"))
+    except sqlite3.OperationalError:
+        return []                     # table not migrated in yet
+    finally:
+        conn.close()
+
+
+def experiment_def(experiment_no: int, db_path: str = DB_PATH) -> tuple[str, str]:
+    """(run_phase, model) for an experiment number. Raises if it is not defined.
+
+    The read direction of the lookup: used by anything given `-e N` that needs to know
+    which campaign that is.
+    """
+    conn = sqlite3.connect(db_path)
+    try:
+        row = conn.execute(
+            "SELECT run_phase, model FROM experiment WHERE experiment_no = ?",
+            (experiment_no,)).fetchone()
+    finally:
+        conn.close()
+    if row is None:
+        known = ", ".join(str(e[0]) for e in list_experiments(db_path)) or "none"
+        raise UnknownExperimentError(
+            f"No experiment {experiment_no} is defined. Defined experiments: {known}.\n"
+            f"  List   : python supply_chain_topology_app/measurement/run_store_schema.py "
+            f"--list-experiments\n"
+            f"  Create : execute_experiment.sh --run-phase <phase> --model <model> --new-experiment"
+        )
+    return row[0], row[1]
+
+
+def experiment_for(run_phase: str, model: str, db_path: str = DB_PATH,
+                   create: bool = False, note: str | None = None) -> int:
+    """experiment_no for a (run_phase, model) pair, optionally allocating a new one.
+
+    The write direction of the lookup. `create` is off by default so a typo in either
+    argument fails loudly instead of silently opening a campaign that nothing will ever
+    add a second run to. A new number is max + 1, which keeps the pilot at 1-3.
+    """
+    from datetime import datetime, timezone
+
+    migrate_schema(db_path)
+    conn = sqlite3.connect(db_path)
+    try:
+        row = conn.execute(
+            "SELECT experiment_no FROM experiment WHERE run_phase = ? AND model = ?",
+            (run_phase, model)).fetchone()
+        if row is not None:
+            return row[0]
+        if not create:
+            known = "\n".join(
+                f"    {e[0]}  {e[1]:8} {e[2]}" for e in list_experiments(db_path)
+            ) or "    (none defined)"
+            raise UnknownExperimentError(
+                f"No experiment is defined for run_phase={run_phase!r}, model={model!r}.\n"
+                f"  Defined experiments:\n{known}\n"
+                f"  Pass --new-experiment to open a new one, after checking the phase and "
+                f"model above are what you intended."
+            )
+        nxt = (conn.execute("SELECT MAX(experiment_no) FROM experiment").fetchone()[0] or 0) + 1
+        conn.execute(
+            "INSERT INTO experiment (experiment_no, run_phase, model, created_at, note) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (nxt, run_phase, model, datetime.now(timezone.utc).isoformat(timespec="seconds"), note))
+        conn.commit()
+        return nxt
+    finally:
+        conn.close()
+
+
+def experiment_mismatches(db_path: str = DB_PATH) -> list[tuple]:
+    """Run rows whose (run_phase, model) disagrees with their experiment_no's definition.
+
+    experiment_no is denormalised onto `run` for the convenience of a single-column
+    WHERE clause, which means it can be made to disagree with the columns it was derived
+    from. This is the check that stops such a row from being aggregated as if it were
+    consistent. An empty list is the expected result.
+    """
+    if not Path(db_path).exists():
+        return []
+    conn = sqlite3.connect(db_path)
+    try:
+        return list(conn.execute("""
+            SELECT r.run_id, r.experiment_no, r.run_phase, r.model, e.run_phase, e.model
+            FROM run r LEFT JOIN experiment e ON e.experiment_no = r.experiment_no
+            WHERE r.experiment_no IS NOT NULL
+              AND (e.experiment_no IS NULL
+                   OR e.run_phase IS NOT r.run_phase
+                   OR e.model IS NOT r.model)
+            ORDER BY r.experiment_no, r.run_id
+        """))
+    except sqlite3.OperationalError:
+        return []
+    finally:
+        conn.close()
+
+
 LOG_DIR = _APP_DIR / "log"
 
 
@@ -353,11 +467,18 @@ def _logs_for(conn, run_ids) -> list[Path]:
 
 
 def delete_runs(scope: str = "unlocked", db_path: str = DB_PATH,
-                run_ids=None, dry_run: bool = False, purge_orphan_logs: bool = False) -> dict:
+                run_ids=None, dry_run: bool = False, purge_orphan_logs: bool = False,
+                experiment_no: int | None = None, run_phase: str | None = None,
+                model: str | None = None) -> dict:
     """Delete runs and everything hanging off them. Default scope spares locked runs.
 
     scope="unlocked" -> every run with lock_rows = 0   (the safe default)
     scope="all"      -> every run, locked included     (caller must mean it)
+
+    *experiment_no*, *run_phase* and *model* narrow the selection to one campaign, so a
+    batch written under the wrong phase can be removed without listing 99 run_ids. They
+    combine with each other and with *run_ids*, and they narrow rather than widen: the
+    lock_rows guard still applies.
 
     Children go first so a foreign-key-enabled database never sees an orphan, and the
     whole thing runs in one transaction: a half-deleted run would still read as valid
@@ -379,6 +500,12 @@ def delete_runs(scope: str = "unlocked", db_path: str = DB_PATH,
             where, params = "lock_rows = 0", []
         else:
             where, params = "1=1", []
+
+        for column, value in (("experiment_no", experiment_no),
+                              ("run_phase", run_phase), ("model", model)):
+            if value is not None:
+                where += f" AND {column} = ?"
+                params.append(value)
 
         targets = [r[0] for r in conn.execute(f"SELECT run_id FROM run WHERE {where}", params)]
         locked_total = conn.execute("SELECT COUNT(*) FROM run WHERE lock_rows = 1").fetchone()[0]
@@ -470,6 +597,53 @@ def list_locked(db_path: str = DB_PATH) -> list[tuple]:
         conn.close()
 
 
+# Tables added after the initial schema. Applied by migrate_schema() with CREATE TABLE
+# IF NOT EXISTS, and therefore defined exactly once: create_schema() calls
+# migrate_schema(), so a freshly created database gets them too. Deliberately outside
+# DDL above, which drops what it creates — an experiment definition outlives any single
+# wipe of the run rows that reference it.
+_MIGRATION_TABLES: tuple[str, ...] = (
+    # experiment: one row per campaign, where a campaign is one run_phase at one model.
+    # The pilot is experiments 1-3 (nano, mini, gpt-5.4, all at N=1); the main experiment
+    # adds one row per tier it runs at.
+    #
+    # This table exists so experiment_no is looked up rather than typed. The harness is
+    # given --run-phase and --model and resolves the number here, which makes a wrong
+    # number unreachable by typo. UNIQUE(run_phase, model) is what makes the mapping a
+    # function: one campaign per pair, no second opinion.
+    """
+    CREATE TABLE IF NOT EXISTS experiment (
+        experiment_no   INTEGER PRIMARY KEY,
+        run_phase       TEXT NOT NULL,
+        model           TEXT NOT NULL,
+        created_at      TEXT,
+        note            TEXT,
+        UNIQUE (run_phase, model)
+    )
+    """,
+    # human_eval_rating: one row per (run_id, rater) -- deliberately NOT one row per
+    # run_id, unlike quality_scores. T58 needs more than one rater's score on the same
+    # run to compute inter-rater reliability (Krippendorff's alpha / Cohen's kappa), so
+    # the same run_id legitimately has multiple rows here, one per rater. item_id is the
+    # blind code the rater actually saw (cli/human_eval_io.py) -- kept alongside run_id
+    # so a rating can be traced back to the blind sheet it came from, not only to the
+    # de-anonymised run.
+    """
+    CREATE TABLE IF NOT EXISTS human_eval_rating (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        run_id          TEXT NOT NULL,
+        item_id         TEXT,
+        rater           TEXT NOT NULL,
+        relevance       REAL,
+        faithfulness    REAL,
+        safety          REAL,
+        notes           TEXT,
+        rated_at        TEXT,
+        UNIQUE (run_id, rater)
+    )
+    """,
+)
+
 # Columns added after the initial schema, as (table, column, type). Applied by
 # migrate_schema() with ALTER TABLE so an existing database picks them up WITHOUT
 # the destructive drop-and-recreate above. Every entry must be nullable or carry a
@@ -494,6 +668,19 @@ _MIGRATIONS: tuple[tuple[str, str, str], ...] = (
     # prompt. A timeline that hides the dominant cost of the condition under test is
     # worse than no timeline.
     ("run", "tool_base_offset_s", "REAL"),
+    # experiment_no: which experiment this run belongs to, resolved through the
+    # `experiment` table (one row per run_phase x model campaign). Denormalised onto the
+    # run row so a single-column WHERE clause selects a campaign; run_phase and model
+    # remain the authoritative pair, and aggregate.py asserts the two agree before it
+    # groups anything.
+    #
+    # batch_id cannot serve this purpose: it labels one dispatch invocation, and an
+    # experiment routinely spans several once a batch is interrupted, resumed, or partly
+    # re-run (the gpt-5.4 pilot spans pilot-5-4-20260906, fix-q8-gpt54 and a smoke batch).
+    #
+    # NULL for a run launched outside execute_experiment.py: a manual execute_topology.sh
+    # call belongs to no campaign, and NULL says so rather than guessing a number.
+    ("run", "experiment_no", "INTEGER"),
     ("run", "log_path", "TEXT"),                             # log file this run wrote
     ("run", "all_turns_json", "TEXT"),                        # T42b: every turn's raw MasterOutput, in order
     # Orchestration turns that are NOT specialist calls: a coordinator turn recorded
@@ -518,6 +705,7 @@ _MIGRATIONS: tuple[tuple[str, str, str], ...] = (
     ("row_output", "lock_rows", "INTEGER NOT NULL DEFAULT 0"),
     ("quality_scores", "lock_rows", "INTEGER NOT NULL DEFAULT 0"),
     ("query_metadata", "lock_rows", "INTEGER NOT NULL DEFAULT 0"),
+    ("experiment", "lock_rows", "INTEGER NOT NULL DEFAULT 0"),
     # Scope-adjusted quality score (T42i, 29-Aug-26, R42.4 follow-up): judge_mean only
     # ever averages capabilities that produced a judged artifact, so a run that silently
     # skips a capability the query implied is judged only on what it DID attempt --
@@ -562,14 +750,14 @@ _MIGRATIONS: tuple[tuple[str, str, str], ...] = (
     # env var was left unset: NULL means "phase unknown", not "assume dev" -- an
     # unset env var during a real pilot run must not silently mislabel as dev.
     ("run", "run_phase", "TEXT"),
-    # Harness-assigned grouping and ordering (5-Sep-26, run_experiment.py). One harness
+    # Harness-assigned grouping and ordering (5-Sep-26, execute_experiment.py). One harness
     # invocation stamps every run it launches with the same batch_id, so a checkpoint or
     # an interrupted run is auditable: which runs belong together, and in what order they
     # actually executed. execution_order is the position of this run within its batch's
     # (randomized, by default) sequence, distinct from run_n -- run_n identifies WHICH
     # repetition of a (topology, query_id) pair this is; execution_order identifies WHEN,
     # relative to every other run in the same batch, it executed. Both NULL for any run
-    # not launched through run_experiment.py (e.g. a manual execute_topology.sh call).
+    # not launched through execute_experiment.py (e.g. a manual execute_topology.sh call).
     ("run", "batch_id", "TEXT"),
     ("run", "execution_order", "INTEGER"),
     # Query-complexity bucket for the stratified quality table (5-Sep-26, Aditi's
@@ -691,7 +879,7 @@ _MIGRATIONS: tuple[tuple[str, str, str], ...] = (
 # — and, more to the point, a half-deleted run is worse than a deleted one, because
 # it still reads as valid data.
 LOCK_TABLES: tuple[str, ...] = (
-    "run", "tool_call", "row_output", "quality_scores", "query_metadata",
+    "run", "tool_call", "row_output", "quality_scores", "query_metadata", "experiment",
 )
 _RUN_SCOPED: tuple[str, ...] = ("tool_call", "row_output", "quality_scores")
 
@@ -708,6 +896,9 @@ def migrate_schema(db_path: str = DB_PATH, verbose: bool = False) -> list[str]:
     added: list[str] = []
     conn = sqlite3.connect(db_path)
     try:
+        # Tables first: a column migration targeting a table created here must find it.
+        for stmt in _MIGRATION_TABLES:
+            conn.execute(stmt)
         for table, column, coltype in _MIGRATIONS:
             existing = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
             if not existing:
@@ -751,6 +942,25 @@ if __name__ == "__main__":
             print()
             for t, n in locked_counts().items():
                 print(f"  {t:16} {n} locked row(s)")
+
+    elif "--list-experiments" in argv:
+        rows = list_experiments()
+        if not rows:
+            print("No experiments defined. Open one with execute_experiment.sh --new-experiment.")
+        else:
+            print(f"{'no':>3}  {'phase':8} {'model':16} {'runs':>5}  created")
+            conn = sqlite3.connect(DB_PATH)
+            for no, phase, model, created, note in rows:
+                n = conn.execute(
+                    "SELECT COUNT(*) FROM run WHERE experiment_no = ?", (no,)).fetchone()[0]
+                print(f"{no:>3}  {phase:8} {model:16} {n:>5}  {created or '-'}")
+                if note:
+                    print(f"       note: {note}")
+            conn.close()
+            bad = experiment_mismatches()
+            if bad:
+                print(f"\nWARNING: {len(bad)} run row(s) disagree with their experiment "
+                      f"definition. Run aggregate.py to see the detail.")
 
     elif "--lock" in argv or "--unlock" in argv:
         lock = "--lock" in argv

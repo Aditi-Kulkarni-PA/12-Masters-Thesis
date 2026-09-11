@@ -175,6 +175,11 @@ def derive(run_row: dict, tool_names: list[str], implied_tools_json: str | None,
 
     return {
         "run_id": run_row["run_id"],
+        # The campaign this run belongs to, carried through so aggregation can group by
+        # it. run_phase and model are kept alongside because they are what the number
+        # means, and a figure labelled only "experiment 4" is not readable.
+        "experiment_no": run_row.get("experiment_no"),
+        "run_phase": run_row.get("run_phase"),
         "model": run_row["model"],
         "topology": run_row["topology"],
         "query_id": run_row["query_id"],

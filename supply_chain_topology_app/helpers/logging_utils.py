@@ -21,7 +21,7 @@ def _run_log_path(log_dir: Path) -> Path:
 
         log/batches/<batch_id>/traces/<order>_<topology>_<query>_n<run_n>.log
 
-    which matches the console log run_experiment.py writes at
+    which matches the console log execute_experiment.py writes at
     log/batches/<batch_id>/<order>_<topology>_<query>_n<run_n>.log. Naming the two
     identically is the point: a trace can be tied to its run from the filename alone.
     Until 9-Sep-26 every trace was written to log/delivery_chat_run_<timestamp>.log, the

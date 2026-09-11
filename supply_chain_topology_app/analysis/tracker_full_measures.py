@@ -40,14 +40,32 @@ def _conn():
     return c
 
 
-def load(scope="workload"):
-    """agg_topology for one scope, keyed by (model, topology, measure)."""
+def load(scope="workload", run_phase=None):
+    """agg_topology for one scope, keyed by (model, topology, measure).
+
+    agg_topology is keyed by experiment, and a tier run in both the pilot and the main
+    experiment produces two rows per key. *run_phase* picks one; a collision that
+    survives it raises rather than silently keeping whichever row came last.
+    """
+    sql = "SELECT * FROM agg_topology WHERE scope=?"
+    params = [scope]
+    if run_phase:
+        sql += " AND run_phase=?"
+        params.append(run_phase)
     with _conn() as c:
-        rows = [dict(r) for r in c.execute(
-            "SELECT * FROM agg_topology WHERE scope=?", (scope,))]
+        rows = [dict(r) for r in c.execute(sql, params)]
     for r in rows:
         KIND[r["measure"]] = r["kind"]
-    return {(r["model"], r["topology"], r["measure"]): r for r in rows}
+
+    out, seen = {}, {}
+    for r in rows:
+        key = (r["model"], r["topology"], r["measure"])
+        if key in out and seen[key] != r["experiment_no"]:
+            raise ValueError(
+                f"{key} appears in experiments {seen[key]} and {r['experiment_no']}. "
+                f"Pass run_phase= to say which campaign this figure is for.")
+        out[key], seen[key] = r, r["experiment_no"]
+    return out
 
 
 def dist(agg, model, measure, fmt="{:.4f}", field="median"):
@@ -120,6 +138,9 @@ def headline(model):
     """Run counts, outcome split, stored cost and mean wall time for one tier."""
     with _conn() as c:
         rows = [dict(r) for r in c.execute(
+            # No run_phase filter: this is the per-tier total across every live run at
+            # that model. Restrict it by phase once a tier appears in more than one
+            # campaign, or the two are summed into a figure belonging to neither.
             "SELECT * FROM run WHERE model=? AND excluded_reason IS NULL", (model,))]
     n = len(rows)
     split = {s: sum(1 for r in rows if r["run_status"] == s)

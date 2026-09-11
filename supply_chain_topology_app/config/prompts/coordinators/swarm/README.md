@@ -38,7 +38,7 @@ comparison and evidence.
 ## Running it
 
 ```
-SC_QUERY_ID=Q10 ./scripts/execute_topology.sh swarm
+./scripts/execute_topology.sh -t swarm -q Q10
 ```
 
 Per-agent instruction audit files land in `runs/swarm/<run_uid>/wave<N>_<agent_name>.md`.

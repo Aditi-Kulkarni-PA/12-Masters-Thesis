@@ -128,7 +128,7 @@ The primary training dataset contains 25,000 historical delivery records represe
 
 | Item | Detail |
 |---|---|
-| **Source file** | `supply_chain_delivery_app/knowledge/delivery_sla_github_ready.md` |
+| **Source file** | `supply_chain_topology_app/knowledge/delivery_sla_github_ready.md` |
 | **Type** | Custom-authored policy document |
 | **Content** | 36-section SLA/OLA document covering performance targets, penalty thresholds, escalation tiers, partner benchmarks, weather policies, distance guidelines, and improvement priorities |
 | **Modelled on** | Industry-standard last-mile delivery SLA frameworks |
@@ -163,7 +163,7 @@ Key responsibilities:
 - **Two-stage vs single multi-class model** — a single 4-class model (on-time / short / medium / long) would be dominated by the 73% on-time class. Splitting into two sequential stages lets Stage 1 independently maximise recall (catching all delays) and Stage 2 independently optimise severity accuracy across a more balanced 3-class problem.
 - **Recall as primary optimisation metric** — a missed delay (false negative) is operationally far more costly than a false alarm (false positive): a missed delay means no corrective action; a false alarm means a slightly unnecessary intervention. GridSearchCV was run with `scoring='recall'` to align model selection with business cost asymmetry.
 
-### Sub-System 2 — Supply Chain Delivery App (`supply_chain_delivery_app/`)
+### Sub-System 2 — Supply Chain Delivery App (`supply_chain_topology_app/`)
 
 A Gradio web application providing the user interface and multi-agent orchestration logic. Users interact through a conversational chat panel; the Master Orchestrator agent interprets intent, calls the appropriate specialist sub-agents in sequence, and populates five output tabs with structured results. Informational questions (e.g. “which region was worst today?”) are answered directly in chat from fresh existing results, without re-running the pipeline.
 
@@ -253,7 +253,7 @@ Taken together, the system enables logistics operations teams to query a convers
 ╔══════════════════════════════════════════════════════════════════════╗
 ║  LAYER 6 — OBSERVABILITY                                             ║
 ║                                                                      ║
-║  Runtime logs      : supply_chain_delivery_app/log/*.log             ║
+║  Runtime logs      : supply_chain_topology_app/log/*.log             ║
 ║  Prediction audit  : output/daily_delivery_delay_prediction_meta.json║
 ║  Diagnosis audit   : output/diagnosis_meta.json                      ║
 ║  Agent tracing     : OPENAI_AGENTS_DISABLE_TRACING=1 (configurable)  ║
@@ -313,7 +313,8 @@ Taken together, the system enables logistics operations teams to query a convers
 
 ```
 0_supply_chain_thesis/
-├── README.md                          ← This file
+├── README-supply-chain-app.md         ← This file — the substrate: app, agents, RAG, MCP
+├── README-thesis-topology-tradeoffs.md ← The thesis: nine topologies, harness, measures
 ├── pyproject.toml                     ← uv project config (package = false)
 ├── requirements.txt                   ← Pinned dependency list (uv export)
 ├── uv.lock                            ← uv lockfile for reproducible installs
@@ -343,7 +344,8 @@ Taken together, the system enables logistics operations teams to query a convers
 │   ├── 18-end-to-end-data-flow.md     ← Full data flow from CSV input to UI output
 │   ├── 19-format-agent-design.md      ← Format Summary agent design and Markdown rendering
 │   ├── 20-executive-flow-diagrams.md  ← Executive-level flow diagrams for documentation
-│   └── 21-eval-flow-design.md         ← Eval framework design: agent evals, RAGAS, LLM-as-judge
+│   ├── 21-eval-flow-design.md         ← Eval framework design: agent evals, RAGAS, LLM-as-judge
+│   └── 23-refactoring-changes.md      ← Consistency refactor + test-driven fixes, by section
 │
 ├── prediction_pipeline/               ← ML training + inference module
 │   ├── README.md
@@ -375,18 +377,24 @@ Taken together, the system enables logistics operations teams to query a convers
 │
 ├── tests/                             ← Smoke & unit tests (run offline, no OpenAI API)
 │   ├── conftest.py                    ← Markdown report writer (pytest_terminal_summary hook)
-│   ├── test_mcp_server.py             ← 11 tests: MCP tools called as async Python functions
+│   ├── test_mcp_server.py             ← 12 tests: MCP tools called as async Python functions
+│   ├── test_feature_engineering.py    ← 10 tests: FeatureEngineering on a synthetic DataFrame
 │   ├── test_pydantic_models.py        ← 11 tests: Pydantic output model validation
-│   └── test_rag_knowledge.py          ← 7 tests: ChromaDB collection, SLA file, keyword retrieval
+│   ├── test_rag_knowledge.py          ← 7 tests: ChromaDB collection, SLA file, keyword retrieval
+│   └── reports/                       ← smoke_test_report.md, written each run (gitignored)
 │
 ├── evals/                             ← LLM-as-judge + RAGAS eval suite (calls OpenAI API)
 │   ├── __init__.py
 │   ├── conftest.py                    ← Fixtures: DB isolation, MCP server lifecycle, report writer
+│   ├── env_settings.py                ← Dual-stack settings: STACK_APP_DIRS, model names, MCP env
+│   ├── agent_adapter.py               ← Framework-agnostic runner: dispatches OpenAI SDK vs MAF
+│   ├── compare_parity.py              ← Diffs baseline vs MAF judge scores against a tolerance
+│   ├── run_parity_check.sh            ← Runs compare_parity.py against the frozen reference pair
 │   ├── pytest.ini                     ← asyncio_mode=auto, ragas marker
 │   ├── eval_config.py                 ← Pass thresholds and dataset paths
 │   ├── judge.py                       ← LLM-as-judge helper (gpt-4.1-mini)
 │   ├── llm_judge_eval.py              ← Standalone LLM-judge runner with human baseline comparison
-│   ├── run_evals.py                   ← Entry point: full suite or single-agent run
+│   ├── run_evals.py                   ← Entry point: full suite, single-agent, or --stack baseline/maf
 │   ├── test_eval_predict.py           ← Predict agent: schema + LLM judge
 │   ├── test_eval_diagnose.py          ← Diagnose agent: schema + LLM judge
 │   ├── test_eval_simulate.py          ← Simulate agent: schema + LLM judge
@@ -394,16 +402,20 @@ Taken together, the system enables logistics operations teams to query a convers
 │   ├── test_eval_email.py             ← Email agent: schema + LLM judge
 │   ├── test_eval_rag.py               ← RAGAS faithfulness + answer_relevancy
 │   ├── test_eval_human_baseline.py    ← Human baseline comparison eval
+│   ├── datasets/
+│   │   └── sample_orders.csv          ← Fixture orders for eval runs
 │   ├── db/                            ← Eval-only SQLite DB (never production)
 │   │   └── delivery_predictions_eval.db  ← Shared DB for agent evals + RAGAS
 │   ├── human_baseline/
 │   │   └── human_scores.xlsx          ← Human-reviewed scores for judge calibration (+ 50-record detail sheets)
 │   └── reports/                       ← Auto-generated eval reports (markdown + JSON)
+│       ├── parity_reference_openai_baseline/    ← frozen pre-port judge scores
+│       └── parity_reference_maf_pre_refactor/   ← frozen judge scores, MAF before its own refactor
 │
-└── supply_chain_delivery_app/         ← Multi-agent app module
+└── supply_chain_topology_app/         ← Multi-agent app module
     ├── README.md
     ├── delivery_chat_app.py            ← Gradio UI entry point
-    ├── delivery_agents.py              ← Pydantic models + agent definitions
+    ├── core/                           ← agents.py, schemas.py, clients.py, mcp_tools.py
     ├── config/
     │   ├── load_config.py             ← get_instruction() — loads prompt .md files verbatim (master gets shared layers)
     │   └── prompts/
@@ -433,8 +445,14 @@ Taken together, the system enables logistics operations teams to query a convers
     ├── vectorstore/                   ← ChromaDB persistent store (gitignored)
     ├── input/                         ← Daily order CSVs for prediction
     ├── output/                        ← Generated predictions, emails, simulations (gitignored)
+    ├── data/                          ← run_store.db (thesis harness only — see below)
     └── log/                           ← Runtime application logs
 ```
+
+`supply_chain_topology_app/` also holds the thesis harness that runs on top of this
+substrate — `cli/`, `topologies/`, `measurement/`, `analysis/` — omitted above because
+this README covers the application, not the experiment. Its full structure, including
+those folders, is in [`supply_chain_topology_app/README.md`](supply_chain_topology_app/README.md#2-project-structure).
 
 ---
 ---
@@ -443,7 +461,7 @@ Taken together, the system enables logistics operations teams to query a convers
 
 <sub>[↑ Back to TOC](#table-of-contents)</sub>
 
-Prompt instructions are split across three composable files — `security_guardrails.md`, `chatbot_behavior.md`, and `master_expert.md` — assembled at runtime by `get_instruction()` in `supply_chain_delivery_app/config/load_config.py`; rather than hardcoded as a single monolithic string. This separation keeps each concern independently editable and testable: guardrail rules can be tightened without touching agent logic, persona and tone can be adjusted without risking security regressions, and domain expertise can be iterated on without re-reviewing the full prompt. The layered order (security first, always) enforces a clear precedence hierarchy that a single flat prompt cannot guarantee. The design evolved through 19 iterations across 7 agents, each driven by a specific failure mode observed during development or testing.
+Prompt instructions are split across three composable files — `security_guardrails.md`, `chatbot_behavior.md`, and `master_expert.md` — assembled at runtime by `get_instruction()` in `supply_chain_topology_app/config/load_config.py`; rather than hardcoded as a single monolithic string. This separation keeps each concern independently editable and testable: guardrail rules can be tightened without touching agent logic, persona and tone can be adjusted without risking security regressions, and domain expertise can be iterated on without re-reviewing the full prompt. The layered order (security first, always) enforces a clear precedence hierarchy that a single flat prompt cannot guarantee. The design evolved through 19 iterations across 7 agents, each driven by a specific failure mode observed during development or testing.
 
 ### Prompt Version History
 
@@ -525,7 +543,7 @@ These invoke the two-stage Random Forest pipeline through the MCP stdio transpor
 
 ### Application-Layer Tools
 
-These run in-process within the `supply_chain_delivery_app/` module and are registered directly with agent instances.
+These run in-process within the `supply_chain_topology_app/` module and are registered directly with agent instances.
 
 | Tool | File | Used by | What it does |
 |---|---|---|---|
@@ -589,9 +607,9 @@ The 12 summary types cover: 6 single-dimension breakdowns (partner, package, veh
 
 ChromaDB was selected as the vector store due to its file-system persistence model (no external server required) and seamless integration with LangChain's text splitting utilities. The file-hash based cache invalidation ensures that the vector store is automatically refreshed if the SLA document is updated, without requiring manual re-indexing.
 
-The Recommend agent retrieves SLA policy context from a persistent ChromaDB vector store (`supply_chain_delivery_app/vectorstore/`) using a three-stage pipeline to maximise retrieval precision. This design keeps the fast bi-encoder retrieval for broad candidate selection while applying the more accurate cross-encoder only on the shortlist.. The store auto-rebuilds if the source SLA file changes (file-hash detection).
+The Recommend agent retrieves SLA policy context from a persistent ChromaDB vector store (`supply_chain_topology_app/vectorstore/`) using a three-stage pipeline to maximise retrieval precision. This design keeps the fast bi-encoder retrieval for broad candidate selection while applying the more accurate cross-encoder only on the shortlist.. The store auto-rebuilds if the source SLA file changes (file-hash detection).
 
-**Source:** `supply_chain_delivery_app/knowledge/delivery_sla_github_ready.md` — 36-section SLA/OLA document  
+**Source:** `supply_chain_topology_app/knowledge/delivery_sla_github_ready.md` — 36-section SLA/OLA document  
 **Embedding model:** `text-embedding-3-small` (1536-dim, OpenAI)  
 **Chunking:** `MarkdownHeaderTextSplitter` → `RecursiveCharacterTextSplitter` (500-token chunks, 200-char overlap, header breadcrumb prepended)
 
@@ -639,7 +657,7 @@ Structured logging uses Python's standard logging module with a named logger (su
 
 | Surface | Location | Contents |
 |---|---|---|
-| Runtime log | `supply_chain_delivery_app/log/delivery_chat_run_{ts}.log` | Structured key=value events from all app modules; one file per process start |
+| Runtime log | `supply_chain_topology_app/log/delivery_chat_run_{ts}.log` | Structured key=value events from all app modules; one file per process start |
 | Prediction audit | `output/daily_delivery_delay_prediction_meta.json` | Summary stats, severity counts, top regions/weather/partners, formatted text |
 | Diagnosis audit | `output/diagnosis_meta.json` | Truncated diagnosis summary for freshness detection |
 | Simulation output | `output/simulate_delays_latest.csv` | Simulated orders with reassigned severity and `simulate_delay_reason` |
@@ -789,7 +807,7 @@ Required `.env` variables:
 | `SC_PREDICTION_MODEL_DIR` | `prediction_pipeline/models` | Directory containing trained `.pkl` model files |
 | `SC_PREDICTION_DB_PATH` | `prediction_pipeline/db/delivery_predictions.db` | Path to SQLite database (27 tables) |
 | `SC_PREDICTION_SRC_DIR` | `prediction_pipeline` | Root of the prediction pipeline module |
-| `SC_DELIVERY_OUTPUT_DIR` | `supply_chain_delivery_app/output` | Output directory for predictions, simulations, emails, sidecars |
+| `SC_DELIVERY_OUTPUT_DIR` | `supply_chain_topology_app/output` | Output directory for predictions, simulations, emails, sidecars |
 
 **Agent Behaviour Tuning**
 
@@ -811,22 +829,31 @@ Open and run `prediction_pipeline/notebooks/train_predict_delay_model.ipynb` end
 - `prediction_pipeline/models/best_severity_random_forest.pkl` (Stage 2)
 - `prediction_pipeline/db/delivery_predictions.db` (SQLite with 27 tables)
 
-### 19.4. Start the MCP prediction server
+### 19.4. Launch the app
 
 ```bash
-# In a separate terminal, from the project root
-uv run python prediction_pipeline/prediction_server.py
+# from the repository root
+./scripts/execute_chat_app.sh
 ```
 
-This starts the FastMCP server (stdio transport) that exposes `predict`, `diagnose`, and `simulate` as tools to the agent layer.
+Open `http://localhost:7860`.
 
-### 19.5. Launch the app
+**The MCP prediction server does not need starting separately.** `pipeline_mcp` is an
+`MCPStdioTool` (`core/mcp_tools.py`), so the app spawns `prediction_pipeline/prediction_server.py`
+as a stdio subprocess and closes it on exit. Running it by hand in a second terminal
+starts a server nothing is connected to.
+
+**First start is slow** — typically well over a minute. Three things load before Gradio
+binds its port: the RAG cross-encoder, the ChromaDB vector store, and the MCP `initialize`
+handshake (`request_timeout=120`). Wait for Gradio's `Running on local URL:` line; opening
+the browser before it appears gives a "site can't be reached" error that looks like a
+crash but is not one.
+
+To run it directly instead of through the script:
 
 ```bash
-uv run python supply_chain_delivery_app/delivery_chat_app.py
+uv run --env-file .env python supply_chain_topology_app/delivery_chat_app.py
 ```
-
-Open `http://localhost:7860` in your browser.
 
 ---
 ---
@@ -991,7 +1018,7 @@ The three-stage RAG pipeline (`retrieve_sla_context()`) is evaluated using RAGAS
 | **Context Precision** | Were the retrieved SLA chunks relevant to the topic query? | **0.875** | ≥ 0.60 |  **PASS** |
 | **Hallucination Rate** | Derived as **1 − Faithfulness**; fraction of claims not grounded in the retrieved context. | **0.017** | ≤ 0.40 |  **PASS** |
 
-Per-topic breakdown, `evals/reports/eval_report_20260712T172254.md` (6 sampled topics across the 3 recommendation categories):
+Per-topic breakdown, `evals/reports/eval_report_20260719T131820.md` (6 sampled topics across the 3 recommendation categories):
 
 | Category | Dimension | Faithfulness | Relevancy | Context Precision | Hallucination Rate |
 |---|---|---|---|---|---|

@@ -1,0 +1,114 @@
+==================================================================
+ topology : static_graph_routed
+ run_n    : 2
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 15:30:53
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4-mini  query_id=Q2
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 4 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[15:30:54] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > Which of today's orders are predicted to be delayed?
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+  >> router selected: predict
+
+============================================================
+[15:30:56] TURN 1 — master response
+============================================================
+{
+  "proceed": true,
+  "chat_response": "Here's my plan:\n1. Predict delivery delays\nShall I proceed?",
+  "capabilities": "<1 item(s)>"
+}
+
+============================================================
+[15:30:56] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+  >> tool_start predict_delivery_delays_tool (input=242 chars)
+     - predict_delivery_delays_tool agent: 30,957 prompt / 4,969 completion tokens over 3 message(s)
+  << tool_end   predict_delivery_delays_tool done in 31.94s (output=19,319 chars, valid_json=True)
+
+============================================================
+[15:31:30] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[15:31:30] SUMMARY — tools, tokens & cost  [model=gpt-5.4-mini, tool calls=1]
+============================================================
+                        tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+predict_delivery_delays_tool     31.94s         242       19,319       True     30,957          4,969    35,926  $0.0456
+          — Sub-agents TOTAL     31.94s                                None     30,957          4,969    35,926  $0.0456
+          — Master (2 turns)      3.99s                                None      9,860             66     9,926  $0.0077
+               — GRAND TOTAL     35.93s                                None     40,817          5,035    45,852  $0.0533
+
+Persisted run_id: ee917e7f-0a58-446a-a0ef-3b58e137ffe3
+
+============================================================
+[15:31:30] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring ee917e7f  topology=static_graph_routed  model=gpt-5.4-mini
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  predict_summary                  rel=5.0 faith=5.0 safe=5.0
+  predict_row_insights_sample      rel=5.0 faith=5.0 safe=5.0
+  coordinator_narrative            rel=2.0 faith=5.0 safe=5.0
+
+  capability blend:
+    predict              rel=5.00 faith=5.00 safe=5.00   (50% predict_summary / 50% predict_row_insights_sample)
+    coordinator_narrative rel=2.00 faith=5.00 safe=5.00   (100% coordinator_narrative)
+
+  SCOPE-ADJUSTED MEAN 4.33/5   (every implied capability was attempted -- same as judge mean)
+
+  JUDGE WEIGHTED MEAN 4.33/5   (relevance 3.50 x.45, faithfulness 5.00 x.45, safety 5.00 x.10)
+  scored 3 artifact(s) -> 2 capability score(s) -> quality_scores
+
+============================================================
+[15:31:35] RUN VALIDITY
+============================================================
+  topology           : static_graph_routed
+  coordinator prompt : static_graph_routed/coordinator = 41f848fc
+  plan presented     : yes
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 1 / 1
+  missing tools      : []
+  empty results      : none
+  dependency order   : respected — every capability waited for its inputs
+  scheduling         : 100% of achievable overlap  (0 pair(s) left unoverlapped)
+  coordinator idle   : 0.0s spent deciding between waves (not a scheduling fault)
+  span               : 31.94s vs critical path 31.94s
+
+  execution timeline:
+    turn 1 start    0.00
+    turn 1 end      2.13   (plan / no tools yet)
+    turn 2 start    2.13
+    ..... 2.13s model reasoning (no tool running) .....
+    predict         2.13 ->   34.08
+    ..... 1.85s model composing answer .....
+    turn 2 end     35.93
+    run end        35.93
+
+  turn-1 plan text (stored verbatim, T94):
+    | Here's my plan:
+    | 1. Predict delivery delays
+    | Shall I proceed?
+
+  All run-validity checks clean.
+
+finished : 2026-09-06 15:31:36

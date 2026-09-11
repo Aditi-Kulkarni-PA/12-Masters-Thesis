@@ -1,0 +1,121 @@
+==================================================================
+ topology : swarm_constrained_adaptive
+ run_n    : 2
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 15:22:54
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4-mini  query_id=Q5
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 4 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[15:22:55] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > Find out which customer orders will be late and what are the reasons for the delay
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+     - swarm_constrained_adaptive_seed_planning agent: 4,486 prompt / 203 completion tokens over 1 message(s)
+  -- swarm_ca: wave 1 running ['predict'] concurrently (prerequisites met); still waiting on ['diagnose']
+  >> tool_start predict_delivery_delays_tool (input=272 chars)
+     - predict_delivery_delays_tool agent: 63,502 prompt / 9,103 completion tokens over 5 message(s)
+  << tool_end   predict_delivery_delays_tool done in 53.90s (output=18,470 chars, valid_json=True)
+  -- swarm_ca: wave 2 running ['diagnose'] concurrently (prerequisites met); still waiting on nothing
+  >> tool_start diagnose_delay_patterns_tool (input=144 chars)
+  -- swarm_ca: diagnose read_blackboard(predict) -> hit
+     - diagnose_delay_patterns_tool agent: 59,205 prompt / 9,803 completion tokens over 7 message(s)
+  << tool_end   diagnose_delay_patterns_tool done in 41.77s (output=17,210 chars, valid_json=True)
+  swarm_ca: 2 wave(s) run; capabilities that posted a result: ['diagnose', 'predict']
+
+============================================================
+[15:24:34] TURN 1 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[15:24:34] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+
+============================================================
+[15:24:34] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[15:24:34] SUMMARY — tools, tokens & cost  [model=gpt-5.4-mini, tool calls=2]
+============================================================
+                        tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+predict_delivery_delays_tool     53.90s         272       18,470       True     63,502          9,103    72,605  $0.0886
+diagnose_delay_patterns_tool     41.77s         144       17,210       True     59,205          9,803    69,008  $0.0885
+          — Sub-agents TOTAL     95.67s                                None    122,707         18,906   141,613  $0.1771
+       — Orchestration turns                                           None      4,486            203     4,689  $0.0043
+          — Master (2 turns)      2.37s                                None      8,972            406     9,378  $0.0086
+               — GRAND TOTAL     98.04s                                None    136,165         19,515   155,680  $0.1899
+
+Persisted run_id: f93ab908-6357-430f-abaa-f6ad686280b5
+
+============================================================
+[15:24:34] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring f93ab908  topology=swarm_constrained_adaptive  model=gpt-5.4-mini
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  predict_summary                  rel=5.0 faith=5.0 safe=5.0
+  predict_row_insights_sample      rel=5.0 faith=5.0 safe=5.0
+  diagnose_delay_patterns_tool     rel=5.0 faith=5.0 safe=5.0
+
+  capability blend:
+    predict              rel=5.00 faith=5.00 safe=5.00   (50% predict_summary / 50% predict_row_insights_sample)
+    diagnose             rel=4.00 faith=4.00 safe=4.00   (80% diagnose_delay_patterns_tool / 20% diagnose_delay_patterns_tool_raw)
+
+  SCOPE-ADJUSTED MEAN 4.50/5   (every implied capability was attempted -- same as judge mean)
+
+  JUDGE WEIGHTED MEAN 4.50/5   (relevance 4.50 x.45, faithfulness 4.50 x.45, safety 4.50 x.10)
+  scored 3 artifact(s) -> 2 capability score(s) -> quality_scores
+
+============================================================
+[15:24:39] RUN VALIDITY
+============================================================
+  topology           : swarm_constrained_adaptive
+  coordinator prompt : swarm_constrained_adaptive/master = ac79b46d
+  plan presented     : NO
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 2 / 2
+  missing tools      : []
+  empty results      : none
+  dependency order   : respected — every capability waited for its inputs
+  scheduling         : 100% of achievable overlap  (0 pair(s) left unoverlapped)
+  coordinator idle   : 0.0s spent deciding between waves (not a scheduling fault)
+  span               : 95.67s vs critical path 95.67s
+
+  execution timeline:
+    turn 1 start    0.00
+    ..... 2.37s model reasoning (no tool running) .....
+    predict         2.37 ->   56.27
+    diagnose       56.27 ->   98.04
+    turn 1 end     98.04
+    turn 2 start   98.04
+    turn 2 end     98.04   (no tools this turn)
+    run end        98.04
+  turn-1 plan text   : (none stored — no plan was produced)
+
+  ATTENTION:
+    - no plan was presented on turn 1 — the 2-turn plan/confirm flow did not engage; plan_presented is a measured comparison field.
+
+finished : 2026-09-06 15:24:39

@@ -1,0 +1,49 @@
+{
+  "created_at": "2026-09-11T10:39:22+00:00",
+  "models": {
+    "MODEL": "gpt-5.4",
+    "MODEL_MINI": "gpt-5.4"
+  },
+  "env": {
+    "OPENAI_MODEL": "gpt-5.4",
+    "OPENAI_MODEL_MINI": "gpt-5.4",
+    "SC_DEV_PATH_FALLBACK": "1"
+  },
+  "targets": {
+    "rag_corpus": {
+      "present": true,
+      "sha256": "d48c42b088b3f78fcf42976f30a07370ffdcd4b89acb0b46f9ec4e5eb7c50bf5",
+      "files": 1,
+      "bytes": 46560,
+      "unreadable": []
+    },
+    "rag_index": {
+      "present": true,
+      "sha256": "2e8854958746359f4b3b4ab5d8dccd4e930262716d60ee1fda7dd56375c9f597",
+      "files": 6,
+      "bytes": 1906868,
+      "unreadable": []
+    },
+    "prompts": {
+      "present": true,
+      "sha256": "2586646eec0f5f48d79654236350da7ae26fdab0c3894eec382af8bf730f219e",
+      "files": 73,
+      "bytes": 243008,
+      "unreadable": []
+    },
+    "query_set": {
+      "present": true,
+      "sha256": "dadf6eff4df9213a4818bed38f6dd4106b812a0b830369aed79c1051ada8a6e7",
+      "files": 1,
+      "bytes": 9419,
+      "unreadable": []
+    },
+    "prediction_models": {
+      "present": true,
+      "sha256": "9f573f20ffe2c288066cd81c9b046b5e514132e62df938496b938abf27157f43",
+      "files": 4,
+      "bytes": 16233471,
+      "unreadable": []
+    }
+  }
+}

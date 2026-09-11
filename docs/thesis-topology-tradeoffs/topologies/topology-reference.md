@@ -24,6 +24,11 @@ What varies is the coordination policy alone. Any instruction a condition needs 
 to implement its own coordination is documented and reviewed, and generation-parameter
 parity is checked before every batch.
 
+`core/agents.py` and `core/clients.py` are factory functions, not one-off construction —
+how they came to be shared across nine independent topology modules, replacing a single
+hardcoded master, is in
+[architecture/topology-modularization.md](../architecture/topology-modularization.md).
+
 ---
 
 ## 2. The five capabilities and their true dependencies
@@ -46,17 +51,18 @@ to judge dependency order in every condition (`measurement/dependencies.py`).
 
 Listed in the order used in every report and table.
 
-| # | Condition | Who decides what runs | Who decides when it runs | Module |
-|---|---|---|---|---|
-| 1 | **Monolith** | one agent, implicitly | the same agent, in one context | `monolith.py` |
-| 2 | **Sequential** | a planner, once | the plan, rigidly; one tool per turn | `sequential.py` |
-| 3 | **Planner-Executor** | a planner produces a task list | an executor follows it | `planner_executor.py` |
-| 4 | **Static Graph DAG** | fixed in code | graph levels, in code | `static_graph_dag.py` |
-| 5 | **Static Graph Routed** | an intent router selects a subset | the same fixed graph | `static_graph_routed.py` |
-| 6 | **Dynamic Graph** | a manager model, re-planned each turn | the same manager's ledger | `dynamic_graph.py` |
-| 7 | **Mesh** | each capability, for its own peers | each peer, on receipt | `mesh.py` |
-| 8 | **Swarm** | a seed plan, then each specialist | each specialist, via `request_specialist` | `swarm.py` |
-| 9 | **Swarm Constrained Adaptive** | a seed plan names the full set | **code**, against the dependency table | `swarm_constrained_adaptive.py` |
+|  # | Condition                      | Who/what decides execution?                                    | Scope of execution                                                                   | Execution order                                 | Context handling                                                                                                                                                | Module                          |
+| -: | ------------------------------ | -------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+|  1 | **Monolith**                   | Single agent                                                   | Agent implicitly determines required capabilities (tools)                            | Single agent context                            | All reasoning, tool calls, and results remain in one continuous agent context                                                                                   | `monolith.py`                   |
+|  2 | **Sequential**                 | Planner                                                        | Planner determines the complete task sequence                                        | Fixed sequence — one tool per turn              | Each agent receives the relevant output/context from the preceding agent                                                                                        | `sequential.py`                 |
+|  3 | **Planner–Executor**           | Planner                                                        | Planner produces a task list for the executor, handling concurrency and dependencies | Executor follows planned order                  | Planner context is converted into executor tasks; execution results are accumulated through the execution flow                                                  | `planner_executor.py`           |
+|  4 | **Static Graph DAG**           | Code-defined graph                                             | All nodes in the fixed graph, each time                                              | Dependency levels and graph-defined parallelism | Context is passed explicitly along graph edges; each node receives its upstream inputs rather than a continuously shared conversation                           | `static_graph_dag.py`           |
+|  5 | **Static Graph Routed**        | Intent router                                                  | Router selects relevant paths in the fixed graph                                     | Graph-defined order for selected paths          | Context follows the selected graph paths; each node receives the inputs/results supplied by its upstream nodes                                                  | `static_graph_routed.py`        |
+|  6 | **Dynamic Graph**              | Manager                                                        | Manager selects the next capability at runtime, one at each step                     | Re-decided after each step                      | Manager reconstructs a ledger/context for each turn; accumulated ledger is included in subsequent manager prompts                                               | `dynamic_graph.py`              |
+|  7 | **Mesh**                       | Peer agents                                                    | Each agent decides whether and where to hand off                                     | Peer-to-peer, on receipt                        | Accumulated peer results are threaded into the context passed to subsequent peer tasks                                                                          | `mesh.py`                       |
+|  8 | **Swarm**                      | Seed plan + participating specialists                          | Specialists dynamically execute assigned capabilities                                | Decided by participating specialists            | Each specialist receives its assigned task/context; task context is established when the task is created rather than through a continuously shared conversation | `swarm.py`                      |
+|  9 | **Swarm Constrained Adaptive** | Seed plan + participating specialists + dependency rule checks | Seed plan identifies required capabilities; code enforces dependencies               | Adaptive within dependency constraints          | Each specialist receives its assigned task/context; context is passed through the shared task state as execution progresses                                     | `swarm_constrained_adaptive.py` |
+
 
 ### The two controlled contrasts
 
@@ -67,8 +73,7 @@ Two pairs differ in exactly one variable, which is what makes them interpretable
 | Static Graph DAG vs Static Graph Routed | intent gating — same graph, with and without a router |
 | Swarm vs Swarm Constrained Adaptive | code-enforced timing — same agents, blackboard and tools; only *when* a ready capability starts differs |
 
-These two comparisons carry more weight than the nine-way ranking, because in each case a
-single design variable changes and everything else is identical.
+Because only one design variable changes within each pair, differences in outcomes can be attributed more directly to that variable, whereas comparisons across all nine conditions involve multiple mechanisms changing simultaneously..
 
 ---
 
@@ -108,6 +113,11 @@ The mechanics that only became visible from building and running these condition
 context passing, framework behaviours confirmed from source, turn handling — are in
 [how-they-actually-work.md](how-they-actually-work.md). Read it before interpreting any
 per-condition measure.
+
+The "Domain prompt text" and "Output contract" rows in §1 name the files; how those files
+actually reach all nine conditions — the `@include` mechanism, the full partial diff per
+topology, and the two controlled contrasts confirmed at the prompt level, not just in
+code — is in [prompt-modularization.md](prompt-modularization.md).
 
 ## 7. Per-condition detail
 

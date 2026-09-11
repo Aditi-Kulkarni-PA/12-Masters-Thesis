@@ -1,0 +1,145 @@
+==================================================================
+ topology : monolith
+ run_n    : 3
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 19:10:36
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4  query_id=Q4
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 5 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[19:10:38] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > What will be the delivery impact if there is a storm in the east today?
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+  >> tool_start simulate_order_delays (input=70 chars)
+  << tool_end   simulate_order_delays done in 0.00s (output=246 chars, valid_json=True)
+  >> tool_start predict_delivery_delays (input=142 chars)
+  << tool_end   predict_delivery_delays done in 0.84s (output=70,498 chars, valid_json=True)
+  >> tool_start simulate_order_delays (input=70 chars)
+  << tool_end   simulate_order_delays done in 0.03s (output=12,249 chars, valid_json=False)
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+  .. still writing (25s since the last tool call)
+
+============================================================
+[19:11:15] TURN 1 — master response
+============================================================
+{
+  "total_orders_emailed": 0,
+  "template_breakdown": "",
+  "chat_response": "",
+  "simulate_summary": "A **stormy** scenario in the **east** materially worsens delay severity. The biggest impact is a sharp shift away from **Short (1-2h)** delays toward ... [362 characters]",
+  "recommendation_summary": "",
+  "email_alert_summary": "",
+  "predict_summary": "",
+  "delayed_orders": "<0 item(s)>",
+  "diagnosis_summary": "",
+  "high_risk_patterns": "<0 item(s)>",
+  "comparison": "<0 item(s)>",
+  "simulations": "<40 item(s)>",
+  "recommended_actions": "<0 item(s)>",
+  "content": "<0 item(s)>"
+}
+
+============================================================
+[19:11:15] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+
+============================================================
+[19:11:18] TURN 2 — master response
+============================================================
+{
+  "total_orders_emailed": 0,
+  "template_breakdown": "",
+  "chat_response": "The storm-impact simulation for the east has already been completed. Key impact: east-region delayed orders shift sharply from mostly **Short (1-2h)**... [354 characters]",
+  "simulate_summary": "",
+  "recommendation_summary": "",
+  "email_alert_summary": "",
+  "predict_summary": "",
+  "delayed_orders": "<0 item(s)>",
+  "diagnosis_summary": "",
+  "high_risk_patterns": "<0 item(s)>",
+  "comparison": "<0 item(s)>",
+  "simulations": "<0 item(s)>",
+  "recommended_actions": "<0 item(s)>",
+  "content": "<0 item(s)>"
+}
+
+============================================================
+[19:11:18] SUMMARY — tools, tokens & cost  [model=gpt-5.4, tool calls=3]
+============================================================
+                   tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+  simulate_order_delays      0.00s          70          246       True          0              0         0  $0.0000
+predict_delivery_delays      0.84s         142       70,498       True          0              0         0  $0.0000
+  simulate_order_delays      0.03s          70       12,249      False          0              0         0  $0.0000
+     — Sub-agents TOTAL      0.87s                                None          0              0         0  $0.0000
+     — Master (2 turns)     35.86s                                None    159,624          5,419   165,043  $0.4803
+          — GRAND TOTAL     40.19s                                None    159,624          5,419   165,043  $0.4803
+
+Persisted run_id: 44f3bb05-2fdd-4508-98e7-9fbf516cd1bc
+
+============================================================
+[19:11:18] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring 44f3bb05  topology=monolith  model=gpt-5.4
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  simulate_row_reasons_sample      rel=5.0 faith=5.0 safe=5.0
+  simulate_narrative               rel=5.0 faith=5.0 safe=5.0
+  coordinator_narrative            rel=5.0 faith=5.0 safe=5.0
+
+  capability blend:
+    simulate             rel=5.00 faith=5.00 safe=5.00   (20% simulate_narrative / 80% simulate_row_reasons_sample)
+    coordinator_narrative rel=5.00 faith=5.00 safe=5.00   (100% coordinator_narrative)
+
+  SCOPE-ADJUSTED MEAN 3.33/5   (zero-filled, implied but never attempted: predict)
+
+  JUDGE WEIGHTED MEAN 5.00/5   (relevance 5.00 x.45, faithfulness 5.00 x.45, safety 5.00 x.10)
+  scored 3 artifact(s) -> 2 capability score(s) -> quality_scores
+
+============================================================
+[19:11:23] RUN VALIDITY
+============================================================
+  topology           : monolith
+  coordinator prompt : monolith/master = b89e77c6
+  plan presented     : NO
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 2 / 3
+  missing tools      : []
+  empty results      : none
+  dependency order   : 1 VIOLATION(S)
+    ! delay_simulations_tool started at 2.04s, before predict_delivery_delays_tool finished at 4.40s
+  scheduling         : 97% of achievable overlap  (0 pair(s) left unoverlapped)
+  coordinator idle   : 3.46s spent deciding between waves (not a scheduling fault)
+  span               : 4.33s vs critical path 0.84s
+
+  execution timeline:
+    turn 1 start    0.00
+    ..... 2.04s model reasoning (no tool running) .....
+    simulate        2.04 ->    2.04
+    ....... 1.51s idle .......
+    predict         3.56 ->    4.40
+    ....... 1.95s idle .......
+    simulate        6.34 ->    6.38
+    ..... 30.73s model composing answer .....
+    turn 1 end     37.10
+    turn 2 start   37.10
+    turn 2 end     40.19   (no tools this turn)
+    run end        40.19
+  turn-1 plan text   : (none stored — no plan was produced)
+
+  ATTENTION:
+    - no plan was presented on turn 1 — the 2-turn plan/confirm flow did not engage; plan_presented is a measured comparison field.
+    - dependency order violated (1): a capability acted before the work it consumes had finished. Recoverable via upstream_missing, but it is the orchestration quality being measured — see run.dependency_violations_json.
+
+finished : 2026-09-06 19:11:23

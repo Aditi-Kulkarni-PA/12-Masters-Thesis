@@ -51,11 +51,35 @@ def _conn():
     return c
 
 
-def _agg(scope="workload"):
-    """agg_topology keyed by (model, topology, measure) for one scope."""
+def _agg(scope="workload", run_phase=None):
+    """agg_topology keyed by (model, topology, measure) for one scope.
+
+    agg_topology is keyed by experiment, and one model can appear in more than one
+    experiment -- the pilot at a tier and the main experiment at that same frozen tier.
+    Keying on the model alone would then map two rows to one key and keep whichever the
+    cursor returned last, silently reporting one campaign's figure under the other's.
+
+    *run_phase* selects which campaign to read. A collision that survives the filter
+    raises rather than resolving itself arbitrarily.
+    """
+    sql = "SELECT * FROM agg_topology WHERE scope=?"
+    params = [scope]
+    if run_phase:
+        sql += " AND run_phase=?"
+        params.append(run_phase)
+
+    out, seen = {}, {}
     with _conn() as c:
-        return {(r["model"], r["topology"], r["measure"]): dict(r)
-                for r in c.execute("SELECT * FROM agg_topology WHERE scope=?", (scope,))}
+        for r in c.execute(sql, params):
+            key = (r["model"], r["topology"], r["measure"])
+            if key in out and seen[key] != r["experiment_no"]:
+                raise ValueError(
+                    f"{key} appears in experiments {seen[key]} and {r['experiment_no']}. "
+                    f"Pass run_phase= to say which campaign this figure is for."
+                )
+            out[key] = dict(r)
+            seen[key] = r["experiment_no"]
+    return out
 
 
 def value(agg, model, topology, measure):
@@ -64,15 +88,22 @@ def value(agg, model, topology, measure):
     return None if row is None else row.get(FIELD[measure])
 
 
-def headline(model):
+def headline(model, run_phase=None):
     """Per-tier totals across every live run, workload and out-of-scope together.
 
     Excluded runs are left out, matching aggregate.py's own load_runs() filter, so a
     harness-abort row cannot depress a completion rate it never participated in.
+
+    *run_phase* restricts the count to one campaign. Without it a tier that was run in
+    both the pilot and the main experiment totals both together.
     """
+    sql = "SELECT * FROM run WHERE model=? AND excluded_reason IS NULL"
+    params = [model]
+    if run_phase:
+        sql += " AND run_phase=?"
+        params.append(run_phase)
     with _conn() as c:
-        rows = [dict(r) for r in c.execute(
-            "SELECT * FROM run WHERE model=? AND excluded_reason IS NULL", (model,))]
+        rows = [dict(r) for r in c.execute(sql, params)]
     n = len(rows)
     split = {s: sum(1 for r in rows if r["run_status"] == s)
              for s in ("success", "partial", "failed", "no_execution")}

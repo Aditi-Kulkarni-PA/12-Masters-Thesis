@@ -12,7 +12,7 @@ what would be lost if it were skipped.
 
 ```
                     ┌──────────────────────────────────────────────┐
-                    │  run_experiment.py                           │
+                    │  execute_experiment.py                           │
   batch plan  ───▶  │  plans topology x query x repetition,        │
                     │  shuffles, and invokes one child per run     │
                     └───────────────────┬──────────────────────────┘
@@ -62,7 +62,7 @@ what would be lost if it were skipped.
 
 | # | Stage | Reads | Writes | Skipping it costs |
 |---|---|---|---|---|
-| 1 | `run_experiment.py` | frozen query set, topology registry | one child process per run; a console log per run under `log/batches/<batch>/` | no batch identity, no execution order, no randomised order |
+| 1 | `execute_experiment.py` | frozen query set, topology registry | one child process per run; a console log per run under `log/batches/<batch>/` | no batch identity, no execution order, no randomised order |
 | 2 | `execute_topology.py` | `SC_*` environment, prompts, tools | `RunRecorder` in memory; a trace under `log/batches/<batch>/traces/` | nothing runs |
 | 3 | `run_store_writer.write_run()` | `RunRecorder`, `query_metadata` | `run` + `tool_call` rows | no measurement exists at all |
 | 4 | `score_topology_run.score_run()` | `run.all_turns_json`, `tool_call.output_text` | `quality_scores` row | no quality measure; every other measure survives |

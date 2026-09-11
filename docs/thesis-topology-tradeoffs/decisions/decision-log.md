@@ -10,65 +10,68 @@ reasoning rather than guess at it.
 
 ## 1. Research design
 
-| # | Decision | Alternative rejected | Reasoning |
-|---|---|---|---|
-| D1 | Topology is the manipulated variable; model is controlled and frozen | vary both | a three-way interaction between model, topology and complexity cannot be interpreted at this sample size |
-| D2 | Tier chosen on **measurability**, not absolute performance | choose the best-performing tier | a tier where some conditions cannot execute the harder queries removes conditions from the comparison rather than ranking them |
-| D3 | Nine conditions including two controlled pairs | a broader set of loosely related designs | the DAG/Routed and Swarm/Swarm-CA pairs isolate one design variable each, which no nine-way ranking can |
-| D4 | Complexity assigned a priori from capability structure | derive bins from observed difficulty | deriving bins from results would make the complexity finding circular |
-| D5 | One out-of-scope probe, reported in its own scope | fold it into the workload | declining is the *correct* outcome there; pooling it would penalise correct restraint |
-| D6 | Q8 deliberately ambiguous | make every query unambiguous | ambiguity handling is an operational capability worth measuring |
+| Decision                                       | Choice                                               | Why                                                                                                                                             |
+| ---------------------------------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **D1. What is varied?**                        | **Topology is varied; model is kept fixed.**         | Changing both would make it difficult to separate the effects of model and topology.                                                            |
+| **D2. Which model tier?**                      | **Choose a tier based on measurability.**            | If a tier cannot complete some queries in some conditions, those conditions cannot be compared fairly.                                          |
+| **D3. Which conditions?**                      | **Nine conditions, including two controlled pairs.** | The two pairs allow specific aspects of orchestration to be compared separately.                                                                |
+| **D4. How is complexity defined?**             | **Set complexity before running the experiment.**    | Defining complexity from the results could bias the analysis.                                                                                   |
+| **D5. How is the out-of-scope query handled?** | **Keep it separate from the main workload.**         | The correct response is to decline the request. Including it in the main workload could unfairly penalise a topology for doing the right thing. |
+| **D6. Why include an ambiguous query?**        | **Keep Q8 deliberately ambiguous.**                  | Handling ambiguity is itself a useful operational behaviour to measure.                                                                         |
+| **D25. Is RAG retrieval quality re-evaluated in this thesis?** | **No. RAG is a fixed, already-validated component; it is not re-tested.** | RAG is carried over unchanged from the capstone project, where it was already evaluated with high scores. It is not the subject of this study — topology is what varies, not retrieval (D1). The same corpus and index feed every topology, in both the pilot and the main experiment, so any RAG-attributable ceiling on quality applies uniformly across conditions rather than confounding the topology comparison. Substrate stability is enforced by checksumming the corpus and index as part of the config freeze (T53), not by re-running a retrieval evaluation. A backup copy of the corpus is kept in case of corruption. |
+
 
 ---
 
 ## 2. Measurement
 
-| # | Decision | Alternative rejected | Reasoning |
-|---|---|---|---|
-| D7 | A required capability returning an empty payload counts as **incomplete** | count any finished run as complete | a tool that finds no data returns an empty list rather than raising; without this rule a coordinator narrating results with nothing behind it scored a clean success |
-| D8 | Extra capabilities ignored by completion | penalise over-execution in completion | over-execution is a different failure, measured by capability precision |
-| D9 | A missing part of an **attempted** capability scores zero | renormalise over what is present | renormalising would score a run 5.0 for work it was told to do and skipped |
-| D10 | An artifact a condition **cannot** produce is excluded and the weight renormalised | score it zero | zero is right when a coordinator was told to write something and did not; wrong when no coordinator exists to write it |
-| D11 | Scope-adjusted quality inserts zero for an unattempted required capability | average only what ran | otherwise a condition that skipped work would outscore one that attempted it imperfectly |
-| D12 | Cost reported from provider billing | use the pipeline estimate | cached prompt tokens were priced at the fresh rate, making the estimate wrong in both directions |
-| D13 | Timing derived from tool offsets only, never wall clock | mix the two | they are captured differently; mixing them produced spurious violations |
-| D14 | `run_status` and `behaviour_class` kept orthogonal | one combined status | they answer different questions and co-occur; an ungrounded answer can accompany partial execution |
+| Decision                                                         | Choice                                                               | Why                                                                                                                                           |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **D7. What counts as incomplete?**                               | **An empty result from a required capability counts as incomplete.** | A capability can finish without finding any data. Without this rule, a run could be marked successful even when it produced no useful result. |
+| **D8. How is extra work treated?**                               | **Extra capabilities do not affect completion.**                     | Running an unnecessary capability is measured separately as **capability precision**.                                                         |
+| **D9. What if an attempted capability is only partly complete?** | **The missing part scores zero.**                                    | Otherwise, a run could receive a high score despite skipping part of the required work.                                                       |
+| **D10. What if an artifact cannot be produced by a condition?**  | **Exclude it from the score and adjust the weights.**                | A condition should not be penalised for an output it cannot produce by design.                                                                |
+| **D11. What if a required capability was not attempted?**        | **Give it zero in the scope-adjusted quality score.**                | Otherwise, skipping required work could produce a better score than attempting it and doing it imperfectly.                                   |
+| **D12. How is cost calculated?**                                 | **Use the provider's reported billing cost.**                        | The pipeline estimate did not always price cached tokens correctly.                                                                           |
+| **D13. How is timing measured?**                                 | **Use tool-call timing data separately from wall-clock time.**       | They measure different things. Mixing them can create incorrect dependency or timing results.                                                 |
+| **D14. How are run outcomes classified?**                        | **Keep `run_status` and `behaviour_class` separate.**                | They answer different questions: whether the run completed, and what kind of behaviour occurred.                                              |
 
 ---
 
 ## 3. Implementation
 
-| # | Decision | Alternative rejected | Reasoning |
-|---|---|---|---|
-| D15 | Each topology is an independent module over shared capabilities | one parameterised orchestrator | a parameterised orchestrator would encode the comparison's conclusion in its own structure |
-| D16 | Swarm and Swarm-CA recorded as **two topologies**, not one design iterated | patch Swarm and report one condition | plain Swarm's free-text failures are themselves the finding for that condition |
-| D17 | Monolith attaches raw tools | wrap its tools as sub-agents for attribution | wrapping would make it a near-Planner-Executor and destroy the single-agent baseline |
-| D18 | Dependency gating in Swarm-CA reads the same table used to *judge* every condition | give Swarm-CA its own table | using one table means the gate and the judgement cannot diverge |
-| D19 | Scheduling values computed once, in a shared function | compute in both the write path and the backfill | two implementations of the same arithmetic drift |
-| D20 | Generation-parameter parity asserted before every batch | trust the literals | `temperature` is written at 23 sites and `config_hash` does not cover it |
-| D21 | Invalid designed runs excluded, not deleted | delete them | deletion destroys the audit trail and hides real spend |
-| D22 | Per-run artefacts share a filename stem | timestamped names | a timestamp cannot be tied to a run without querying the store, and nearly caused real evidence to be deleted |
+| Decision                                                   | Choice                                                                                                    | Why                                                                                                                                                                         |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **D15. How are topologies implemented?**                   | **Each topology is a separate module using the same shared capabilities.**                                | A single configurable orchestrator could unintentionally build the comparison into the implementation.                                                                      |
+| **D16. How are Swarm and Swarm-CA treated?**               | **As two separate topologies.**                                                                           | The differences in their behaviour are part of what the study measures.                                                                                                     |
+| **D17. How is Monolith implemented?**                      | **It uses the raw tools directly.**                                                                       | Wrapping the tools as sub-agents would make it closer to Planner-Executor and weaken the single-agent baseline.                                                             |
+| **D18. How is dependency gating implemented in Swarm-CA?** | **It uses the same dependency table used to evaluate all conditions.**                                    | This keeps the dependency rules consistent between execution and evaluation.                                                                                                |
+| **D19. Where are scheduling values calculated?**           | **Once in a shared function.**                                                                            | This avoids having different versions of the same calculation.                                                                                                              |
+| **D20. How is model configuration kept consistent?**       | **Configuration parity is checked before each batch.**                                                    | Some settings, such as `temperature`, appear in multiple places and could otherwise differ between conditions.                                                              |
+| **D21. How are invalid runs handled?**                     | **Excluded from analysis but retained in the records.**                                                   | The audit trail and evidence of actual spend must be preserved.                                                                                                             |
+| **D22. How are run artefacts named?**                      | **Each run uses a shared filename stem.**                                                                 | This makes artefacts traceable to the run without relying on timestamps.                                                                                                    |
+| **D23. How are shared components created?**                | **Client, MCP configuration and domain-agent construction are created through shared factory functions.** | This reduces the risk of different topology modules using different configurations.                                                                                         |
+| **D24. How is the second turn handled?**                   | **Each query uses the same predefined clarification.**                                                    | This keeps the clarification identical across topologies and model tiers. A declined first turn is retried once so it receives the same two-turn interaction as other runs. |
 
 ---
 
 ## 4. Abandoned designs
 
-| Design | Why abandoned |
-|---|---|
-| LLM-generated topology source (`swarm_codegen.py`) | built, never wired in, deleted unused — the controller assembling agents directly is simpler and inspectable |
-| Free-text capability resolution in Swarm | a resolver mapping free text onto a fixed target set is a routing table, which is Mesh's distinguishing feature, not Swarm's |
-| Keyword-based behaviour classifier | rewritten three times, relabelled real runs each pass; replaced with an LLM judge and an explicit rationale field |
-| Uniform cost-correction factor | the pricing bias differs in direction by tier, so no single factor applies |
+| Design                                               | Why it was abandoned                                                                                                                           |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **LLM-generated topology code** (`swarm_codegen.py`) | It was built but never used. The simpler approach is for the controller to create the agents directly.                                         |
+| **Free-text capability selection in Swarm**          | It would require mapping model-generated text to a fixed set of capabilities, making it similar to the routing used in Mesh.                   |
+| **Keyword-based behaviour classifier**               | It was rewritten several times and changed the classification of real runs. It was replaced with an LLM judge and an explicit rationale field. |
+| **Single cost-correction factor**                    | The pricing error differs by model tier, so one correction factor cannot be applied reliably.                                                  |
 
 ---
 
 ## 5. Decisions still open
 
-| Question | Blocking |
-|---|---|
-| Whether an empty-but-valid payload should count against completion at N ≥ 3 | definition is settled and applied consistently; revisit only if it changes a conclusion |
-| Whether to re-read billed cost before quoting any final figure | yes — the current billed figure predates the last re-runs |
-| Whether `behaviour_class` labels are written to the store before the write-up | the wrongful-decline distinction is load-bearing in the tier argument |
+| Question                                                                | Current position                                                                                                                  |
+| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| **Should billed cost be checked again before reporting final figures?** | **Yes.** The current billed figures are from before the latest re-runs.                                                           |
+| **Should `behaviour_class` be saved before the final write-up?**        | **Yes.** Populated on 0 of 297 rows in the current store. The distinction between different types of decline is important for the model-tier analysis. |
 
 ---
 

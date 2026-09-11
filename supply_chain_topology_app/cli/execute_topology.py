@@ -347,9 +347,32 @@ async def main():
             f"--env-file) overrode it. Remove SC_NO_CACHE from .env — the script owns it. "
             f"Continuing would produce a run whose cache state does not match its label."
         )
+    # SC_EXPERIMENT_NO is set by execute_experiment.py, which resolved it from the run phase
+    # and model it was given. Here it is checked against the phase and model THIS process
+    # actually sees, so a value left exported in an interactive shell cannot file an
+    # ad-hoc run under a measured campaign. An unset variable is the normal case for a
+    # manual run and passes.
+    _exp = os.getenv("SC_EXPERIMENT_NO", "").strip()
+    if _exp:
+        from measurement.run_store_schema import experiment_def, UnknownExperimentError
+        try:
+            _exp_phase, _exp_model = experiment_def(int(_exp))
+        except (ValueError, UnknownExperimentError) as exc:
+            raise SystemExit(f"ABORT: SC_EXPERIMENT_NO={_exp!r} is not usable.\n{exc}")
+        _seen_phase = os.getenv("SC_RUN_PHASE") or None
+        if (_exp_phase, _exp_model) != (_seen_phase, MODEL):
+            raise SystemExit(
+                f"ABORT: SC_EXPERIMENT_NO={_exp} is defined as "
+                f"(run_phase={_exp_phase!r}, model={_exp_model!r}) but this process has "
+                f"(run_phase={_seen_phase!r}, model={MODEL!r}). Unset SC_EXPERIMENT_NO for "
+                f"an ad-hoc run, or fix .env / --run-phase so the two agree. Continuing "
+                f"would write a run into a campaign it does not belong to."
+            )
+
     print(f"  effective config   : SC_NO_CACHE={int(_no_cache)}  "
           f"SC_DEV_PATH_FALLBACK={os.getenv('SC_DEV_PATH_FALLBACK', '<unset>')}  "
-          f"model={MODEL}  query_id={query_id}")
+          f"model={MODEL}  query_id={query_id}  "
+          f"experiment={_exp or '<ad-hoc>'}")
 
     # Before anything is timed -- see the function's docstring for why this is not
     # left to happen on its own inside turn 1.
@@ -556,14 +579,23 @@ async def main():
         recorder=recorder,
         responses=responses,
         prompt_versions=prompt_versions,
-        log_path=str(_LOG_PATH),
+        # Stored relative to supply_chain_topology_app/, not absolute. An absolute path
+        # records the machine that produced the run rather than where the trace lives in
+        # the repo, so it stops resolving the moment the repo is cloned, moved, or read
+        # from a different environment than the one that wrote it.
+        log_path=str(_LOG_PATH.relative_to(_APP_DIR)),
         run_t0=run_t0,
         query_id=query_id,
         topology=_SPEC.name,
         run_n=_run_n,
         model=MODEL,
         run_phase=os.getenv("SC_RUN_PHASE"),
-        # Set only by run_experiment.py; both None for a manual execute_topology.sh call.
+        # Set only by execute_experiment.py, which resolves it from (run_phase, model)
+        # against the experiment table. A manual execute_topology.sh call leaves it
+        # NULL: an ad-hoc run belongs to no campaign, and NULL states that rather than
+        # guessing a number, which would put a smoke test into a measured denominator.
+        experiment_no=(int(_e) if (_e := os.getenv("SC_EXPERIMENT_NO", "").strip()) else None),
+        # Set only by execute_experiment.py; both None for a manual execute_topology.sh call.
         batch_id=os.getenv("SC_BATCH_ID") or None,
         execution_order=(int(os.getenv("SC_EXECUTION_ORDER"))
                          if os.getenv("SC_EXECUTION_ORDER", "").strip() else None),
@@ -588,6 +620,7 @@ async def main():
             "OPENAI_MODEL_MINI": os.getenv("OPENAI_MODEL_MINI"),
             "SC_MCP_ENRICH_ROWS": os.getenv("SC_MCP_ENRICH_ROWS"),
             "SC_RUN_PHASE": os.getenv("SC_RUN_PHASE"),
+            "SC_EXPERIMENT_NO": os.getenv("SC_EXPERIMENT_NO"),
         },
         turn_times=turn_times,
     )

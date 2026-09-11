@@ -1,0 +1,148 @@
+==================================================================
+ topology : planner_executor
+ run_n    : 3
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 19:28:17
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4  query_id=Q9
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 4 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[19:28:18] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > What patterns are driving today's delays, what should we do about it, and let affected customers know
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+
+============================================================
+[19:28:20] TURN 1 — master response
+============================================================
+{
+  "chat_response": "Here's my plan:\n1. Predict delivery delays\n2. Diagnose delay patterns\n3. Generate optimization recommendations\n4. Generate customer email alerts\nShall I proceed?",
+  "simulate_summary": "",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[19:28:20] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+  >> tool_start predict_delivery_delays_tool (input=290 chars)
+     - predict_delivery_delays_tool agent: 30,968 prompt / 4,738 completion tokens over 3 message(s)
+  << tool_end   predict_delivery_delays_tool done in 38.68s (output=18,649 chars, valid_json=True)
+  >> tool_start diagnose_delay_patterns_tool (input=308 chars)
+     - diagnose_delay_patterns_tool agent: 18,948 prompt / 5,075 completion tokens over 3 message(s)
+  << tool_end   diagnose_delay_patterns_tool done in 24.83s (output=17,749 chars, valid_json=True)
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+  >> tool_start recommendation_tool (input=4,453 chars)
+     - recommendation_tool agent: 13,259 prompt / 4,504 completion tokens over 3 message(s)
+  << tool_end   recommendation_tool done in 43.85s (output=13,675 chars, valid_json=True)
+  >> tool_start email_alert_tool (input=293 chars)
+     - email_alert_tool agent: 3,515 prompt / 578 completion tokens over 3 message(s)
+  << tool_end   email_alert_tool done in 5.59s (output=2,446 chars, valid_json=True)
+
+============================================================
+[19:30:31] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "",
+  "recommendation_summary": "Today's delays are being driven primarily by structurally weak **express** lanes, especially when combined with **foggy**, **rainy**, or **stormy** we... [459 characters]",
+  "email_alert_summary": "Emails generated for **10** delayed orders (**Long** 3 / **Medium** 1 / **Short** 6); **3** rendered samples returned."
+}
+
+============================================================
+[19:30:31] SUMMARY — tools, tokens & cost  [model=gpt-5.4, tool calls=4]
+============================================================
+                        tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+predict_delivery_delays_tool     38.68s         290       18,649       True     30,968          4,738    35,706  $0.1485
+diagnose_delay_patterns_tool     24.83s         308       17,749       True     18,948          5,075    24,023  $0.1235
+         recommendation_tool     43.85s       4,453       13,675       True     13,259          4,504    17,763  $0.1007
+            email_alert_tool      5.59s         293        2,446       True      3,515            578     4,093  $0.0175
+          — Sub-agents TOTAL    112.95s                                None     66,690         14,895    81,585  $0.3901
+          — Master (2 turns)      6.92s                                None     78,638          1,893    80,531  $0.2250
+               — GRAND TOTAL    132.71s                                None    145,328         16,788   162,116  $0.6151
+
+Persisted run_id: 2baae95a-3115-4346-a354-92d397dfcc4e
+
+============================================================
+[19:30:31] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring 2baae95a  topology=planner_executor  model=gpt-5.4
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  predict_summary                  rel=5.0 faith=5.0 safe=5.0
+  predict_row_insights_sample      rel=5.0 faith=5.0 safe=5.0
+  diagnose_delay_patterns_tool     rel=5.0 faith=5.0 safe=5.0
+  recommendation_tool              rel=5.0 faith=5.0 safe=5.0
+  recommendation_summary           rel=5.0 faith=5.0 safe=5.0
+  email_alert_tool                 rel=5.0 faith=4.0 safe=5.0
+  email_alert_summary              rel=5.0 faith=5.0 safe=5.0
+  coordinator_narrative            rel=3.0 faith=5.0 safe=5.0
+
+  capability blend:
+    predict              rel=5.00 faith=5.00 safe=5.00   (50% predict_summary / 50% predict_row_insights_sample)
+    diagnose             rel=4.00 faith=4.00 safe=4.00   (80% diagnose_delay_patterns_tool / 20% diagnose_delay_patterns_tool_raw)
+    recommendation       rel=4.00 faith=4.00 safe=4.00   (10% recommendation_summary / 70% recommendation_tool / 20% recommendation_tool_raw)
+    email                rel=4.00 faith=3.30 safe=4.00   (10% email_alert_summary / 70% email_alert_tool / 20% email_alert_tool_raw)
+    coordinator_narrative rel=3.00 faith=5.00 safe=5.00   (100% coordinator_narrative)
+
+  SCOPE-ADJUSTED MEAN 4.16/5   (every implied capability was attempted -- same as judge mean)
+
+  JUDGE WEIGHTED MEAN 4.16/5   (relevance 4.00 x.45, faithfulness 4.26 x.45, safety 4.40 x.10)
+  scored 8 artifact(s) -> 5 capability score(s) -> quality_scores
+
+============================================================
+[19:30:45] RUN VALIDITY
+============================================================
+  topology           : planner_executor
+  coordinator prompt : planner_executor/master = 60e3e21d
+  plan presented     : yes
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 4 / 4
+  missing tools      : []
+  empty results      : none
+  dependency order   : respected — every capability waited for its inputs
+  scheduling         : 95% of achievable overlap  (2 pair(s) left unoverlapped)
+  coordinator idle   : 12.84s spent deciding between waves (not a scheduling fault)
+  span               : 125.79s vs critical path 107.36s
+
+  execution timeline:
+    turn 1 start    0.00
+    turn 1 end      1.79   (plan / no tools yet)
+    turn 2 start    1.79
+    ..... 3.60s model reasoning (no tool running) .....
+    predict         3.60 ->   42.28
+    ....... 2.42s idle .......
+    diagnose       44.70 ->   69.53
+    ....... 8.40s idle .......
+    recommend      77.92 ->  121.77
+    ....... 2.02s idle .......
+    email         123.79 ->  129.38
+    ..... 3.32s model composing answer .....
+    turn 2 end    132.71
+    run end       132.71
+
+    ~ email_alert_tool could have run alongside diagnose_delay_patterns_tool (ready at 38.68s, actually started 120.19s)
+    ~ email_alert_tool could have run alongside recommendation_tool (ready at 38.68s, actually started 120.19s)
+
+  turn-1 plan text (stored verbatim, T94):
+    | Here's my plan:
+    | 1. Predict delivery delays
+    | 2. Diagnose delay patterns
+    | 3. Generate optimization recommendations
+    | 4. Generate customer email alerts
+    | Shall I proceed?
+
+  ATTENTION:
+    - 2 pair(s) were free to overlap but ran sequentially. Not an error — the dependency order was respected — but it is what separates a code-scheduled topology from one that has to reason the independence out.
+
+finished : 2026-09-06 19:30:46

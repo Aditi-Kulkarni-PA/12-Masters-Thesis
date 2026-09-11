@@ -176,6 +176,7 @@ def write_failed_run(
     failure_category: str,
     log_path: str | None = None,
     run_phase: str | None = None,
+    experiment_no: int | None = None,
     batch_id: str | None = None,
     execution_order: int | None = None,
     db_path: str = DB_PATH,
@@ -206,12 +207,16 @@ def write_failed_run(
 
     conn = sqlite3.connect(db_path)
     try:
-        # Clear any earlier failed attempt at the same combination. Completed runs are
-        # left untouched: only a row that itself records a non-completion is replaced.
+        # Clear any earlier failed attempt at the same slot. Completed runs are left
+        # untouched: only a row that itself records a non-completion is replaced.
+        #
+        # run_phase is part of the slot alongside model. Without it a main-experiment
+        # retry would match, and delete, a pilot row for the same topology, query, run_n
+        # and tier -- the pilot is N=1 at every tier, so main N=1 collides with it exactly.
         conn.execute(
             "DELETE FROM run WHERE topology = ? AND query_id = ? AND run_n = ? "
-            "AND model = ? AND run_status = 'failed'",
-            (topology, query_id, run_n, model),
+            "AND model = ? AND run_phase IS ? AND run_status = 'failed'",
+            (topology, query_id, run_n, model, run_phase),
         )
         # started_at is left NULL, not stamped with the current time. This row records a
         # run that did not complete, and for one that never reached the model there is no
@@ -220,15 +225,19 @@ def write_failed_run(
         # read as a single harness abort and caused a genuine finding to be misdiagnosed
         # and excluded (Risk Log R71, R72). The write time goes to recorded_at instead, so
         # the audit trail is kept without inventing a start time.
+        #
+        # experiment_no is written here as well as on the completed path. A failed run
+        # that carried no experiment would drop out of its campaign's denominator, which
+        # is the exact failure this function was added to prevent.
         conn.execute(
             "INSERT INTO run (run_id, query_id, topology, run_n, model, config_hash, "
             "started_at, recorded_at, run_status, failure_category, log_path, run_phase, "
-            "batch_id, execution_order, capture_version, path_fallback_used) "
-            "VALUES (?, ?, ?, ?, ?, ?, NULL, ?, 'failed', ?, ?, ?, ?, ?, ?, 0)",
+            "experiment_no, batch_id, execution_order, capture_version, path_fallback_used) "
+            "VALUES (?, ?, ?, ?, ?, ?, NULL, ?, 'failed', ?, ?, ?, ?, ?, ?, ?, 0)",
             (run_id, query_id, topology, run_n, model,
              "unavailable:run_did_not_complete",
              datetime.now(timezone.utc).isoformat(),
-             failure_category, log_path, run_phase, batch_id, execution_order,
+             failure_category, log_path, run_phase, experiment_no, batch_id, execution_order,
              CAPTURE_VERSION),
         )
         conn.commit()
@@ -257,6 +266,7 @@ def write_run(
     log_path: str | None = None,
     run_t0: float | None = None,
     run_phase: str | None = None,
+    experiment_no: int | None = None,
     batch_id: str | None = None,
     execution_order: int | None = None,
     db_path: str = DB_PATH,
@@ -281,7 +291,7 @@ def write_run(
 
     *batch_id* / *execution_order* (5-Sep-26): identify which harness invocation
     produced this run, and its position within that invocation's (usually randomized)
-    run order. Both None for a run not launched through run_experiment.py.
+    run order. Both None for a run not launched through execute_experiment.py.
     """
     run_id = str(uuid.uuid4())
     # Bring an older database up to date before inserting; no-op once applied.
@@ -292,9 +302,13 @@ def write_run(
     conn = sqlite3.connect(db_path)
     try:
         if run_n is None:
+            # Scoped to this experiment's (run_phase, model), not to the pair alone.
+            # Counting every row for a topology and query would carry the pilot's
+            # repetitions into the main experiment and start it at run_n = 2.
             row = conn.execute(
-                "SELECT COALESCE(MAX(run_n), 0) FROM run WHERE topology = ? AND query_id = ?",
-                (topology, query_id),
+                "SELECT COALESCE(MAX(run_n), 0) FROM run WHERE topology = ? AND query_id = ? "
+                "AND model = ? AND run_phase IS ?",
+                (topology, query_id, model, run_phase),
             ).fetchone()
             run_n = row[0] + 1
 
@@ -304,11 +318,13 @@ def write_run(
         # and the new completed one, so the slot counted twice and the tier's run total
         # exceeded the grid. Only rows that record a non-completion are removed; a
         # completed run is never replaced by another completed run, so a genuine
-        # repetition at the same run_n still has to be deliberate.
+        # repetition at the same run_n still has to be deliberate. run_phase is part of
+        # the slot for the same reason as in write_failed_run(): main N=1 and pilot N=1
+        # are identical on every other column.
         conn.execute(
             "DELETE FROM run WHERE topology = ? AND query_id = ? AND run_n = ? "
-            "AND model = ? AND run_status = 'failed'",
-            (topology, query_id, run_n, model),
+            "AND model = ? AND run_phase IS ? AND run_status = 'failed'",
+            (topology, query_id, run_n, model, run_phase),
         )
 
         run_finished_at = datetime.now(timezone.utc)
@@ -440,10 +456,10 @@ def write_run(
                 tool_base_offset_s, all_turns_json,
                 orchestration_prompt_tokens, orchestration_completion_tokens,
                 orchestration_total_tokens, orchestration_cost_usd,
-                capture_version, run_phase, batch_id, execution_order, behaviour_class,
+                capture_version, run_phase, experiment_no, batch_id, execution_order, behaviour_class,
                 scheduling_ratio, scheduling_deviation, infeasible_overlap,
                 critical_path_s, actual_span_s, fully_serial_s, coordinator_idle_s
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """,
             (
                 run_id, query_id, topology, None, run_n, model, config_hash,
@@ -471,6 +487,7 @@ def write_run(
                 orch_cost,
                 CAPTURE_VERSION,
                 run_phase,
+                experiment_no,
                 batch_id,
                 execution_order,
                 None,   # behaviour_class -- set by the scoring pipeline

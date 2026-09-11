@@ -14,8 +14,11 @@
 # for any run added since the last report.
 #
 # Usage:
-#   ./generate_metrics_report.sh                          # FULL REPORT: every model, every view
-#   ./generate_metrics_report.sh --model gpt-5.4-mini      # one tier only
+#   ./generate_metrics_report.sh                          # FULL REPORT: every experiment, every view
+#   ./generate_metrics_report.sh -e 3                      # one experiment only
+#   ./generate_metrics_report.sh --run-phase main          # one phase, every tier in it
+#   ./generate_metrics_report.sh --run-phase pilot --model gpt-5.4-mini
+#   ./generate_metrics_report.sh --model gpt-5.4-mini      # one tier, every phase it appears in
 #   ./generate_metrics_report.sh --no-bins                 # topology summary only
 #   ./generate_metrics_report.sh --no-print                # complexity bins only
 #   ./generate_metrics_report.sh --no-print --no-bins      # rebuild the tables, print nothing
@@ -23,7 +26,7 @@
 #   ./generate_metrics_report.sh --db path/to/other.db     # report on a different store
 #
 # What this does NOT do: it makes no API calls and re-executes no run. Both steps derive
-# everything from what run_experiment.sh/execute_topology.sh already stored — the tool
+# everything from what execute_experiment.sh/execute_topology.sh already stored — the tool
 # call offsets, token counts and judge scores — so running it as often as you like costs
 # nothing and cannot alter a measurement.
 #
@@ -41,6 +44,10 @@ export UV_PROJECT_ENVIRONMENT="$PWD/.venv"
 # The full report is the default here, unlike aggregate.py itself where each view is
 # opt-in: running this script by hand means wanting to see everything. Both the topology
 # summary and the complexity-bin breakdown print unless explicitly suppressed.
+#
+# Campaign filters (-e / --run-phase / --model) are not parsed here. Anything this loop
+# does not recognise falls through to aggregate.py, which owns their meaning -- parsing
+# them twice is how the two would drift apart.
 #
 # --no-print      omit the topology summary
 # --no-bins       omit the complexity-bin breakdown

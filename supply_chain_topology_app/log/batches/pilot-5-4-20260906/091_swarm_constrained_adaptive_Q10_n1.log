@@ -1,0 +1,141 @@
+==================================================================
+ topology : swarm_constrained_adaptive
+ run_n    : 3
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 20:25:29
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4  query_id=Q10
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 3 derived file(s), 13 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[20:25:30] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > Diagnose today's delay patterns, check how a storm in the East would affect things, and tell me how to optimize delivery
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+     - swarm_constrained_adaptive_seed_planning agent: 4,494 prompt / 507 completion tokens over 1 message(s)
+  -- swarm_ca: wave 1 running ['predict'] concurrently (prerequisites met); still waiting on ['diagnose', 'recommend', 'simulate']
+  >> tool_start predict_delivery_delays_tool (input=310 chars)
+     - predict_delivery_delays_tool agent: 64,300 prompt / 9,853 completion tokens over 5 message(s)
+  << tool_end   predict_delivery_delays_tool done in 60.09s (output=20,068 chars, valid_json=True)
+  -- swarm_ca: wave 2 running ['diagnose', 'simulate'] concurrently (prerequisites met); still waiting on ['recommend']
+  >> tool_start diagnose_delay_patterns_tool (input=288 chars)
+  >> tool_start delay_simulations_tool (input=341 chars)
+  -- swarm_ca: simulate read_blackboard(predict) -> hit
+  -- swarm_ca: diagnose read_blackboard(predict) -> hit
+     - delay_simulations_tool agent: 35,563 prompt / 8,256 completion tokens over 7 message(s)
+  << tool_end   delay_simulations_tool done in 47.03s (output=17,360 chars, valid_json=True)
+     - diagnose_delay_patterns_tool agent: 60,761 prompt / 10,847 completion tokens over 7 message(s)
+  << tool_end   diagnose_delay_patterns_tool done in 51.03s (output=18,511 chars, valid_json=True)
+  -- swarm_ca: wave 3 running ['recommend'] concurrently (prerequisites met); still waiting on nothing
+  >> tool_start recommendation_tool (input=292 chars)
+  -- swarm_ca: recommend read_blackboard(diagnose) -> hit
+  -- swarm_ca: recommend read_blackboard(predict) -> hit
+     - recommendation_tool agent: 62,878 prompt / 8,093 completion tokens over 7 message(s)
+  << tool_end   recommendation_tool done in 63.65s (output=13,526 chars, valid_json=True)
+  swarm_ca: 3 wave(s) run; capabilities that posted a result: ['diagnose', 'predict', 'recommend', 'simulate']
+
+============================================================
+[20:28:29] TURN 1 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "Posting the simulation results for the East-region storm scenario, including the severity distribution shift and the transcribed capped table rows enr... [284 characters]",
+  "recommendation_summary": "Posting optimization recommendations organized into quick-win, short-term, and long-term actions grounded in today's predicted delays, diagnosis findi... [232 characters]",
+  "email_alert_summary": ""
+}
+
+============================================================
+[20:28:29] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+
+============================================================
+[20:28:29] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "Posting the simulation results for the East-region storm scenario, including the severity distribution shift and the transcribed capped table rows enr... [284 characters]",
+  "recommendation_summary": "Posting optimization recommendations organized into quick-win, short-term, and long-term actions grounded in today's predicted delays, diagnosis findi... [232 characters]",
+  "email_alert_summary": ""
+}
+
+============================================================
+[20:28:29] SUMMARY — tools, tokens & cost  [model=gpt-5.4, tool calls=4]
+============================================================
+                        tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+predict_delivery_delays_tool     60.09s         310       20,068       True     64,300          9,853    74,153  $0.3085
+diagnose_delay_patterns_tool     51.03s         288       18,511       True     60,761         10,847    71,608  $0.3146
+      delay_simulations_tool     47.03s         341       17,360       True     35,563          8,256    43,819  $0.2127
+         recommendation_tool     63.65s         292       13,526       True     62,878          8,093    70,971  $0.2786
+          — Sub-agents TOTAL    221.80s                                None    223,502         37,049   260,551  $1.1145
+       — Orchestration turns                                           None      4,494            507     5,001  $0.0188
+          — Master (2 turns)      4.12s                                None      8,988          1,014    10,002  $0.0377
+               — GRAND TOTAL    178.90s                                None    236,984         38,570   275,554  $1.1710
+
+Persisted run_id: 189fdbcf-2612-4cf2-9ee0-1e4e56a97bea
+
+============================================================
+[20:28:29] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring 189fdbcf  topology=swarm_constrained_adaptive  model=gpt-5.4
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  predict_summary                  rel=5.0 faith=5.0 safe=5.0
+  predict_row_insights_sample      rel=5.0 faith=5.0 safe=5.0
+  simulate_row_reasons_sample      rel=4.0 faith=5.0 safe=5.0
+  diagnose_delay_patterns_tool     rel=5.0 faith=5.0 safe=5.0
+  recommendation_tool              rel=5.0 faith=5.0 safe=5.0
+  recommendation_summary           rel=2.0 faith=3.0 safe=5.0
+  simulate_narrative               rel=2.0 faith=3.0 safe=5.0
+
+  capability blend:
+    predict              rel=5.00 faith=5.00 safe=5.00   (50% predict_summary / 50% predict_row_insights_sample)
+    diagnose             rel=4.00 faith=4.00 safe=4.00   (80% diagnose_delay_patterns_tool / 20% diagnose_delay_patterns_tool_raw)
+    simulate             rel=3.60 faith=4.60 safe=5.00   (20% simulate_narrative / 80% simulate_row_reasons_sample)
+    recommendation       rel=3.70 faith=3.80 safe=4.00   (10% recommendation_summary / 70% recommendation_tool / 20% recommendation_tool_raw)
+
+  SCOPE-ADJUSTED MEAN 4.24/5   (every implied capability was attempted -- same as judge mean)
+
+  JUDGE WEIGHTED MEAN 4.24/5   (relevance 4.08 x.45, faithfulness 4.35 x.45, safety 4.50 x.10)
+  scored 7 artifact(s) -> 4 capability score(s) -> quality_scores
+
+============================================================
+[20:28:40] RUN VALIDITY
+============================================================
+  topology           : swarm_constrained_adaptive
+  coordinator prompt : swarm_constrained_adaptive/master = ac79b46d
+  plan presented     : NO
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 4 / 4
+  missing tools      : []
+  empty results      : none
+  dependency order   : respected — every capability waited for its inputs
+  scheduling         : 100% of achievable overlap  (0 pair(s) left unoverlapped)
+  coordinator idle   : 0.01s spent deciding between waves (not a scheduling fault)
+  span               : 174.78s vs critical path 174.77s
+
+  execution timeline:
+    turn 1 start    0.00
+    ..... 4.12s model reasoning (no tool running) .....
+    predict         4.12 ->   64.21
+    diagnose       64.22 ->  115.25 +
+    simulate       64.23 ->  111.26 +-- 2 at once
+    recommend     115.25 ->  178.90
+    turn 1 end    178.90
+    turn 2 start  178.90
+    turn 2 end    178.90   (no tools this turn)
+    run end       178.90
+  turn-1 plan text   : (none stored — no plan was produced)
+
+  ATTENTION:
+    - no plan was presented on turn 1 — the 2-turn plan/confirm flow did not engage; plan_presented is a measured comparison field.
+
+finished : 2026-09-06 20:28:41

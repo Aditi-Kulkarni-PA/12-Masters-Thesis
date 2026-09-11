@@ -5,7 +5,7 @@ The application package. It contains **two things that share one substrate**:
 | | What | Entry point |
 |---|---|---|
 | **The delivery app** | a Gradio conversational UI over five delivery capabilities | `delivery_chat_app.py` |
-| **The topology harness** | nine orchestration conditions, instrumented, run headlessly for the thesis | `cli/run_experiment.py` → `cli/execute_topology.py` |
+| **The topology harness** | nine orchestration conditions, instrumented, run headlessly for the thesis | `cli/execute_experiment.py` → `cli/execute_topology.py` |
 
 Both use the same capabilities, prompts, tools, MCP server and data. That is deliberate:
 the app *is* the substrate the thesis holds constant while varying topology.
@@ -58,18 +58,19 @@ repeated.
 ╚══════════════════════════════════════════════════════════════════════╝
                             │
 ╔══════════════════════════════════════════════════════════════════════╗
-║  AGENT RUNTIME  (delivery_agents.py — OpenAI Agents SDK)             ║
+║  AGENT RUNTIME  (core/agents.py — Microsoft Agent Framework)         ║
 ║                                                                      ║
-║  Master Expert Agent  (orchestrator)                                 ║
+║  Coordinator  (the delivery app uses planner-executor)               ║
 ║  ├── Predict Agent      → output: PredictOutput (Pydantic)           ║
 ║  ├── Diagnose Agent     → output: DelayDiagnosisResult (Pydantic)    ║
 ║  ├── Simulate Agent     → output: SimulationOutput (Pydantic)        ║
 ║  ├── Recommend Agent    → output: RecommendationOutput (Pydantic)    ║
 ║  ├── Email Alert Agent  → output: EmailsList (Pydantic)              ║
 ║  ├── Format Summary Agent (replaced by python; kept for future)      ║
-║  └── Fallback Advisor   → WebSearchTool                              ║
+║  └── Fallback Advisor   → out-of-scope / generic advisory replies    ║
 ║                                                                      ║
 ║  All outputs validated via Pydantic v2 structured output contracts   ║
+║  The same five agents are the substrate for all nine topologies      ║
 ╚══════════════════════════════════════════════════════════════════════╝
                             │
 ╔══════════════════════════════════════════════════════════════════════╗
@@ -129,39 +130,51 @@ application itself rather than part of the harness.
 
 
 ```
-supply_chain_delivery_app/
-├── delivery_chat_app.py           # Gradio UI — entry point
-├── delivery_agents.py             # Pydantic output models + agent definitions
+supply_chain_topology_app/
+├── delivery_chat_app.py            # Gradio UI — the delivery app's entry point
+│
+├── cli/                            # harness entry points, one concern each
+│   ├── execute_experiment.py           # plans a batch, dispatches one child per run
+│   ├── execute_topology.py         # runs one topology x query x repetition
+│   ├── score_topology_run.py       # LLM-judge quality scoring
+│   ├── backfill_scheduling.py      # repairs timing measures on existing rows
+│   ├── check_model_parity.py       # pre-flight generation-parameter gate
+│   ├── report_topology_run.py      # per-run report
+│   └── classify_behaviour.py       # behaviour labelling
+├── topologies/                     # the nine orchestration conditions + registry.py
+├── measurement/                    # instrumentation, dependencies, run-store schema/writer
+├── analysis/                       # aggregate.py, measures.py, tracker figure builders
+│
+├── core/                           # the substrate all nine conditions hold constant
+│   ├── agents.py                   # the five capability agents
+│   ├── clients.py                  # model client and generation settings
+│   ├── schemas.py                  # Pydantic output models incl. MasterOutput
+│   ├── mcp_tools.py                # pipeline_mcp — spawns the prediction server
+│   ├── tool_descriptions.py        # canonical tool names and descriptions
+│   └── paths.py
 ├── config/
-│   ├── load_config.py             # get_instruction() — reads prompt .md files verbatim
+│   ├── load_config.py              # get_instruction() — reads prompt .md files verbatim
 │   └── prompts/
-│       ├── agents/                # 7 agent-specific markdown prompts
-│       │   ├── master_expert.md
-│       │   ├── predict_delivery_delays.md
-│       │   ├── diagnose_delay_patterns.md
-│       │   ├── delay_simulation.md
-│       │   ├── recommendation.md
-│       │   ├── email_alert.md
-│       │   └── fallback_advisor.md
-│       └── shared/                      # 4 cross-cutting prompts
-│           ├── security_guardrails.md   # master layer 1
-│           ├── chatbot_behavior.md      # master layer 2
-│           ├── field_glossary.md        # @include'd into predict/diagnose/format prompts
-│           └── format_summary.md        # format agent (currently unused)
+│       ├── agents/                 # per-capability domain prompts
+│       ├── coordinators/           # per-topology coordinator prompts
+│       ├── shared/                 # cross-cutting partials, @include'd
+│       ├── helper/ · templates/    # supporting fragments
 ├── tools/
-│   ├── rag_knowledge.py           # ChromaDB + hybrid retrieval (cosine + keyword)
-│   ├── recommend_actions.py       # SQLite reads + RAG retrieval for recommendations
-│   └── email_customers.py         # Severity-based email template generation
+│   ├── rag_knowledge.py            # ChromaDB + hybrid retrieval (cosine + keyword)
+│   ├── recommend_actions.py        # SQLite reads + RAG retrieval for recommendations
+│   └── email_customers.py          # severity-based email template generation
 ├── helpers/
-│   ├── app_utils.py               # Gradio UI helpers and state management
-│   ├── post_processing.py         # Agent output post-processing
-│   └── logging_utils.py           # Runtime logging setup
-├── knowledge/
-│   └── delivery_sla_github_ready.md  # 36-section SLA/OLA policy document (RAG source)
-├── vectorstore/                   # ChromaDB persistent store (gitignored)
-├── input/                         # Daily order CSVs for prediction
-├── output/                        # Generated prediction, simulation, and email CSVs (gitignored)
-└── log/                           # Runtime application logs
+│   ├── app_utils.py                # Gradio UI helpers and state management
+│   ├── post_processing.py          # agent output post-processing
+│   └── logging_utils.py            # run logging, run_slug()/run_batch() identity
+│
+├── knowledge/                      # delivery_sla_github_ready.md — RAG source
+├── data/                           # run_store.db — every measured run
+├── runs/                           # per-run agent artefacts (swarm instruction files)
+├── vectorstore/                    # ChromaDB persistent store (gitignored)
+├── input/                          # daily order CSVs for prediction
+├── output/                         # generated CSVs and sidecars (gitignored)
+└── log/                            # batches/<batch_id>/ console logs and traces/
 ```
 
 ### 2.1 GitHub repository
@@ -188,7 +201,7 @@ supply_chain_delivery_app/
 | `SC_PREDICTION_MODEL_DIR` | Path to trained models | `prediction_pipeline/models` |
 | `SC_PREDICTION_DB_PATH` | Path to SQLite DB | `prediction_pipeline/db/delivery_predictions.db` |
 | `SC_PREDICTION_SRC_DIR` | Path to prediction_pipeline root | `prediction_pipeline` |
-| `SC_DELIVERY_OUTPUT_DIR` | Path for generated outputs | `supply_chain_delivery_app/output` |
+| `SC_DELIVERY_OUTPUT_DIR` | Path for generated outputs | `supply_chain_topology_app/output` |
 | `SC_MCP_ENRICH_ROWS` | Max rows for LLM enrichment | `50` |
 | `SC_MCP_DISPLAY_ROWS` | Max rows to display in UI | `50` |
 
@@ -219,11 +232,17 @@ separately — `pipeline_mcp` is an `MCPStdioTool`, so the app spawns it as a su
 and closes it on exit (see [section 6](#6-mcp-integration)).
 
 ```bash
-./scripts/run_chat_app.sh                 # start the UI
-SC_NO_CACHE=1 ./scripts/run_chat_app.sh   # no response cache, no freshness reuse
+./scripts/execute_chat_app.sh                 # start the UI
+SC_NO_CACHE=1 ./scripts/execute_chat_app.sh   # no response cache, no freshness reuse
 ```
 
 Open `http://localhost:7860`.
+
+**First start is slow** — typically well over a minute. The RAG cross-encoder, the
+ChromaDB vector store and the MCP `initialize` handshake (`request_timeout=120`) all load
+before Gradio binds its port. Wait for Gradio's `Running on local URL:` line; opening the
+browser before it appears gives a "site can't be reached" error that looks like a crash
+but is not one.
 
 **The app runs planner-executor, and only planner-executor.** That is a structural fit,
 not a preference: it is a plain MAF `Agent`, so one chat message returns a finished
@@ -363,7 +382,7 @@ The vector store persists in `vectorstore/` (gitignored) and is rebuilt on first
 ## 10. Pydantic output models
 
 All agent outputs are validated against Pydantic v2 models defined in
-`delivery_agents.py`. Key models:
+`core/schemas.py`; the agents that produce them are built in `core/agents.py`. Key models:
 
 | Model | Agent | Key fields |
 |---|---|---|
@@ -386,19 +405,20 @@ conditions headlessly against the frozen query set and persists every run to
 
 ```bash
 # from the repository root
-grep -E '^(MODEL|OPENAI_MODEL)=' .env          # the tier comes from .env, not a flag
-./scripts/run_experiment.sh --dry-run          # preview, spend nothing
-caffeinate -i ./scripts/run_experiment.sh      # run the full design
-./scripts/generate_metrics_report.sh           # rebuild every metric
+grep -E '^OPENAI_MODEL=' .env                              # --model is checked against this
+uv run python supply_chain_topology_app/measurement/run_store_schema.py --list-experiments
+./scripts/execute_experiment.sh -e 4 --run-n 1 --dry-run   # preview, spend nothing
+caffeinate -i ./scripts/execute_experiment.sh -e 4 --run-n 1   # run one repetition
+./scripts/generate_metrics_report.sh                       # rebuild every metric
 ```
 
 | Script | Purpose |
 |---|---|
 | `execute_topology.sh` | one topology, one query, once |
-| `run_experiment.sh` | plan and run a batch; parity-checked before it spends |
+| `execute_experiment.sh` | plan and run a batch; parity-checked before it spends |
 | `delete_topology_run.sh` | remove runs, sparing locked ones |
 | `generate_metrics_report.sh` | backfill timing, rebuild aggregates, print the report |
-| `run_chat_app.sh` | launch the Gradio delivery app; records nothing |
+| `execute_chat_app.sh` | launch the Gradio delivery app; records nothing |
 
 > **@include** [`../docs/thesis-topology-tradeoffs/experiments/harness-scripts.md`](../docs/thesis-topology-tradeoffs/experiments/harness-scripts.md)
 > — every flag for all four scripts, with the two behaviours that have caused mistakes

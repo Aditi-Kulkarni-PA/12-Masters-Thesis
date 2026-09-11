@@ -1,0 +1,123 @@
+==================================================================
+ topology : dynamic_graph
+ run_n    : 2
+ no-cache : 1   (1 = measurement mode)
+ started  : 2026-09-06 16:41:27
+==================================================================
+  effective config   : SC_NO_CACHE=1  SC_DEV_PATH_FALLBACK=0  model=gpt-5.4-mini  query_id=Q4
+  tiktoken cache     : warm (0.1s)
+  run isolation: cleared 0 derived file(s), 0 daily_* table(s); hist_* baseline untouched
+
+============================================================
+[16:41:28] 
+TURN 1 — sending query (expecting plan)
+============================================================
+  > What will be the delivery impact if there is a storm in the east today?
+  >
+  > The input orders data is in the file at path: /Users/aditikulkarni/Documents/Masters/AI-Projects/12-Thesis/0_supply_chain_thesis/prediction_pipeline/data/raw/daily_delivery_logistics_1.csv
+
+
+============================================================
+[16:41:30] TURN 1 — master response
+============================================================
+{
+  "proceed": true,
+  "chat_response": ""
+}
+
+============================================================
+[16:41:30] 
+TURN 2 — confirming ('Yes, proceed.') — tools will run now
+============================================================
+  > Yes, proceed.
+
+  >> tool_start predict_delivery_delays (input=176 chars)
+  << tool_end   predict_delivery_delays done in 0.86s (output=70,166 chars, valid_json=True)
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+  >> tool_start simulate_order_delays (input=70 chars)
+  << tool_end   simulate_order_delays done in 0.03s (output=12,249 chars, valid_json=False)
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+  >> tool_start simulate_order_delays (input=70 chars)
+  << tool_end   simulate_order_delays done in 0.03s (output=12,249 chars, valid_json=False)
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+  >> master reasoning (writing the full structured response -- usually the slowest part of the turn)...
+
+============================================================
+[16:43:03] TURN 2 — master response
+============================================================
+{
+  "chat_response": "",
+  "simulate_summary": "A **stormy** day in the **east** would materially worsen delivery performance for east-region orders. Severity shifts away from **Short (1-2h)** delay... [363 characters]",
+  "recommendation_summary": "",
+  "email_alert_summary": ""
+}
+
+============================================================
+[16:43:03] SUMMARY — tools, tokens & cost  [model=gpt-5.4-mini, tool calls=2]
+============================================================
+                        tool duration_s input_chars output_chars valid_json prompt_tok completion_tok total_tok cost_usd
+predict_delivery_delays_tool     25.76s           0       18,244       True     30,868          4,738    35,606  $0.0445
+      delay_simulations_tool     21.43s           0       16,916       True     61,895          4,119    66,014  $0.0650
+          — Sub-agents TOTAL     47.19s                                None    170,320         12,977   183,297  $0.1861
+       — Orchestration turns                                           None    401,979          1,981   403,960  $0.3104
+          — Master (2 turns)     18.47s                                None      4,230            130     4,360  $0.0038
+               — GRAND TOTAL     95.01s                                None    576,529         15,088   591,617  $0.5003
+
+Persisted run_id: 4f44f7a8-fa4e-4929-bd9e-b945a688d59d
+
+============================================================
+[16:43:03] QUALITY SCORING (T42) — judging persisted capability outputs
+============================================================
+
+Scoring 4f44f7a8  topology=dynamic_graph  model=gpt-5.4-mini
+  judged artifact: up to 13 artifacts, blended into 6 capability-level scores (T42c)
+
+  predict_summary                  rel=5.0 faith=5.0 safe=5.0
+  predict_row_insights_sample      rel=5.0 faith=5.0 safe=5.0
+  simulate_row_reasons_sample      rel=4.0 faith=5.0 safe=5.0
+  simulate_narrative               rel=5.0 faith=5.0 safe=5.0
+
+  capability blend:
+    predict              rel=5.00 faith=5.00 safe=5.00   (50% predict_summary / 50% predict_row_insights_sample)
+    simulate             rel=4.20 faith=5.00 safe=5.00   (20% simulate_narrative / 80% simulate_row_reasons_sample)
+
+  SCOPE-ADJUSTED MEAN 4.82/5   (every implied capability was attempted -- same as judge mean)
+
+  JUDGE WEIGHTED MEAN 4.82/5   (relevance 4.60 x.45, faithfulness 5.00 x.45, safety 5.00 x.10)
+  scored 4 artifact(s) -> 2 capability score(s) -> quality_scores
+
+============================================================
+[16:43:10] RUN VALIDITY
+============================================================
+  topology           : dynamic_graph
+  coordinator prompt : dynamic_graph/coordinator = 9670f683
+  plan presented     : NO
+  input path source  : DERIVED from query (good)
+  run status         : success
+  tools expected/ran : 2 / 2
+  missing tools      : []
+  empty results      : none
+  dependency order   : respected — every capability waited for its inputs
+  scheduling         : 100% of achievable overlap  (0 pair(s) left unoverlapped)
+  coordinator idle   : 29.36s spent deciding between waves (not a scheduling fault)
+  span               : 76.54s vs critical path 47.18s
+
+  execution timeline:
+    turn 1 start    0.00
+    turn 1 end      1.61   (plan / no tools yet)
+    turn 2 start    1.61
+    ..... 10.55s model reasoning (no tool running) .....
+    predict        10.55 ->   36.31
+    ....... 29.35s idle .......
+    simulate       65.66 ->   87.09
+    ..... 7.92s model composing answer .....
+    turn 2 end     95.01
+    run end        95.01
+  turn-1 plan text   : (none stored — no plan was produced)
+
+  ATTENTION:
+    - no plan was presented on turn 1 — the 2-turn plan/confirm flow did not engage; plan_presented is a measured comparison field.
+
+finished : 2026-09-06 16:43:10
